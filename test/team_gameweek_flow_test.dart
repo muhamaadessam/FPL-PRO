@@ -6,9 +6,58 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fantasy_pl/core/models/fpl_models.dart';
 import 'package:fantasy_pl/core/network/fpl_api_client.dart';
 import 'package:fantasy_pl/features/team/presentation/team_view.dart';
+import 'package:fantasy_pl/features/team/presentation/pitch_view.dart';
 import 'package:fantasy_pl/l10n/app_localizations.dart';
 
 void main() {
+  testWidgets('applies captain multiplier to player points', (tester) async {
+    final bootstrap = FplBootstrap.fromJson({
+      'teams': [
+        {'id': 1, 'name': 'Test FC', 'short_name': 'TST'},
+      ],
+      'elements': [
+        {'id': 10, 'web_name': 'Captain', 'team': 1, 'element_type': 4},
+        {'id': 11, 'web_name': 'Bench', 'team': 1, 'element_type': 4},
+      ],
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: PitchView(
+            starting: [
+              TeamPick.fromJson({
+                'element': 10,
+                'position': 1,
+                'multiplier': 2,
+                'is_captain': true,
+                'element_type': 4,
+              }),
+            ],
+            bench: [
+              TeamPick.fromJson({
+                'element': 11,
+                'position': 12,
+                'multiplier': 0,
+                'element_type': 4,
+              }),
+            ],
+            bootstrap: bootstrap,
+            gameweekPoints: const {10: 2, 11: 17},
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('4'), findsOneWidget);
+    expect(find.text('2'), findsNothing);
+    expect(find.text('17'), findsOneWidget);
+  });
+
   testWidgets('reloads team and player points for the selected gameweek', (
     tester,
   ) async {
