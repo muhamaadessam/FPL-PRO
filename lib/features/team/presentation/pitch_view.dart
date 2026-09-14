@@ -162,7 +162,7 @@ class _PitchRow extends StatelessWidget {
               pick: pick,
               player: bootstrap.players[pick.elementId],
               team: _teamFor(pick),
-              points: gameweekPoints[pick.elementId],
+              points: _displayPoints(pick),
               isBench: isBench,
             ),
           )
@@ -173,6 +173,12 @@ class _PitchRow extends StatelessWidget {
   FplTeam? _teamFor(TeamPick pick) {
     final player = bootstrap.players[pick.elementId];
     return player == null ? null : bootstrap.teams[player.teamId];
+  }
+
+  int? _displayPoints(TeamPick pick) {
+    final points = gameweekPoints[pick.elementId];
+    if (points == null) return null;
+    return points * (pick.multiplier > 0 ? pick.multiplier : 1);
   }
 }
 
