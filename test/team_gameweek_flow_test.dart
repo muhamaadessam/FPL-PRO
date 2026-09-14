@@ -125,32 +125,10 @@ void main() {
     expect(find.text('نقطة'), findsNWidgets(2));
     expect(tester.takeException(), isNull);
   });
-
-  testWidgets('does not use player live rows as the team gameweek total', (
-    tester,
-  ) async {
-    final api = _FakeFplApiClient(useOfficialPoints: false);
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [fplApiClientProvider.overrideWithValue(api)],
-        child: MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: const Scaffold(body: TeamView(entryId: 123)),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('83'), findsNothing);
-  });
 }
 
 class _FakeFplApiClient extends FplApiClient {
-  _FakeFplApiClient({this.useOfficialPoints = true}) : super(dio: Dio());
-
-  final bool useOfficialPoints;
+  _FakeFplApiClient() : super(dio: Dio());
 
   final teamRequests = <int>[];
   final pointsRequests = <int>[];
@@ -191,7 +169,8 @@ class _FakeFplApiClient extends FplApiClient {
         {
           'element': gameweekId == 4 ? 1 : 3,
           'position': 1,
-          'multiplier': 1,
+          'multiplier': gameweekId == 4 ? 2 : 1,
+          'is_captain': gameweekId == 4,
           'element_type': 4,
         },
         if (gameweekId == 4)
@@ -199,7 +178,7 @@ class _FakeFplApiClient extends FplApiClient {
       ],
       'entry_history': {
         'event': gameweekId,
-        'points': useOfficialPoints && gameweekId == 4 ? 60 : 0,
+        'points': gameweekId == 4 ? 59 : 0,
       },
     });
   }
@@ -207,7 +186,7 @@ class _FakeFplApiClient extends FplApiClient {
   @override
   Future<Map<int, int>> getGameweekPoints(int gameweekId) async {
     pointsRequests.add(gameweekId);
-    return gameweekId == 4 ? const {1: 40, 2: 43} : const {};
+    return gameweekId == 4 ? const {1: 2, 2: 56} : const {};
   }
 
   @override

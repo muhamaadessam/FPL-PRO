@@ -7,33 +7,36 @@ import 'package:fantasy_pl/core/security/session_store.dart';
 import 'package:fantasy_pl/features/team/data/team_repository.dart';
 
 void main() {
-  test('uses private picks for current and future gameweeks', () async {
-    final api = _FakeFplApiClient();
-    final repository = TeamRepository(api);
-    const session = OfficialSession(accessToken: 'test-token');
+  test(
+    'uses public picks for played gameweeks and private picks for future',
+    () async {
+      final api = _FakeFplApiClient();
+      final repository = TeamRepository(api);
+      const session = OfficialSession(accessToken: 'test-token');
 
-    await repository.getTeamForGameweek(
-      session: session,
-      entryId: 123,
-      gameweekId: 4,
-      currentGameweekId: 4,
-    );
-    await repository.getTeamForGameweek(
-      session: session,
-      entryId: 123,
-      gameweekId: 5,
-      currentGameweekId: 4,
-    );
-    await repository.getTeamForGameweek(
-      session: session,
-      entryId: 123,
-      gameweekId: 3,
-      currentGameweekId: 4,
-    );
+      await repository.getTeamForGameweek(
+        session: session,
+        entryId: 123,
+        gameweekId: 4,
+        currentGameweekId: 4,
+      );
+      await repository.getTeamForGameweek(
+        session: session,
+        entryId: 123,
+        gameweekId: 5,
+        currentGameweekId: 4,
+      );
+      await repository.getTeamForGameweek(
+        session: session,
+        entryId: 123,
+        gameweekId: 3,
+        currentGameweekId: 4,
+      );
 
-    expect(api.privateRequests, [4, 5]);
-    expect(api.publicRequests, [3]);
-  });
+      expect(api.privateRequests, [5]);
+      expect(api.publicRequests, [4, 3]);
+    },
+  );
 }
 
 class _FakeFplApiClient extends FplApiClient {

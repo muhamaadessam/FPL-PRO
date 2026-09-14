@@ -211,7 +211,11 @@ class _TeamContent extends StatelessWidget {
       (gw) => gw.id == selectedGameweekId,
       orElse: () => bootstrap.gameweeks.first,
     );
+    final liveTeamPoints = gameweek.isCurrent
+        ? _liveTeamPoints(team.picks, gameweekPoints)
+        : null;
     final displayedPoints =
+        liveTeamPoints ??
         historyPoints[selectedGameweekId] ??
         (team.summary.gameweekId == selectedGameweekId
             ? team.summary.points
@@ -277,6 +281,19 @@ class _TeamContent extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  int? _liveTeamPoints(List<TeamPick> picks, Map<int, int> gameweekPoints) {
+    if (gameweekPoints.isEmpty) return null;
+    final starting = picks.where((pick) => pick.position <= 11);
+    if (starting.isEmpty) return null;
+    return starting.fold<int>(
+      0,
+      (total, pick) =>
+          total +
+          (gameweekPoints[pick.elementId] ?? 0) *
+              (pick.multiplier > 0 ? pick.multiplier : 1),
     );
   }
 }

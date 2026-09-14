@@ -76,7 +76,7 @@ class TeamRepository {
     required int gameweekId,
     required int currentGameweekId,
   }) {
-    if (gameweekId >= currentGameweekId) {
+    if (gameweekId > currentGameweekId) {
       return getMyTeam(
         session: session,
         entryId: entryId,
