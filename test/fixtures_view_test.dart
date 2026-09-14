@@ -34,7 +34,9 @@ class FakeFplApiClient implements FplApiClient {
         1: FplTeam(id: 1, name: 'Arsenal', shortName: 'ARS', code: 3),
         2: FplTeam(id: 2, name: 'Chelsea', shortName: 'CHE', code: 8),
       },
-      players: const {},
+      players: const {
+        99: FplPlayer(id: 99, webName: 'Scorer', teamId: 1, positionId: 4),
+      },
     );
   }
 
@@ -68,17 +70,36 @@ class FakeFplApiClient implements FplApiClient {
         homeScore: 1,
         awayScore: 0,
       ),
-      FplFixture(
-        id: 3,
-        gameweekId: 1,
-        homeTeamId: 1,
-        awayTeamId: 2,
-        kickoffTime: DateTime.now().subtract(const Duration(days: 1)),
-        finished: true,
-        started: true,
-        homeScore: 2,
-        awayScore: 2,
-      ),
+      FplFixture.fromJson({
+        'id': 3,
+        'event': 1,
+        'team_h': 1,
+        'team_a': 2,
+        'kickoff_time': DateTime.now()
+            .subtract(const Duration(days: 1))
+            .toIso8601String(),
+        'finished': false,
+        'finished_provisional': true,
+        'started': true,
+        'team_h_score': 2,
+        'team_a_score': 2,
+        'stats': [
+          {
+            'identifier': 'goals_scored',
+            'h': [
+              {'element': 99, 'value': 2},
+            ],
+            'a': [],
+          },
+          {
+            'identifier': 'bonus',
+            'h': [
+              {'element': 99, 'value': 3},
+            ],
+            'a': [],
+          },
+        ],
+      }),
       // Finished match with missing scores to test em dash logic
       FplFixture(
         id: 4,
@@ -210,5 +231,21 @@ void main() {
 
     // 4 fixtures * 2 teams = 8 badges total.
     expect(find.byType(Image), findsNWidgets(8));
+  });
+
+  testWidgets('opens match details in a bottom sheet', (tester) async {
+    final apiClient = FakeFplApiClient();
+    await tester.pumpWidget(createWidgetUnderTest(apiClient));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('fixture-card-3')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Match details'), findsOneWidget);
+    expect(find.text('Goals'), findsOneWidget);
+    expect(find.text('Bonus points'), findsOneWidget);
+    expect(find.text('Scorer'), findsNWidgets(2));
+    expect(find.text('×2'), findsOneWidget);
+    expect(find.text('+3'), findsOneWidget);
   });
 }

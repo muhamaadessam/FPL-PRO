@@ -62,6 +62,15 @@ class AppLocalizations {
   String get matches => isArabic ? 'المباريات' : 'Matches';
   String matchesCount(int count) =>
       isArabic ? '$count مباريات' : '$count matches';
+  String get homeTeam => isArabic ? 'صاحب الأرض' : 'Home';
+  String get awayTeam => isArabic ? 'الضيف' : 'Away';
+  String get matchDetails => isArabic ? 'تفاصيل المباراة' : 'Match details';
+  String get goals => isArabic ? 'الأهداف' : 'Goals';
+  String get assists => isArabic ? 'التمريرات الحاسمة' : 'Assists';
+  String get bonusPoints => isArabic ? 'نقاط البونص' : 'Bonus points';
+  String get noMatchEvents =>
+      isArabic ? 'لا توجد أحداث مسجلة بعد.' : 'No player events recorded yet.';
+  String playerName(int id) => isArabic ? 'لاعب $id' : 'Player $id';
   String get myTeam => isArabic ? 'فريقي' : 'My Team';
   String get currentGameweek =>
       isArabic ? 'الأسبوع الحالي' : 'Current gameweek';
