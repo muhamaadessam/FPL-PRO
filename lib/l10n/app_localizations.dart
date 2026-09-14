@@ -60,6 +60,8 @@ class AppLocalizations {
       ? 'اعرض بيانات المباريات الرسمية بدون تسجيل دخول.'
       : 'View official fixture data without signing in.';
   String get matches => isArabic ? 'المباريات' : 'Matches';
+  String matchesCount(int count) =>
+      isArabic ? '$count مباريات' : '$count matches';
   String get myTeam => isArabic ? 'فريقي' : 'My Team';
   String get currentGameweek =>
       isArabic ? 'الأسبوع الحالي' : 'Current gameweek';
@@ -77,6 +79,9 @@ class AppLocalizations {
   String get kickoff => isArabic ? 'موعد البداية' : 'Kick-off';
   String get finalScore => isArabic ? 'النهاية' : 'Full time';
   String get notStarted => isArabic ? 'لم تبدأ' : 'Not started';
+  String get fixtureFinished => isArabic ? 'انتهت' : 'Finished';
+  String get fixtureLive => isArabic ? 'مباشر' : 'Live';
+  String get fixtureUpcoming => isArabic ? 'قادمة' : 'Upcoming';
   String get noFixtures => isArabic ? 'لا توجد مباريات' : 'No fixtures found';
   String get retry => isArabic ? 'إعادة المحاولة' : 'Try again';
   String get logout => isArabic ? 'تسجيل الخروج' : 'Sign out';
