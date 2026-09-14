@@ -152,7 +152,8 @@ class DioHelper {
   static bool _isSensitivePath(String path) {
     return path.contains('/token') ||
         path.contains('/api/me/') ||
-        path.contains('/my-team/');
+        path.contains('/my-team/') ||
+        path.contains('/transfers/');
   }
 
   static bool _isLargeEndpoint(String path) {

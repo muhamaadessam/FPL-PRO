@@ -1,12 +1,17 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:fantasy_pl/core/models/fpl_models.dart';
-import 'package:fantasy_pl/core/network/fpl_api_client.dart';
-import 'package:fantasy_pl/features/team/presentation/team_view.dart';
-import 'package:fantasy_pl/features/team/presentation/pitch_view.dart';
+import 'package:fantasy_pl/features/fixtures/data/models/fpl_models.dart';
+import 'package:fantasy_pl/features/fixtures/data/datasources/fpl_api_client.dart';
+import 'package:fantasy_pl/features/team/data/models/team_models.dart';
+import 'package:fantasy_pl/features/fixtures/data/repositories/fixtures_repository_impl.dart';
+import 'package:fantasy_pl/features/fixtures/domain/repositories/fixtures_repository.dart';
+import 'package:fantasy_pl/features/team/data/repositories/team_repository.dart';
+import 'package:fantasy_pl/features/team/domain/repositories/team_repository.dart';
+import 'package:fantasy_pl/features/team/presentation/screens/team_view.dart';
+import 'package:fantasy_pl/features/team/presentation/widgets/pitch_view.dart';
 import 'package:fantasy_pl/l10n/app_localizations.dart';
 
 void main() {
@@ -69,8 +74,15 @@ void main() {
     final api = _FakeFplApiClient();
 
     await tester.pumpWidget(
-      ProviderScope(
-        overrides: [fplApiClientProvider.overrideWithValue(api)],
+      MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<FixturesRepository>.value(
+            value: FixturesRepositoryImpl(api),
+          ),
+          RepositoryProvider<TeamRepository>.value(
+            value: TeamRepositoryImpl(api),
+          ),
+        ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
@@ -120,8 +132,15 @@ void main() {
     final api = _FakeFplApiClient();
 
     await tester.pumpWidget(
-      ProviderScope(
-        overrides: [fplApiClientProvider.overrideWithValue(api)],
+      MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<FixturesRepository>.value(
+            value: FixturesRepositoryImpl(api),
+          ),
+          RepositoryProvider<TeamRepository>.value(
+            value: TeamRepositoryImpl(api),
+          ),
+        ],
         child: MaterialApp(
           locale: const Locale('ar'),
           localizationsDelegates: AppLocalizations.localizationsDelegates,

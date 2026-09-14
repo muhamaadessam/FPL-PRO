@@ -1,7 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:fantasy_pl/core/models/fpl_models.dart';
-import 'package:fantasy_pl/features/recommendations/domain/recommendation_engine.dart';
+import 'package:fantasy_pl/features/fixtures/data/models/fpl_models.dart';
+import 'package:fantasy_pl/features/recommendations/domain/usecases/recommendation_engine.dart';
+import 'package:fantasy_pl/features/team/data/models/team_models.dart';
 
 void main() {
   test('recommends an affordable same-position transfer and captain', () {
@@ -81,6 +82,57 @@ void main() {
 
     expect(result.chip, SuggestedChip.freeHit);
     expect(result.chipReason, ChipReason.missingStarters);
+  });
+
+  test('rates by position and handles doubles and blanks', () {
+    final bootstrap = _bootstrap([
+      _player(1, 'Double Star', 1, 3, 90, 8),
+      _player(2, 'Average Mid', 2, 3, 70, 4),
+      {..._player(3, 'Unavailable', 3, 3, 60, 6), 'status': 'u'},
+    ]);
+    final team = MyTeam.fromJson({
+      'picks': [
+        {'element': 1, 'position': 1, 'element_type': 3, 'is_captain': true},
+        {'element': 3, 'position': 12, 'element_type': 3},
+      ],
+    });
+    final result = const RecommendationEngine().build(
+      bootstrap: bootstrap,
+      fixtures: [_fixture(5, 1, 2), _fixture(5, 1, 4)],
+      team: team,
+      gameweekId: 5,
+      playerSummaries: {
+        1: FplPlayerSummary(
+          history: [
+            FplPlayerHistory(
+              round: 4,
+              minutes: 90,
+              starts: 1,
+              totalPoints: 9,
+              expectedGoalInvolvements: 0.8,
+            ),
+          ],
+          historyPast: [
+            FplPastSeason(
+              seasonName: '2025/26',
+              totalPoints: 180,
+              minutes: 3000,
+              starts: 34,
+              expectedGoalInvolvements: 15,
+            ),
+          ],
+        ),
+      },
+    );
+
+    final star = result.squadAnalysis.players.first;
+    final unavailable = result.squadAnalysis.players.last;
+    expect(star.projection.nextFixtureCount, 2);
+    expect(star.rating, 100);
+    expect(star.expectedPoints, greaterThan(0));
+    expect(unavailable.expectedPoints, 0);
+    expect(result.squadAnalysis.currentSeasonCoverage, 1);
+    expect(result.squadAnalysis.previousSeasonPlayers, 1);
   });
 }
 

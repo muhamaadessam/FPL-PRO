@@ -135,8 +135,76 @@ class AppLocalizations {
   String get recommendationSubtitle => isArabic
       ? 'تقديرات مبنية على الإحصائيات الرسمية والمباريات القادمة.'
       : 'Estimates based on official stats and upcoming fixtures.';
+  String get nextGameweekAnalysis =>
+      isArabic ? 'تحليل الجولة القادمة' : 'Next Gameweek Analysis';
+  String get nextGameweekAnalysisSubtitle => isArabic
+      ? 'تقييم التشكيلة واللاعبين من واقع الموسم والمباريات القادمة.'
+      : 'Squad and player ratings from season form and upcoming fixtures.';
+  String get squadRating => isArabic ? 'تقييم التشكيلة' : 'Squad rating';
+  String ratingOutOf100(int rating) => '$rating/100';
+  String get expectedStartingPoints =>
+      isArabic ? 'متوقع الأساسيين' : 'Starting XI forecast';
+  String get expectedBenchPoints => isArabic ? 'متوقع الدكة' : 'Bench forecast';
+  String get averagePlayerRating =>
+      isArabic ? 'متوسط تقييم الأساسيين' : 'Starting XI average';
+  String get bestLegalLineup =>
+      isArabic ? 'أفضل تشكيلة قانونية' : 'Best legal XI';
+  String get selectionEfficiency =>
+      isArabic ? 'كفاءة اختيار الأساسيين' : 'Selection efficiency';
+  String get currentForm => isArabic ? 'آخر المباريات' : 'Recent form';
+  String get seasonAverage => isArabic ? 'متوسط الموسم' : 'Season average';
+  String get previousSeason => isArabic ? 'الموسم السابق' : 'Previous season';
+  String get fixtureRating => isArabic ? 'سهولة المباراة' : 'Fixture rating';
+  String get reliability => isArabic ? 'ثبات المشاركة' : 'Minutes reliability';
+  String get ratingMethod =>
+      isArabic ? 'كيف اتحسب التقييم؟' : 'How is this rated?';
+  String get ratingMethodDescription => isArabic
+      ? 'التقييم يجمع توقع الجولة، آخر 6 مباريات، متوسط الموسم، الأرقام المتوقعة، صعوبة الخصم، الجاهزية وثبات الدقائق. الموسم السابق وزنه 5% فقط عند توفره.'
+      : 'The rating combines the next-Gameweek forecast, last six matches, season average, underlying numbers, fixture difficulty, availability and minutes reliability. Previous-season data carries only 5% when available.';
+  String get analysisDisclaimer => isArabic
+      ? 'التقييم تقديري وليس ضمانًا. أخبار الإصابات والتشكيل قبل الموعد النهائي تظل أهم تحديث.'
+      : 'Ratings are estimates, not guarantees. Recheck injuries and line-ups before the deadline.';
+  String analysisCoverage(int current, int previous, int total) => isArabic
+      ? 'تاريخ الموسم متاح لـ$current من $total لاعب • موسم سابق لـ$previous'
+      : 'Current-season history for $current of $total players • previous season for $previous';
+  String get rising => isArabic ? 'صاعد' : 'Rising';
+  String get steady => isArabic ? 'ثابت' : 'Steady';
+  String get falling => isArabic ? 'متراجع' : 'Falling';
+  String get homeShort => isArabic ? 'د' : 'H';
+  String get awayShort => isArabic ? 'خ' : 'A';
+  String get noPreviousSeason => isArabic ? 'غير متاح' : 'Not available';
+  String ratingBand(int rating) {
+    if (rating >= 85) return isArabic ? 'ممتازة' : 'Excellent';
+    if (rating >= 75) return isArabic ? 'قوية' : 'Strong';
+    if (rating >= 65) return isArabic ? 'جيدة' : 'Competitive';
+    if (rating >= 50) return isArabic ? 'تحتاج تحسين' : 'Needs work';
+    return isArabic ? 'مخاطرة عالية' : 'High risk';
+  }
+
   String get captainPick => isArabic ? 'اختيار الكابتن' : 'Captain pick';
   String get transferIdeas => isArabic ? 'اقتراحات التبديل' : 'Transfer ideas';
+  String get compareTransfer =>
+      isArabic ? 'مقارنة التبديل' : 'Compare transfer';
+  String get transferOut => isArabic ? 'خارج' : 'Out';
+  String get transferIn => isArabic ? 'داخل' : 'In';
+  String get projectedPoints =>
+      isArabic ? 'النقاط المتوقعة' : 'Projected points';
+  String get nextFixtures => isArabic ? 'المباريات القادمة' : 'Next fixtures';
+  String get availability => isArabic ? 'الجاهزية' : 'Availability';
+  String get confirmTransfer => isArabic ? 'تأكيد التبديل' : 'Confirm transfer';
+  String get selected => isArabic ? 'تم الاختيار' : 'Selected';
+  String get transferSubmitted =>
+      isArabic ? 'تم إرسال التبديل' : 'Transfer submitted';
+  String get actionPlanHint => isArabic
+      ? 'اضغط على الاقتراح لمراجعة التفاصيل قبل التنفيذ.'
+      : 'Tap a suggestion to review it before submitting.';
+  String get confirmChip => isArabic ? 'تفعيل الـChip' : 'Activate chip';
+  String chipSelection(String chip) =>
+      isArabic ? 'اختيار $chip' : 'Select $chip';
+  String get chipSubmitted => isArabic ? 'تم تفعيل الـChip' : 'Chip submitted';
+  String get writeAuthRequired => isArabic
+      ? 'أعد تسجيل الدخول لتفعيل التغييرات على الفريق.'
+      : 'Sign in again to submit team changes.';
   String get topPicks => isArabic ? 'أفضل الاختيارات' : 'Top picks';
   String get chipAdvice => isArabic ? 'قرار الـChip' : 'Chip decision';
   String get noChip => isArabic ? 'بدون Chip' : 'No chip';
@@ -169,6 +237,9 @@ class AppLocalizations {
     'freeHit' => isArabic ? 'Free Hit' : 'Free Hit',
     'benchBoost' => isArabic ? 'Bench Boost' : 'Bench Boost',
     'tripleCaptain' => isArabic ? 'Triple Captain' : 'Triple Captain',
+    'freehit' => isArabic ? 'Free Hit' : 'Free Hit',
+    'bboost' => isArabic ? 'Bench Boost' : 'Bench Boost',
+    '3xc' => isArabic ? 'Triple Captain' : 'Triple Captain',
     _ => noChip,
   };
 

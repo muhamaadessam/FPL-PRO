@@ -1,19 +1,25 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 
-import 'package:fantasy_pl/app/app.dart';
-import 'package:fantasy_pl/core/security/session_store.dart';
-import 'package:fantasy_pl/features/auth/application/auth_controller.dart';
-import 'package:fantasy_pl/features/auth/data/official_auth_client.dart';
+import 'package:fantasy_pl/core/app/app.dart';
+import 'package:fantasy_pl/features/auth/data/datasources/session_store.dart';
+import 'package:fantasy_pl/features/auth/data/datasources/official_auth_client.dart';
+import 'package:fantasy_pl/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:fantasy_pl/features/auth/domain/entities/official_session.dart';
+import 'package:fantasy_pl/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:fantasy_pl/features/fixtures/data/datasources/fpl_api_client.dart';
+import 'package:fantasy_pl/features/fixtures/data/repositories/fixtures_repository_impl.dart';
+import 'package:fantasy_pl/features/team/data/repositories/team_repository.dart';
 
 void main() {
   testWidgets('team lookup page exposes public team access', (tester) async {
+    final apiClient = FplApiClient(dio: Dio());
     await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          officialAuthClientProvider.overrideWithValue(_FakeAuthClient()),
-        ],
-        child: const FantasyPlApp(),
+      FantasyPlApp(
+        authCubit: AuthCubit(AuthRepositoryImpl(_FakeAuthClient()))
+          ..restoreSession(),
+        fixturesRepository: FixturesRepositoryImpl(apiClient),
+        teamRepository: TeamRepositoryImpl(apiClient),
       ),
     );
     await tester.pumpAndSettle();

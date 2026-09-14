@@ -1,17 +1,17 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:fantasy_pl/core/models/fpl_models.dart';
-import 'package:fantasy_pl/core/network/fpl_api_client.dart';
-import 'package:fantasy_pl/core/security/session_store.dart';
-import 'package:fantasy_pl/features/team/data/team_repository.dart';
+import 'package:fantasy_pl/features/fixtures/data/datasources/fpl_api_client.dart';
+import 'package:fantasy_pl/features/auth/domain/entities/official_session.dart';
+import 'package:fantasy_pl/features/team/data/models/team_models.dart';
+import 'package:fantasy_pl/features/team/data/repositories/team_repository.dart';
 
 void main() {
   test(
     'uses public picks for played gameweeks and private picks for future',
     () async {
       final api = _FakeFplApiClient();
-      final repository = TeamRepository(api);
+      final repository = TeamRepositoryImpl(api);
       const session = OfficialSession(accessToken: 'test-token');
 
       await repository.getTeamForGameweek(
@@ -63,6 +63,25 @@ class _FakeFplApiClient extends FplApiClient {
     publicRequests.add(gameweekId);
     return MyTeam.fromJson(const {'entry_history': {}});
   }
+
+  @override
+  Future<void> makeTransfer({
+    required OfficialSession session,
+    required int entryId,
+    required int gameweekId,
+    required int elementIn,
+    required int elementOut,
+    required int purchasePrice,
+    required int sellingPrice,
+  }) async {}
+
+  @override
+  Future<void> saveMyTeam({
+    required OfficialSession session,
+    required int entryId,
+    required String? chip,
+    required List<TeamPick> picks,
+  }) async {}
 
   @override
   void dispose() {}

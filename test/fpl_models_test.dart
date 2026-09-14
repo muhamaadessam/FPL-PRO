@@ -1,8 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:fantasy_pl/core/models/fpl_models.dart';
-import 'package:fantasy_pl/core/network/fpl_api_client.dart';
-import 'package:fantasy_pl/features/auth/data/official_auth_client.dart';
+import 'package:fantasy_pl/features/fixtures/data/models/fpl_models.dart';
+import 'package:fantasy_pl/features/fixtures/data/datasources/fpl_api_client.dart';
+import 'package:fantasy_pl/features/team/data/models/team_models.dart';
+import 'package:fantasy_pl/features/auth/data/datasources/official_auth_client.dart';
 
 void main() {
   test('selects the current gameweek and parses public data', () {
@@ -165,5 +166,33 @@ void main() {
 
     expect(chip.isAvailableFor(20), isFalse);
     expect(chip.isAvailableFor(21), isTrue);
+  });
+
+  test('parses current and previous player history', () {
+    final summary = FplPlayerSummary.fromJson({
+      'history': [
+        {
+          'round': 4,
+          'minutes': 90,
+          'starts': 1,
+          'total_points': 8,
+          'expected_goal_involvements': '0.72',
+        },
+      ],
+      'history_past': [
+        {
+          'season_name': '2025/26',
+          'total_points': 180,
+          'minutes': 3000,
+          'starts': 34,
+          'expected_goal_involvements': '16.2',
+        },
+      ],
+    });
+
+    expect(summary.history.single.totalPoints, 8);
+    expect(summary.history.single.expectedGoalInvolvements, 0.72);
+    expect(summary.historyPast.single.seasonName, '2025/26');
+    expect(summary.historyPast.single.pointsPer90, closeTo(5.4, 0.01));
   });
 }

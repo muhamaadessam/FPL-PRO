@@ -1,10 +1,12 @@
 import 'dart:io';
-import 'package:fantasy_pl/core/models/fpl_models.dart';
-import 'package:fantasy_pl/core/network/fpl_api_client.dart';
-import 'package:fantasy_pl/features/fixtures/presentation/fixtures_view.dart';
+import 'package:fantasy_pl/features/fixtures/data/models/fpl_models.dart';
+import 'package:fantasy_pl/features/fixtures/data/datasources/fpl_api_client.dart';
+import 'package:fantasy_pl/features/fixtures/data/repositories/fixtures_repository_impl.dart';
+import 'package:fantasy_pl/features/fixtures/presentation/screens/fixtures_view.dart';
+import 'package:fantasy_pl/features/fixtures/domain/repositories/fixtures_repository.dart';
 import 'package:fantasy_pl/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class FakeFplApiClient implements FplApiClient {
@@ -188,8 +190,8 @@ void main() {
     FakeFplApiClient apiClient, {
     Locale locale = const Locale('en'),
   }) {
-    return ProviderScope(
-      overrides: [fplApiClientProvider.overrideWithValue(apiClient)],
+    return RepositoryProvider<FixturesRepository>.value(
+      value: FixturesRepositoryImpl(apiClient),
       child: MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
