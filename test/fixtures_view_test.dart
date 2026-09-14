@@ -36,6 +36,7 @@ class FakeFplApiClient implements FplApiClient {
       },
       players: const {
         99: FplPlayer(id: 99, webName: 'Scorer', teamId: 1, positionId: 4),
+        100: FplPlayer(id: 100, webName: 'Booked', teamId: 2, positionId: 2),
       },
     );
   }
@@ -97,6 +98,20 @@ class FakeFplApiClient implements FplApiClient {
               {'element': 99, 'value': 3},
             ],
             'a': [],
+          },
+          {
+            'identifier': 'yellow_cards',
+            'h': [],
+            'a': [
+              {'element': 100, 'value': 1},
+            ],
+          },
+          {
+            'identifier': 'saves',
+            'h': [],
+            'a': [
+              {'element': 100, 'value': 2},
+            ],
           },
         ],
       }),
@@ -244,8 +259,12 @@ void main() {
     expect(find.text('Match details'), findsOneWidget);
     expect(find.text('Goals'), findsOneWidget);
     expect(find.text('Bonus points'), findsOneWidget);
+    expect(find.text('Yellow cards'), findsOneWidget);
+    expect(find.text('Booked'), findsOneWidget);
+    expect(find.text('-1 pts'), findsOneWidget);
+    expect(find.text('Saves'), findsNothing);
     expect(find.text('Scorer'), findsNWidgets(2));
-    expect(find.text('×2'), findsOneWidget);
-    expect(find.text('+3'), findsOneWidget);
+    expect(find.text('+8 pts'), findsOneWidget);
+    expect(find.text('+3 pts'), findsOneWidget);
   });
 }
