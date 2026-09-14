@@ -399,3 +399,142 @@ class _ClubLogo extends StatelessWidget {
     );
   }
 }
+
+class PitchSkeleton extends StatelessWidget {
+  const PitchSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: DecoratedBox(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xff2d8c47), Color(0xff1a6e30)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+            child: Stack(
+              children: [
+                const Positioned.fill(
+                  child: CustomPaint(painter: _PitchMarkingsPainter()),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 12,
+                  ),
+                  child: Column(
+                    children: [
+                      const _PitchSkeletonRow(count: 1),
+                      const SizedBox(height: 12),
+                      const _PitchSkeletonRow(count: 4),
+                      const SizedBox(height: 12),
+                      const _PitchSkeletonRow(count: 4),
+                      const SizedBox(height: 12),
+                      const _PitchSkeletonRow(count: 2),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          decoration: BoxDecoration(
+            color: Theme.of(
+              context,
+            ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsetsDirectional.only(start: 8, bottom: 8),
+                child: Container(
+                  width: 60,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+              const _PitchSkeletonRow(count: 4, isBench: true),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PitchSkeletonRow extends StatelessWidget {
+  const _PitchSkeletonRow({required this.count, this.isBench = false});
+  final int count;
+  final bool isBench;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: List.generate(
+        count,
+        (_) => Expanded(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: IntrinsicWidth(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SizedBox(
+                    width: 48,
+                    height: 56,
+                    child: Icon(
+                      Icons.sports_soccer,
+                      size: 38,
+                      color: isBench ? Colors.black26 : Colors.white70,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Container(
+                    height: 16,
+                    decoration: const BoxDecoration(
+                      color: Color(0xff1f1f2e),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(4),
+                        topRight: Radius.circular(4),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    height: 25,
+                    decoration: BoxDecoration(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.5),
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(6),
+                        bottomRight: Radius.circular(6),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

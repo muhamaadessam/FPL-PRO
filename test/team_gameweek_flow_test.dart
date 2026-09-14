@@ -80,7 +80,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const ValueKey('team-gameweek-filter')), findsOneWidget);
+    expect(find.byKey(const Key('team-gameweek-prev')), findsOneWidget);
+    expect(find.byKey(const Key('team-gameweek-next')), findsOneWidget);
     expect(api.teamRequests, [4]);
     expect(api.pointsRequests, [4]);
     expect(find.text('GW4 Player'), findsOneWidget);
@@ -88,15 +89,26 @@ void main() {
     expect(find.text('130'), findsOneWidget);
     expect(find.text('50'), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('team-gameweek-filter')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('GW 5').last);
+    // Verify prev button is disabled since GW4 is the first in bootstrap.
+    final prevButton = tester.widget<IconButton>(
+      find.byKey(const Key('team-gameweek-prev')),
+    );
+    expect(prevButton.onPressed, isNull);
+
+    // Tap next button to go to GW5
+    await tester.tap(find.byKey(const Key('team-gameweek-next')));
     await tester.pumpAndSettle();
 
     expect(api.teamRequests.last, 5);
     expect(api.pointsRequests.last, 5);
     expect(find.text('GW4 Player'), findsNothing);
     expect(find.text('GW5 Player'), findsOneWidget);
+
+    // Verify next button is disabled since GW5 is the last in bootstrap.
+    final nextButton = tester.widget<IconButton>(
+      find.byKey(const Key('team-gameweek-next')),
+    );
+    expect(nextButton.onPressed, isNull);
   });
 
   testWidgets('team layout bounds in Arabic at 320px', (tester) async {
