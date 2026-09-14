@@ -45,7 +45,7 @@ class _TeamViewState extends ConsumerState<TeamView> {
     final bootstrapAsync = ref.watch(bootstrapProvider);
 
     return bootstrapAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const _TeamSkeleton(),
       error: (error, _) => _TeamMessage(
         icon: Icons.error_outline,
         message: _errorMessage(error),
@@ -65,7 +65,7 @@ class _TeamViewState extends ConsumerState<TeamView> {
         }
 
         return teamAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const _TeamSkeleton(),
           error: (error, _) => _TeamMessage(
             icon: Icons.error_outline,
             message: _errorMessage(error),
@@ -86,14 +86,14 @@ class _TeamViewState extends ConsumerState<TeamView> {
                 : const AsyncValue.data(<int, int>{});
 
             return gwPointsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const _TeamSkeleton(),
               error: (error, _) => _TeamMessage(
                 icon: Icons.error_outline,
                 message: _errorMessage(error),
                 onRetry: () => ref.invalidate(gameweekPointsProvider(targetGw)),
               ),
               data: (gwPoints) => historyPointsAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
+                loading: () => const _TeamSkeleton(),
                 error: (_, _) => _buildTeamContent(
                   team: team,
                   bootstrap: bootstrap,
@@ -229,41 +229,87 @@ class _TeamContent extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                flex: 3,
+                flex: 4,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  height: 48,
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surfaceContainerHighest
                         .withValues(alpha: 0.45),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<int>(
-                      key: const Key('team-gameweek-filter'),
-                      value: selectedGameweekId,
-                      isExpanded: true,
-                      icon: const Icon(Icons.arrow_drop_down),
-                      items: bootstrap.gameweeks
-                          .map(
-                            (gw) => DropdownMenuItem(
-                              value: gw.id,
-                              child: Text(
-                                'GW ${gw.id}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                          )
-                          .toList(growable: false),
-                      onChanged: onGameweekChanged,
+                  child: Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          key: const Key('team-gameweek-prev'),
+                          constraints: const BoxConstraints.tightFor(
+                            width: 36,
+                            height: 36,
+                          ),
+                          padding: EdgeInsets.zero,
+                          iconSize: 20,
+                          icon: const Icon(Icons.chevron_left),
+                          onPressed:
+                              bootstrap.gameweeks.indexWhere(
+                                    (g) => g.id == selectedGameweekId,
+                                  ) >
+                                  0
+                              ? () {
+                                  final idx = bootstrap.gameweeks.indexWhere(
+                                    (g) => g.id == selectedGameweekId,
+                                  );
+                                  onGameweekChanged(
+                                    bootstrap.gameweeks[idx - 1].id,
+                                  );
+                                }
+                              : null,
+                        ),
+                        Expanded(
+                          child: Text(
+                            'GW $selectedGameweekId',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                            maxLines: 1,
+                          ),
+                        ),
+                        IconButton(
+                          key: const Key('team-gameweek-next'),
+                          constraints: const BoxConstraints.tightFor(
+                            width: 36,
+                            height: 36,
+                          ),
+                          padding: EdgeInsets.zero,
+                          iconSize: 20,
+                          icon: const Icon(Icons.chevron_right),
+                          onPressed:
+                              bootstrap.gameweeks.indexWhere(
+                                        (g) => g.id == selectedGameweekId,
+                                      ) >=
+                                      0 &&
+                                  bootstrap.gameweeks.indexWhere(
+                                        (g) => g.id == selectedGameweekId,
+                                      ) <
+                                      bootstrap.gameweeks.length - 1
+                              ? () {
+                                  final idx = bootstrap.gameweeks.indexWhere(
+                                    (g) => g.id == selectedGameweekId,
+                                  );
+                                  onGameweekChanged(
+                                    bootstrap.gameweeks[idx + 1].id,
+                                  );
+                                }
+                              : null,
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
-                flex: 7,
+                flex: 6,
                 child: _SummaryCard(
                   summary: team.summary,
                   gameweek: gameweek,
@@ -318,41 +364,44 @@ class _SummaryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          Flexible(
-            child: _SummaryMetric(
-              label: l10n.points,
-              value: displayedPoints?.toString() ?? '—',
-              color: scheme.onPrimary,
+      child: Directionality(
+        textDirection: TextDirection.ltr,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Flexible(
+              child: _SummaryMetric(
+                label: l10n.averageScore,
+                value: gameweek.averageEntryScore?.toString() ?? '—',
+                color: scheme.onPrimary,
+              ),
             ),
-          ),
-          Container(
-            width: 1,
-            height: 24,
-            color: scheme.onPrimary.withValues(alpha: 0.2),
-          ),
-          Flexible(
-            child: _SummaryMetric(
-              label: l10n.averageScore,
-              value: gameweek.averageEntryScore?.toString() ?? '—',
-              color: scheme.onPrimary,
+            Container(
+              width: 1,
+              height: 24,
+              color: scheme.onPrimary.withValues(alpha: 0.2),
             ),
-          ),
-          Container(
-            width: 1,
-            height: 24,
-            color: scheme.onPrimary.withValues(alpha: 0.2),
-          ),
-          Flexible(
-            child: _SummaryMetric(
-              label: l10n.highestScore,
-              value: gameweek.highestScore?.toString() ?? '—',
-              color: scheme.onPrimary,
+            Flexible(
+              child: _SummaryMetric(
+                label: l10n.points,
+                value: displayedPoints?.toString() ?? '—',
+                color: scheme.onPrimary,
+              ),
             ),
-          ),
-        ],
+            Container(
+              width: 1,
+              height: 24,
+              color: scheme.onPrimary.withValues(alpha: 0.2),
+            ),
+            Flexible(
+              child: _SummaryMetric(
+                label: l10n.highestScore,
+                value: gameweek.highestScore?.toString() ?? '—',
+                color: scheme.onPrimary,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -446,6 +495,93 @@ class TeamLookupPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.myTeam)),
       body: TeamView(entryId: entryId),
+    );
+  }
+}
+
+class _TeamSkeleton extends StatefulWidget {
+  const _TeamSkeleton();
+  @override
+  State<_TeamSkeleton> createState() => _TeamSkeletonState();
+}
+
+class _TeamSkeletonState extends State<_TeamSkeleton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return ShaderMask(
+          blendMode: BlendMode.modulate,
+          shaderCallback: (bounds) {
+            return LinearGradient(
+              colors: const [
+                Color(0xff8a8a8a),
+                Color(0xfff5f5f5),
+                Color(0xff8a8a8a),
+              ],
+              stops: const [0.0, 0.5, 1.0],
+              begin: Alignment(-2.0 + (_controller.value * 4), 0),
+              end: Alignment(-1.0 + (_controller.value * 4), 0),
+            ).createShader(bounds);
+          },
+          child: child,
+        );
+      },
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        physics: const NeverScrollableScrollPhysics(),
+        children: [
+          Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest
+                        .withValues(alpha: 0.45),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 7,
+                child: Container(
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const PitchSkeleton(),
+        ],
+      ),
     );
   }
 }
