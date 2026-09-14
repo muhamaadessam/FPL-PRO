@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../l10n/app_localizations.dart';
+import '../../../team/presentation/widgets/pitch_view.dart';
 import '../../domain/entities/recommendation_data.dart';
 import '../../domain/usecases/recommendation_engine.dart';
 
@@ -37,22 +38,24 @@ class NextGameweekAnalysisPage extends StatelessWidget {
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 24),
-          _SectionHeader(
-            title: l10n.startingXi,
-            value: l10n.ratingOutOf100(analysis.averageStarterRating),
+          PitchView(
+            starting: analysis.starters
+                .map((p) => p.pick)
+                .toList(growable: false),
+            bench: analysis.bench.map((p) => p.pick).toList(growable: false),
+            bootstrap: data.bootstrap,
+            gameweekPoints: {
+              for (final p in analysis.players)
+                p.pick.elementId: p.expectedPoints,
+            },
           ),
-          const SizedBox(height: 8),
-          _PlayerList(players: analysis.starters, data: data),
           const SizedBox(height: 24),
-          _SectionHeader(
-            title: l10n.bench,
-            value:
-                '${analysis.expectedBenchPoints.toStringAsFixed(1)} ${l10n.ptsCue}',
+          _PlayerList(
+            players: [...analysis.starters, ...analysis.bench],
+            data: data,
           ),
-          const SizedBox(height: 8),
-          _PlayerList(players: analysis.bench, data: data),
           const SizedBox(height: 24),
-          _MethodologyPanel(),
+          const _MethodologyPanel(),
           const SizedBox(height: 12),
           Text(
             l10n.analysisDisclaimer,
@@ -199,36 +202,6 @@ class _SummaryMetric extends StatelessWidget {
           style: Theme.of(context).textTheme.labelSmall,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-        ),
-      ],
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title, required this.value});
-
-  final String title;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            title,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
-          ),
-        ),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            color: Theme.of(context).colorScheme.primary,
-            fontWeight: FontWeight.w900,
-          ),
         ),
       ],
     );

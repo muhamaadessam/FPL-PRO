@@ -16,7 +16,7 @@ class PitchView extends StatelessWidget {
   final List<TeamPick> starting;
   final List<TeamPick> bench;
   final FplBootstrap bootstrap;
-  final Map<int, int> gameweekPoints;
+  final Map<int, num> gameweekPoints;
 
   @override
   Widget build(BuildContext context) {
@@ -153,7 +153,7 @@ class _PitchRow extends StatelessWidget {
 
   final List<TeamPick> picks;
   final FplBootstrap bootstrap;
-  final Map<int, int> gameweekPoints;
+  final Map<int, num> gameweekPoints;
   final bool isBench;
 
   @override
@@ -180,7 +180,7 @@ class _PitchRow extends StatelessWidget {
     return player == null ? null : bootstrap.teams[player.teamId];
   }
 
-  int? _displayPoints(TeamPick pick) {
+  num? _displayPoints(TeamPick pick) {
     final points = gameweekPoints[pick.elementId];
     if (points == null) return null;
     return points * (pick.multiplier > 0 ? pick.multiplier : 1);
@@ -199,7 +199,7 @@ class _PitchPlayer extends StatelessWidget {
   final TeamPick pick;
   final FplPlayer? player;
   final FplTeam? team;
-  final int? points;
+  final num? points;
   final bool isBench;
 
   @override
@@ -208,6 +208,10 @@ class _PitchPlayer extends StatelessWidget {
     final textColor = Colors.white;
     final panelColor = const Color(0xff1f1f2e);
     final localShirt = _localShirtAsset(isGoalkeeper);
+
+    final pointsText = points != null
+        ? (points is int ? points.toString() : points!.toStringAsFixed(1))
+        : '-';
 
     return Expanded(
       child: Align(
@@ -280,7 +284,8 @@ class _PitchPlayer extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      '${points ?? '-'}',
+                      pointsText,
+                      key: ValueKey('pitch-player-points-${pick.elementId}'),
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onPrimary,
                         fontSize: 13,
