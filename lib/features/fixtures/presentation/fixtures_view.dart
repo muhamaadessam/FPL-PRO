@@ -200,10 +200,17 @@ class _FixtureCard extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (_) => _FixtureDetailsSheet(
-        fixture: fixture,
-        teams: teams,
-        players: players,
+      builder: (_) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.75,
+        minChildSize: 0.2,
+        maxChildSize: 0.95,
+        builder: (context, scrollController) => _FixtureDetailsSheet(
+          fixture: fixture,
+          teams: teams,
+          players: players,
+          scrollController: scrollController,
+        ),
       ),
     );
   }
@@ -352,11 +359,13 @@ class _FixtureDetailsSheet extends StatelessWidget {
     required this.fixture,
     required this.teams,
     required this.players,
+    required this.scrollController,
   });
 
   final FplFixture fixture;
   final Map<int, FplTeam> teams;
   final Map<int, FplPlayer> players;
+  final ScrollController scrollController;
 
   @override
   Widget build(BuildContext context) {
@@ -441,6 +450,8 @@ class _FixtureDetailsSheet extends StatelessWidget {
 
     return SafeArea(
       child: SingleChildScrollView(
+        key: const Key('fixture-details-scroll'),
+        controller: scrollController,
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

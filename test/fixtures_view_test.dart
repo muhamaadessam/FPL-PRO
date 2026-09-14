@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 class FakeFplApiClient implements FplApiClient {
   bool shouldThrowError = false;
+  bool includeLongDetailsFixture = false;
 
   @override
   Future<FplBootstrap> getBootstrap() async {
@@ -50,7 +51,7 @@ class FakeFplApiClient implements FplApiClient {
         message: 'err',
       );
     }
-    return [
+    final fixtures = <FplFixture>[
       FplFixture(
         id: 1,
         gameweekId: 1,
@@ -126,6 +127,38 @@ class FakeFplApiClient implements FplApiClient {
         started: true,
       ),
     ];
+
+    if (includeLongDetailsFixture) {
+      fixtures.add(
+        FplFixture.fromJson({
+          'id': 5,
+          'event': 1,
+          'team_h': 1,
+          'team_a': 2,
+          'kickoff_time': DateTime.now()
+              .subtract(const Duration(days: 1))
+              .toIso8601String(),
+          'finished': true,
+          'started': true,
+          'team_h_score': 2,
+          'team_a_score': 1,
+          'stats': [
+            {
+              'identifier': 'goals_scored',
+              'h': List.generate(24, (_) => {'element': 99, 'value': 1}),
+              'a': <Map<String, int>>[],
+            },
+            {
+              'identifier': 'bonus',
+              'h': List.generate(18, (_) => {'element': 99, 'value': 1}),
+              'a': <Map<String, int>>[],
+            },
+          ],
+        }),
+      );
+    }
+
+    return fixtures;
   }
 
   @override
@@ -266,5 +299,30 @@ void main() {
     expect(find.text('Scorer'), findsNWidgets(2));
     expect(find.text('+8'), findsOneWidget);
     expect(find.text('+3'), findsOneWidget);
+  });
+
+  testWidgets('long match details can be dismissed after scrolling', (
+    tester,
+  ) async {
+    final apiClient = FakeFplApiClient()..includeLongDetailsFixture = true;
+    await tester.pumpWidget(createWidgetUnderTest(apiClient));
+    await tester.pumpAndSettle();
+
+    final fixtureCard = find.byKey(const Key('fixture-card-5'));
+    await tester.drag(find.byType(ListView), const Offset(0, -500));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(fixtureCard);
+    await tester.pumpAndSettle();
+    await tester.tap(fixtureCard);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Match details'), findsOneWidget);
+    final detailsScroll = find.byKey(const Key('fixture-details-scroll'));
+    await tester.drag(detailsScroll, const Offset(0, -600));
+    await tester.pumpAndSettle();
+    await tester.drag(detailsScroll, const Offset(0, 1200));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Match details'), findsNothing);
   });
 }
