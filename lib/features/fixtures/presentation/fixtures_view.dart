@@ -363,29 +363,11 @@ class _FixtureDetailsSheet extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final home = teams[fixture.homeTeamId];
     final away = teams[fixture.awayTeamId];
-    final eventSections = [
-      (
-        l10n.goals,
-        Icons.sports_soccer,
-        fixture.entriesFor('goals_scored', home: true),
-        fixture.entriesFor('goals_scored', home: false),
-        false,
-      ),
-      (
-        l10n.assists,
-        Icons.handshake_outlined,
-        fixture.entriesFor('assists', home: true),
-        fixture.entriesFor('assists', home: false),
-        false,
-      ),
-      (
-        l10n.bonusPoints,
-        Icons.military_tech_outlined,
-        fixture.entriesFor('bonus', home: true),
-        fixture.entriesFor('bonus', home: false),
-        true,
-      ),
-    ];
+    final hasAnyEvents = ['goals_scored', 'assists', 'bonus'].any(
+      (stat) =>
+          fixture.entriesFor(stat, home: true).isNotEmpty ||
+          fixture.entriesFor(stat, home: false).isNotEmpty,
+    );
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -400,42 +382,83 @@ class _FixtureDetailsSheet extends StatelessWidget {
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: _DetailsTeam(team: home, fallback: l10n.homeTeam),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Column(
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isWide = constraints.maxWidth > 400;
+                if (isWide) {
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _ScoreArea(fixture: fixture, l10n: l10n),
-                      const SizedBox(height: 8),
-                      _StateBadge(fixture: fixture, l10n: l10n),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            _DetailsTeam(team: home, fallback: l10n.homeTeam),
+                            const SizedBox(height: 24),
+                            _TeamEventsList(
+                              isHome: true,
+                              fixture: fixture,
+                              players: players,
+                              l10n: l10n,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Column(
+                          children: [
+                            _ScoreArea(fixture: fixture, l10n: l10n),
+                            const SizedBox(height: 8),
+                            _StateBadge(fixture: fixture, l10n: l10n),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            _DetailsTeam(team: away, fallback: l10n.awayTeam),
+                            const SizedBox(height: 24),
+                            _TeamEventsList(
+                              isHome: false,
+                              fixture: fixture,
+                              players: players,
+                              l10n: l10n,
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
-                  ),
-                ),
-                Expanded(
-                  child: _DetailsTeam(team: away, fallback: l10n.awayTeam),
-                ),
-              ],
+                  );
+                }
+
+                return Column(
+                  children: [
+                    _ScoreArea(fixture: fixture, l10n: l10n),
+                    const SizedBox(height: 8),
+                    _StateBadge(fixture: fixture, l10n: l10n),
+                    const SizedBox(height: 24),
+                    _DetailsTeam(team: home, fallback: l10n.homeTeam),
+                    const SizedBox(height: 16),
+                    _TeamEventsList(
+                      isHome: true,
+                      fixture: fixture,
+                      players: players,
+                      l10n: l10n,
+                    ),
+                    const SizedBox(height: 24),
+                    _DetailsTeam(team: away, fallback: l10n.awayTeam),
+                    const SizedBox(height: 16),
+                    _TeamEventsList(
+                      isHome: false,
+                      fixture: fixture,
+                      players: players,
+                      l10n: l10n,
+                    ),
+                  ],
+                );
+              },
             ),
-            const SizedBox(height: 24),
-            for (final section in eventSections)
-              _FixtureEventSection(
-                title: section.$1,
-                icon: section.$2,
-                homeEvents: section.$3,
-                awayEvents: section.$4,
-                homeName: _teamLabel(home, l10n.homeTeam),
-                awayName: _teamLabel(away, l10n.awayTeam),
-                players: players,
-                l10n: l10n,
-                isBonus: section.$5,
-              ),
-            if (eventSections.every(
-              (section) => section.$3.isEmpty && section.$4.isEmpty,
-            ))
+            if (!hasAnyEvents)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
@@ -450,10 +473,6 @@ class _FixtureDetailsSheet extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _teamLabel(FplTeam? team, String fallback) {
-    return team?.shortName.isNotEmpty == true ? team!.shortName : fallback;
   }
 }
 
@@ -484,14 +503,67 @@ class _DetailsTeam extends StatelessWidget {
   }
 }
 
-class _FixtureEventSection extends StatelessWidget {
-  const _FixtureEventSection({
+class _TeamEventsList extends StatelessWidget {
+  const _TeamEventsList({
+    required this.isHome,
+    required this.fixture,
+    required this.players,
+    required this.l10n,
+  });
+
+  final bool isHome;
+  final FplFixture fixture;
+  final Map<int, FplPlayer> players;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final sections = [
+      (
+        l10n.goals,
+        Icons.sports_soccer,
+        fixture.entriesFor('goals_scored', home: isHome),
+        false,
+      ),
+      (
+        l10n.assists,
+        Icons.handshake_outlined,
+        fixture.entriesFor('assists', home: isHome),
+        false,
+      ),
+      (
+        l10n.bonusPoints,
+        Icons.military_tech_outlined,
+        fixture.entriesFor('bonus', home: isHome),
+        true,
+      ),
+    ];
+
+    final activeSections = sections.where((s) => s.$3.isNotEmpty).toList();
+    if (activeSections.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final section in activeSections)
+          _TeamEventSection(
+            title: section.$1,
+            icon: section.$2,
+            events: section.$3,
+            players: players,
+            l10n: l10n,
+            isBonus: section.$4,
+          ),
+      ],
+    );
+  }
+}
+
+class _TeamEventSection extends StatelessWidget {
+  const _TeamEventSection({
     required this.title,
     required this.icon,
-    required this.homeEvents,
-    required this.awayEvents,
-    required this.homeName,
-    required this.awayName,
+    required this.events,
     required this.players,
     required this.l10n,
     required this.isBonus,
@@ -499,24 +571,13 @@ class _FixtureEventSection extends StatelessWidget {
 
   final String title;
   final IconData icon;
-  final List<FplFixtureStatEntry> homeEvents;
-  final List<FplFixtureStatEntry> awayEvents;
-  final String homeName;
-  final String awayName;
+  final List<FplFixtureStatEntry> events;
   final Map<int, FplPlayer> players;
   final AppLocalizations l10n;
   final bool isBonus;
 
   @override
   Widget build(BuildContext context) {
-    if (homeEvents.isEmpty && awayEvents.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final events = [
-      ...homeEvents.map((event) => (event, homeName)),
-      ...awayEvents.map((event) => (event, awayName)),
-    ];
     final scheme = Theme.of(context).colorScheme;
 
     return Padding(
@@ -528,20 +589,21 @@ class _FixtureEventSection extends StatelessWidget {
             children: [
               Icon(icon, size: 18, color: scheme.primary),
               const SizedBox(width: 8),
-              Text(
-                title,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 8),
           for (var index = 0; index < events.length; index++) ...[
-            _FixtureEventRow(
-              event: events[index].$1,
-              teamName: events[index].$2,
-              player: players[events[index].$1.elementId],
+            _TeamEventRow(
+              event: events[index],
+              player: players[events[index].elementId],
               l10n: l10n,
               isBonus: isBonus,
             ),
@@ -554,17 +616,15 @@ class _FixtureEventSection extends StatelessWidget {
   }
 }
 
-class _FixtureEventRow extends StatelessWidget {
-  const _FixtureEventRow({
+class _TeamEventRow extends StatelessWidget {
+  const _TeamEventRow({
     required this.event,
-    required this.teamName,
     required this.player,
     required this.l10n,
     required this.isBonus,
   });
 
   final FplFixtureStatEntry event;
-  final String teamName;
   final FplPlayer? player;
   final AppLocalizations l10n;
   final bool isBonus;
@@ -580,13 +640,11 @@ class _FixtureEventRow extends StatelessWidget {
             child: Text(
               player?.webName ?? l10n.playerName(event.elementId),
               style: const TextStyle(fontWeight: FontWeight.w700),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          Text(
-            teamName,
-            style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
-          ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           Text(
             isBonus ? '+${event.value}' : '×${event.value}',
             style: TextStyle(
