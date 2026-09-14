@@ -173,6 +173,47 @@ class FplBootstrap {
   }
 }
 
+class FplFixtureStatEntry {
+  const FplFixtureStatEntry({required this.elementId, required this.value});
+
+  final int elementId;
+  final int value;
+
+  factory FplFixtureStatEntry.fromJson(Map<String, dynamic> json) {
+    return FplFixtureStatEntry(
+      elementId: _int(json['element']),
+      value: _int(json['value']),
+    );
+  }
+}
+
+class FplFixtureStat {
+  const FplFixtureStat({
+    required this.identifier,
+    required this.home,
+    required this.away,
+  });
+
+  final String identifier;
+  final List<FplFixtureStatEntry> home;
+  final List<FplFixtureStatEntry> away;
+
+  factory FplFixtureStat.fromJson(Map<String, dynamic> json) {
+    return FplFixtureStat(
+      identifier: json['identifier'] as String? ?? '',
+      home: _fixtureStatEntries(json['h']),
+      away: _fixtureStatEntries(json['a']),
+    );
+  }
+}
+
+List<FplFixtureStatEntry> _fixtureStatEntries(dynamic value) {
+  return (value as List<dynamic>? ?? const [])
+      .whereType<Map<String, dynamic>>()
+      .map(FplFixtureStatEntry.fromJson)
+      .toList(growable: false);
+}
+
 class FplFixture {
   const FplFixture({
     required this.id,
@@ -182,10 +223,12 @@ class FplFixture {
     required this.kickoffTime,
     required this.finished,
     required this.started,
+    this.finishedProvisional = false,
     this.homeScore,
     this.awayScore,
     this.homeDifficulty,
     this.awayDifficulty,
+    this.stats = const [],
   });
 
   final int id;
@@ -195,10 +238,27 @@ class FplFixture {
   final DateTime? kickoffTime;
   final bool finished;
   final bool started;
+  final bool finishedProvisional;
   final int? homeScore;
   final int? awayScore;
   final int? homeDifficulty;
   final int? awayDifficulty;
+  final List<FplFixtureStat> stats;
+
+  bool get isFinished => finished || finishedProvisional;
+  bool get isLive => started && !isFinished;
+
+  List<FplFixtureStatEntry> entriesFor(
+    String identifier, {
+    required bool home,
+  }) {
+    for (final stat in stats) {
+      if (stat.identifier == identifier) {
+        return home ? stat.home : stat.away;
+      }
+    }
+    return const [];
+  }
 
   factory FplFixture.fromJson(Map<String, dynamic> json) {
     return FplFixture(
@@ -209,10 +269,15 @@ class FplFixture {
       kickoffTime: _date(json['kickoff_time']),
       finished: json['finished'] as bool? ?? false,
       started: json['started'] as bool? ?? false,
+      finishedProvisional: json['finished_provisional'] as bool? ?? false,
       homeScore: _nullableInt(json['team_h_score']),
       awayScore: _nullableInt(json['team_a_score']),
       homeDifficulty: _nullableInt(json['team_h_difficulty']),
       awayDifficulty: _nullableInt(json['team_a_difficulty']),
+      stats: (json['stats'] as List<dynamic>? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(FplFixtureStat.fromJson)
+          .toList(growable: false),
     );
   }
 }
