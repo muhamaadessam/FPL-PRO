@@ -438,12 +438,6 @@ class _FixtureDetailsSheet extends StatelessWidget {
     final hasAnyEvents = entries.any(
       (section) => section.$2.isNotEmpty || section.$3.isNotEmpty,
     );
-    final homeName = home?.shortName.isNotEmpty == true
-        ? home!.shortName
-        : (home?.name ?? l10n.homeTeam);
-    final awayName = away?.shortName.isNotEmpty == true
-        ? away!.shortName
-        : (away?.name ?? l10n.awayTeam);
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -486,8 +480,6 @@ class _FixtureDetailsSheet extends StatelessWidget {
                 icon: section.$1.icon,
                 homeEvents: section.$2,
                 awayEvents: section.$3,
-                homeName: homeName,
-                awayName: awayName,
                 l10n: l10n,
               ),
             if (!hasAnyEvents)
@@ -609,8 +601,6 @@ class _CategoryEventSection extends StatelessWidget {
     required this.icon,
     required this.homeEvents,
     required this.awayEvents,
-    required this.homeName,
-    required this.awayName,
     required this.l10n,
   });
 
@@ -618,8 +608,6 @@ class _CategoryEventSection extends StatelessWidget {
   final IconData icon;
   final List<_FixtureDisplayEvent> homeEvents;
   final List<_FixtureDisplayEvent> awayEvents;
-  final String homeName;
-  final String awayName;
   final AppLocalizations l10n;
 
   @override
@@ -631,14 +619,14 @@ class _CategoryEventSection extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              Icon(icon, size: 18, color: scheme.primary),
-              const SizedBox(width: 8),
+              Icon(icon, size: 16, color: scheme.primary),
+              const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   title,
@@ -649,7 +637,9 @@ class _CategoryEventSection extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
+          const Divider(height: 1, thickness: 1),
+          const SizedBox(height: 8),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -657,52 +647,18 @@ class _CategoryEventSection extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    if (homeEvents.isNotEmpty) ...[
-                      Text(
-                        homeName,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: scheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.5,
-                        ),
-                        textAlign: TextAlign.start,
-                      ),
-                      const SizedBox(height: 8),
-                      for (final event in homeEvents)
-                        _TeamCategoryRow(
-                          event: event,
-                          l10n: l10n,
-                          isHome: true,
-                        ),
-                    ],
+                    for (final event in homeEvents)
+                      _TeamCategoryRow(event: event, l10n: l10n, isHome: true),
                   ],
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    if (awayEvents.isNotEmpty) ...[
-                      Text(
-                        awayName,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: scheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.5,
-                        ),
-                        textAlign: TextAlign.end,
-                      ),
-                      const SizedBox(height: 8),
-                      for (final event in awayEvents)
-                        _TeamCategoryRow(
-                          event: event,
-                          l10n: l10n,
-                          isHome: false,
-                        ),
-                    ],
+                    for (final event in awayEvents)
+                      _TeamCategoryRow(event: event, l10n: l10n, isHome: false),
                   ],
                 ),
               ),
@@ -729,34 +685,43 @@ class _TeamCategoryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final impactColor = event.points < 0 ? scheme.error : scheme.primary;
-    final valueText = Column(
-      crossAxisAlignment: isHome
-          ? CrossAxisAlignment.end
-          : CrossAxisAlignment.start,
-      children: [
-        Text(
-          '${event.value}',
-          style: const TextStyle(
-            fontWeight: FontWeight.w900,
-            fontFeatures: [FontFeature.tabularFigures()],
-          ),
+    final pointString = event.points > 0
+        ? '+${event.points}'
+        : '${event.points}';
+
+    final badge = Container(
+      width: 20,
+      height: 20,
+      decoration: BoxDecoration(
+        color: impactColor.withValues(alpha: 0.15),
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        pointString,
+        style: TextStyle(
+          color: impactColor,
+          fontWeight: FontWeight.w900,
+          fontSize: 10,
+          fontFeatures: const [FontFeature.tabularFigures()],
         ),
-        Text(
-          l10n.pointImpact(event.points),
-          style: TextStyle(
-            color: impactColor,
-            fontWeight: FontWeight.w800,
-            fontSize: 11,
-            fontFeatures: const [FontFeature.tabularFigures()],
-          ),
-        ),
-      ],
+      ),
+    );
+
+    final countText = Text(
+      '${event.value}x',
+      style: TextStyle(
+        color: scheme.onSurfaceVariant,
+        fontSize: 10,
+        fontWeight: FontWeight.w800,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
     );
 
     final playerText = Expanded(
       child: Text(
         event.player?.webName ?? l10n.playerName(event.elementId),
-        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         textAlign: isHome ? TextAlign.start : TextAlign.end,
@@ -766,9 +731,22 @@ class _TeamCategoryRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: isHome
-            ? [playerText, const SizedBox(width: 8), valueText]
-            : [valueText, const SizedBox(width: 8), playerText],
+            ? [
+                playerText,
+                const SizedBox(width: 6),
+                badge,
+                const SizedBox(width: 4),
+                countText,
+              ]
+            : [
+                countText,
+                const SizedBox(width: 4),
+                badge,
+                const SizedBox(width: 6),
+                playerText,
+              ],
       ),
     );
   }

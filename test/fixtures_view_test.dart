@@ -261,10 +261,10 @@ void main() {
     expect(find.text('Bonus points'), findsOneWidget);
     expect(find.text('Yellow cards'), findsOneWidget);
     expect(find.text('Booked'), findsOneWidget);
-    expect(find.text('-1 pts'), findsOneWidget);
+    expect(find.text('-1'), findsOneWidget);
     expect(find.text('Saves'), findsNothing);
     expect(find.text('Scorer'), findsNWidgets(2));
-    expect(find.text('+8 pts'), findsOneWidget);
-    expect(find.text('+3 pts'), findsOneWidget);
+    expect(find.text('+8'), findsOneWidget);
+    expect(find.text('+3'), findsOneWidget);
   });
 }
