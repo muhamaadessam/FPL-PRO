@@ -10,6 +10,7 @@ import '../../data/repositories/team_repository.dart';
 import '../../data/models/team_models.dart';
 import '../../domain/repositories/team_repository.dart';
 import '../cubit/team_cubit.dart';
+import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
 import '../widgets/pitch_view.dart';
 
 class TeamView extends StatelessWidget {
@@ -21,12 +22,32 @@ class TeamView extends StatelessWidget {
   Widget build(BuildContext context) {
     final authCubit = entryId == null ? context.read<AuthCubit>() : null;
     return BlocProvider(
-      create: (context) => TeamCubit(
-        fixturesRepository: context.read<FixturesRepository>(),
-        teamRepository: context.read<TeamRepository>(),
-        authCubit: authCubit,
-        entryId: entryId,
-      )..load(),
+      create: (context) {
+        HomePreloadState? preload;
+        try {
+          preload = context.read<HomePreloadCubit>().state;
+        } on ProviderNotFoundException catch (_) {}
+        final hasPreload =
+            preload?.status == PreloadStatus.success && entryId == null;
+        final cubit = TeamCubit(
+          fixturesRepository: context.read<FixturesRepository>(),
+          teamRepository: context.read<TeamRepository>(),
+          authCubit: authCubit,
+          entryId: entryId,
+          initialState: hasPreload
+              ? TeamState(
+                  status: TeamStatus.success,
+                  bootstrap: preload?.bootstrap,
+                  team: preload?.teamCurrent,
+                  gameweekPoints: preload?.gameweekPoints ?? const {},
+                  historyPoints: preload?.historyPoints ?? const {},
+                  selectedGameweekId: preload?.bootstrap?.currentGameweekId,
+                )
+              : null,
+        );
+        if (!hasPreload) cubit.load();
+        return cubit;
+      },
       child: _TeamBody(entryId: entryId),
     );
   }

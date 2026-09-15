@@ -10,16 +10,26 @@ import 'package:fantasy_pl/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:fantasy_pl/features/fixtures/data/datasources/fpl_api_client.dart';
 import 'package:fantasy_pl/features/fixtures/data/repositories/fixtures_repository_impl.dart';
 import 'package:fantasy_pl/features/team/data/repositories/team_repository.dart';
+import 'package:fantasy_pl/features/dashboard/presentation/cubit/home_preload_cubit.dart';
 
 void main() {
   testWidgets('team lookup page exposes public team access', (tester) async {
     final apiClient = FplApiClient(dio: Dio());
+    final authCubit = AuthCubit(AuthRepositoryImpl(_FakeAuthClient()))
+      ..restoreSession();
+    final fixturesRepo = FixturesRepositoryImpl(apiClient);
+    final teamRepo = TeamRepositoryImpl(apiClient);
+    final preloadCubit = HomePreloadCubit(
+      fixturesRepository: fixturesRepo,
+      teamRepository: teamRepo,
+      authCubit: authCubit,
+    );
     await tester.pumpWidget(
       FantasyPlApp(
-        authCubit: AuthCubit(AuthRepositoryImpl(_FakeAuthClient()))
-          ..restoreSession(),
-        fixturesRepository: FixturesRepositoryImpl(apiClient),
-        teamRepository: TeamRepositoryImpl(apiClient),
+        authCubit: authCubit,
+        preloadCubit: preloadCubit,
+        fixturesRepository: fixturesRepo,
+        teamRepository: teamRepo,
       ),
     );
     await tester.pumpAndSettle();

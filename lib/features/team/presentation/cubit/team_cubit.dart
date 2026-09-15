@@ -56,8 +56,9 @@ class TeamCubit extends Cubit<TeamState> {
     required this.teamRepository,
     this.authCubit,
     this.entryId,
+    TeamState? initialState,
   }) : _getTeamForGameweek = GetTeamForGameweek(teamRepository),
-       super(const TeamState());
+       super(initialState ?? const TeamState());
 
   final FixturesRepository fixturesRepository;
   final GetTeamForGameweek _getTeamForGameweek;

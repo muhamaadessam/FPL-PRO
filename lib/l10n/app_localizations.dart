@@ -106,6 +106,16 @@ class AppLocalizations {
   String get fixtureUpcoming => isArabic ? 'قادمة' : 'Upcoming';
   String get noFixtures => isArabic ? 'لا توجد مباريات' : 'No fixtures found';
   String get retry => isArabic ? 'إعادة المحاولة' : 'Try again';
+  String get loadingData =>
+      isArabic ? 'جاري تحميل البيانات...' : 'Loading data...';
+  String get errorLoadingData =>
+      isArabic ? 'فشل تحميل البيانات' : 'Failed to load data';
+  String get authenticating =>
+      isArabic ? 'جاري التحقق من الهوية...' : 'Authenticating...';
+  String get themeSystem => isArabic ? 'تلقائي' : 'System';
+  String get themeLight => isArabic ? 'فاتح' : 'Light';
+  String get themeDark => isArabic ? 'داكن' : 'Dark';
+  String get themeTitle => isArabic ? 'المظهر' : 'Theme';
   String get logout => isArabic ? 'تسجيل الخروج' : 'Sign out';
   String get language => isArabic ? 'English' : 'العربية';
   String get authContractRequired => isArabic

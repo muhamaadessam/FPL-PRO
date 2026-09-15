@@ -6,6 +6,7 @@ import '../../data/datasources/fpl_api_client.dart';
 import '../../data/models/fpl_models.dart';
 import '../../domain/repositories/fixtures_repository.dart';
 import '../cubit/fixtures_cubit.dart';
+import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
 
 class FixturesView extends StatelessWidget {
   const FixturesView({super.key});
@@ -13,8 +14,25 @@ class FixturesView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) =>
-          FixturesCubit(context.read<FixturesRepository>())..load(),
+      create: (context) {
+        HomePreloadState? preload;
+        try {
+          preload = context.read<HomePreloadCubit>().state;
+        } on ProviderNotFoundException catch (_) {}
+        final hasPreload = preload?.status == PreloadStatus.success;
+        final cubit = FixturesCubit(
+          context.read<FixturesRepository>(),
+          initialState: hasPreload
+              ? FixturesState(
+                  status: FixturesStatus.success,
+                  bootstrap: preload?.bootstrap,
+                  fixtures: preload?.currentGameweekFixtures ?? const [],
+                )
+              : null,
+        );
+        if (!hasPreload) cubit.load();
+        return cubit;
+      },
       child: const _FixturesBody(),
     );
   }

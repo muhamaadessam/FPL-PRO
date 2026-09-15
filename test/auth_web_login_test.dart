@@ -16,6 +16,8 @@ void main() {
   test('keeps the login route while sign-in is loading', () {
     expect(authRedirect(const AuthLoading(), '/login'), isNull);
     expect(authRedirect(const AuthLoading(), '/login/web'), isNull);
+    expect(authRedirect(const AuthLoading(), '/preview'), isNull);
+    expect(authRedirect(const AuthLoading(), '/team/123'), isNull);
   });
 
   testWidgets('starts sign-in after the first frame', (tester) async {

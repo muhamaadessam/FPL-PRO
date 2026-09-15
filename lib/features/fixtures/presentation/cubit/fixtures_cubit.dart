@@ -34,7 +34,8 @@ class FixturesState {
 }
 
 class FixturesCubit extends Cubit<FixturesState> {
-  FixturesCubit(this._repository) : super(const FixturesState());
+  FixturesCubit(this._repository, {FixturesState? initialState})
+    : super(initialState ?? const FixturesState());
 
   final FixturesRepository _repository;
 

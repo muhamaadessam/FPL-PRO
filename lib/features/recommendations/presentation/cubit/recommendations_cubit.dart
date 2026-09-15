@@ -40,7 +40,8 @@ class RecommendationsCubit extends Cubit<RecommendationsState> {
     required this.fixturesRepository,
     required this.teamRepository,
     required this.authCubit,
-  }) : super(const RecommendationsState());
+    RecommendationsState? initialState,
+  }) : super(initialState ?? const RecommendationsState());
 
   final FixturesRepository fixturesRepository;
   final TeamRepository teamRepository;

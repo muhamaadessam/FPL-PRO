@@ -11,6 +11,7 @@ import '../../../team/domain/repositories/team_repository.dart';
 import '../../domain/entities/recommendation_data.dart';
 import '../../domain/usecases/recommendation_engine.dart';
 import '../cubit/recommendations_cubit.dart';
+import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
 import 'next_gameweek_analysis_page.dart';
 
 export '../../domain/entities/recommendation_data.dart';
@@ -21,11 +22,53 @@ class RecommendationsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => RecommendationsCubit(
-        fixturesRepository: context.read<FixturesRepository>(),
-        teamRepository: context.read<TeamRepository>(),
-        authCubit: context.read<AuthCubit>(),
-      )..load(),
+      create: (context) {
+        HomePreloadState? preload;
+        try {
+          preload = context.read<HomePreloadCubit>().state;
+        } on ProviderNotFoundException catch (_) {}
+        final hasPreload = preload?.status == PreloadStatus.success;
+        RecommendationsState? initialState;
+        if (hasPreload &&
+            preload?.bootstrap != null &&
+            preload?.teamNext != null) {
+          final p = preload!;
+          final result = const RecommendationEngine().build(
+            bootstrap: p.bootstrap!,
+            fixtures: p.fixtures,
+            team: p.teamNext!,
+            gameweekId: p.bootstrap!.gameweeks
+                .firstWhere(
+                  (g) => g.isNext,
+                  orElse: () => p.bootstrap!.gameweeks.firstWhere(
+                    (g) => g.id > p.bootstrap!.currentGameweekId,
+                    orElse: () => p.bootstrap!.gameweeks.last,
+                  ),
+                )
+                .id,
+            playerSummaries: p.playerSummaries,
+          );
+          initialState = RecommendationsState(
+            status: RecommendationsStatus.success,
+            data: RecommendationData(
+              result: result,
+              gameweek: p.bootstrap!.gameweeks.firstWhere(
+                (g) => g.id == result.gameweekId,
+              ),
+              bootstrap: p.bootstrap!,
+              team: p.teamNext!,
+            ),
+          );
+        }
+        final cubit = RecommendationsCubit(
+          fixturesRepository: context.read<FixturesRepository>(),
+          teamRepository: context.read<TeamRepository>(),
+          authCubit: context.read<AuthCubit>(),
+          initialState: initialState,
+        );
+        if (initialState == null) cubit.load();
+        return cubit;
+      },
       child: const _RecommendationsBody(),
     );
   }

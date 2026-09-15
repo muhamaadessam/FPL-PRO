@@ -6,19 +6,39 @@ import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../features/auth/presentation/screens/login_page.dart';
 import '../../features/auth/presentation/screens/official_web_login_page.dart';
 import '../../features/dashboard/presentation/screens/dashboard_shell.dart';
+import '../../features/dashboard/presentation/cubit/home_preload_cubit.dart';
 import '../../features/fixtures/presentation/screens/public_matches_page.dart';
 import '../../features/team/presentation/screens/team_view.dart';
 import '../widgets/splash_page.dart';
 
-GoRouter createRouter(AuthCubit authCubit) {
+GoRouter createRouter(AuthCubit authCubit, HomePreloadCubit preloadCubit) {
   final refresh = ValueNotifier(0);
   authCubit.stream.listen((_) => refresh.value++);
+  preloadCubit.stream.listen((_) => refresh.value++);
 
   return GoRouter(
     initialLocation: '/splash',
     refreshListenable: refresh,
-    redirect: (context, state) =>
-        authRedirect(authCubit.state, state.matchedLocation),
+    redirect: (context, state) {
+      final location = state.matchedLocation;
+      final auth = authCubit.state;
+      final preload = preloadCubit.state;
+
+      final authResult = authRedirect(auth, location);
+      if (authResult != null) return authResult;
+
+      if (auth.session != null) {
+        final isHome = location == '/home';
+        final isSplash = location == '/splash';
+        final isPreloadValid =
+            preload.status == PreloadStatus.success &&
+            preload.entryId == auth.session?.entryId;
+
+        if (isHome && !isPreloadValid) return '/splash';
+        if (isSplash && isPreloadValid) return '/home';
+      }
+      return null;
+    },
     routes: [
       GoRoute(path: '/splash', builder: (_, _) => const SplashPage()),
       GoRoute(path: '/login', builder: (_, _) => const LoginPage()),
@@ -46,11 +66,13 @@ String? authRedirect(AuthState auth, String location) {
   final isPublicTeam = location.startsWith('/team/');
 
   if (auth is AuthInitial || auth.isLoading) {
-    return isSplash || isLogin || isWebLogin ? null : '/splash';
+    return isSplash || isLogin || isWebLogin || isPreview || isPublicTeam
+        ? null
+        : '/splash';
   }
 
   if (auth.session == null) {
     return isLogin || isWebLogin || isPreview || isPublicTeam ? null : '/login';
   }
-  return isSplash || isLogin || isWebLogin ? '/home' : null;
+  return isLogin || isWebLogin ? '/splash' : null;
 }

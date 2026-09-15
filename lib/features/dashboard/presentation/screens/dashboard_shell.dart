@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/localization/cubit/locale_cubit.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
+import '../../../../core/themes/cubit/theme_cubit.dart';
 import '../../../fixtures/presentation/screens/fixtures_view.dart';
 import '../../../recommendations/presentation/screens/recommendations_view.dart';
 import '../../../team/presentation/screens/team_view.dart';
@@ -34,6 +35,22 @@ class _DashboardShellState extends State<DashboardShell> {
           style: const TextStyle(fontWeight: FontWeight.w900),
         ),
         actions: [
+          PopupMenuButton<ThemeMode>(
+            tooltip: l10n.themeTitle,
+            icon: const Icon(Icons.palette_outlined),
+            onSelected: (mode) => context.read<ThemeCubit>().setThemeMode(mode),
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: ThemeMode.system,
+                child: Text(l10n.themeSystem),
+              ),
+              PopupMenuItem(
+                value: ThemeMode.light,
+                child: Text(l10n.themeLight),
+              ),
+              PopupMenuItem(value: ThemeMode.dark, child: Text(l10n.themeDark)),
+            ],
+          ),
           IconButton(
             tooltip: l10n.language,
             onPressed: context.read<LocaleCubit>().toggle,
