@@ -43,6 +43,28 @@ void main() {
       expect(cubit.state.entry?.name, 'Fake FC');
     },
   );
+
+  test('refreshes entry data without invalidating the home route', () async {
+    final session = const OfficialSession(accessToken: 'token', entryId: 42);
+    final authCubit = AuthCubit(
+      _FakeAuthRepository(session),
+      initialState: AuthAuthenticated(session),
+    );
+    final teamRepository = _FakeTeamRepository();
+    final cubit = HomePreloadCubit(
+      fixturesRepository: _FakeFixturesRepository(),
+      teamRepository: teamRepository,
+      authCubit: authCubit,
+    );
+
+    await cubit.load();
+    expect(cubit.state.status, PreloadStatus.success);
+
+    await cubit.refreshEntry();
+
+    expect(cubit.state.status, PreloadStatus.success);
+    expect(teamRepository.entryRequests, [42, 42]);
+  });
 }
 
 class _FakeAuthRepository implements AuthRepository {
@@ -122,6 +144,7 @@ class _FakeFixturesRepository implements FixturesRepository {
 class _FakeTeamRepository implements TeamRepository {
   final currentRequests = <int>[];
   final nextRequests = <int>[];
+  final entryRequests = <int>[];
 
   final currentTeam = MyTeam.fromJson({
     'picks': [
@@ -150,8 +173,10 @@ class _FakeTeamRepository implements TeamRepository {
   });
 
   @override
-  Future<FplEntry> getEntry(int entryId) async =>
-      FplEntry(id: entryId, name: 'Fake FC');
+  Future<FplEntry> getEntry(int entryId) async {
+    entryRequests.add(entryId);
+    return FplEntry(id: entryId, name: 'Fake FC');
+  }
 
   @override
   Future<FplLeagueDetails> getLeagueStandings({

@@ -184,4 +184,15 @@ class HomePreloadCubit extends Cubit<HomePreloadState> {
       _isLoading = false;
     }
   }
+
+  Future<void> refreshEntry() async {
+    final session = authCubit.state.session;
+    if (session == null || session.entryId == null) return;
+    try {
+      final entry = await teamRepository.getEntry(session.entryId!);
+      emit(state.copyWith(entry: entry, entryId: session.entryId));
+    } catch (_) {
+      // Keep the existing home data visible when a lightweight refresh fails.
+    }
+  }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../l10n/app_localizations.dart';
 import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
@@ -45,13 +46,13 @@ class LeaguesView extends StatelessWidget {
             title: l10n.noLeagues,
             message: l10n.noLeaguesHint,
             actionLabel: l10n.retry,
-            onAction: context.read<HomePreloadCubit>().load,
+            onAction: context.read<HomePreloadCubit>().refreshEntry,
           );
         }
 
         final groups = _groupLeagues(leagues, l10n);
         return RefreshIndicator(
-          onRefresh: context.read<HomePreloadCubit>().load,
+          onRefresh: context.read<HomePreloadCubit>().refreshEntry,
           color: Theme.of(context).colorScheme.primary,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -689,94 +690,97 @@ class _StandingRow extends StatelessWidget {
         ? standing.teamName
         : standing.managerName;
 
-    return Container(
+    return Material(
       color: isYou
           ? theme.colorScheme.primary.withValues(alpha: 0.1)
           : Colors.transparent,
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 11, 10, 11),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 38,
-                  child: Text(
-                    _value(context, standing.currentRank),
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w900,
-                      color: isYou ? theme.colorScheme.primary : null,
+      child: InkWell(
+        onTap: () => context.push('/team/${standing.entryId}'),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 11, 10, 11),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 38,
+                    child: Text(
+                      _value(context, standing.currentRank),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: isYou ? theme.colorScheme.primary : null,
+                      ),
                     ),
                   ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        managerName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      if (standing.teamName.isNotEmpty &&
-                          standing.teamName != managerName)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          isYou
-                              ? '${standing.teamName} • ${l10n.you}'
-                              : standing.teamName,
+                          managerName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: secondary,
-                          ),
-                        )
-                      else if (isYou)
-                        Text(
-                          l10n.you,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.primary,
+                          style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w800,
                           ),
                         ),
-                    ],
-                  ),
-                ),
-                SizedBox(
-                  width: 48,
-                  child: Text(
-                    _value(context, standing.gameweekPoints),
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: secondary,
-                      fontWeight: FontWeight.w700,
+                        if (standing.teamName.isNotEmpty &&
+                            standing.teamName != managerName)
+                          Text(
+                            isYou
+                                ? '${standing.teamName} • ${l10n.you}'
+                                : standing.teamName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: secondary,
+                            ),
+                          )
+                        else if (isYou)
+                          Text(
+                            l10n.you,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-                ),
-                SizedBox(
-                  width: 58,
-                  child: Text(
-                    _value(context, standing.totalPoints),
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w900,
+                  SizedBox(
+                    width: 48,
+                    child: Text(
+                      _value(context, standing.gameweekPoints),
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: secondary,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                ),
-                SizedBox(
-                  width: 24,
-                  child: Semantics(
-                    label: movementLabel,
-                    child: Icon(movementIcon, size: 17, color: movementColor),
+                  SizedBox(
+                    width: 58,
+                    child: Text(
+                      _value(context, standing.totalPoints),
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                  SizedBox(
+                    width: 24,
+                    child: Semantics(
+                      label: movementLabel,
+                      child: Icon(movementIcon, size: 17, color: movementColor),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          if (!isLast) Divider(height: 1, indent: 12, endIndent: 10),
-        ],
+            if (!isLast) Divider(height: 1, indent: 12, endIndent: 10),
+          ],
+        ),
       ),
     );
   }
