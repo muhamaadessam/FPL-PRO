@@ -14,8 +14,11 @@ class TeamRepositoryImpl implements TeamRepository {
   }
 
   @override
-  Future<FplLeagueDetails> getLeagueStandings({required FplLeague league}) {
-    return _dataSource.getLeagueStandings(league: league);
+  Future<FplLeagueDetails> getLeagueStandings({
+    required FplLeague league,
+    int page = 1,
+  }) {
+    return _dataSource.getLeagueStandings(league: league, page: page);
   }
 
   @override

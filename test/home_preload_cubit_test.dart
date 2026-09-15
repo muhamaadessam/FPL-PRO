@@ -181,7 +181,13 @@ class _FakeTeamRepository implements TeamRepository {
   @override
   Future<FplLeagueDetails> getLeagueStandings({
     required FplLeague league,
-  }) async => FplLeagueDetails(league: league, standings: const []);
+    int page = 1,
+  }) async => FplLeagueDetails(
+    league: league,
+    standings: const [],
+    page: page,
+    hasNext: false,
+  );
 
   @override
   Future<MyTeam> getTeamForGameweek({

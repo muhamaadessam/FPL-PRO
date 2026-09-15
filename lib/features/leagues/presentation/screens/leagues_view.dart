@@ -431,23 +431,93 @@ class LeagueDetailsPage extends StatefulWidget {
 }
 
 class _LeagueDetailsPageState extends State<LeagueDetailsPage> {
-  late Future<FplLeagueDetails> _future;
+  FplLeagueDetails? _details;
+  Object? _loadMoreError;
+  var _isLoading = true;
+  var _isLoadingMore = false;
+  var _hasMore = false;
+  var _nextPage = 1;
 
   @override
   void initState() {
     super.initState();
-    _future = _load();
+    _loadFirstPage();
   }
 
-  Future<FplLeagueDetails> _load() {
+  Future<FplLeagueDetails> _fetchPage(int page) {
     return context.read<TeamRepository>().getLeagueStandings(
       league: widget.league,
+      page: page,
     );
   }
 
+  Future<void> _loadFirstPage() async {
+    if (_details == null && mounted) setState(() => _isLoading = true);
+    try {
+      final details = await _fetchPage(1);
+      if (!mounted) return;
+      setState(() {
+        _details = details;
+        _loadMoreError = null;
+        _isLoading = false;
+        _hasMore = details.hasNext;
+        _nextPage = details.page + 1;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadMore() async {
+    final current = _details;
+    if (current == null || _isLoadingMore || !_hasMore) return;
+    setState(() {
+      _isLoadingMore = true;
+      _loadMoreError = null;
+    });
+    try {
+      final next = await _fetchPage(_nextPage);
+      if (!mounted) return;
+      if (_details != current) {
+        setState(() => _isLoadingMore = false);
+        return;
+      }
+      setState(() {
+        _details = FplLeagueDetails(
+          league: next.league,
+          standings: [...current.standings, ...next.standings],
+          page: next.page,
+          hasNext: next.hasNext,
+        );
+        _hasMore = next.hasNext;
+        _nextPage = next.page + 1;
+        _isLoadingMore = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loadMoreError = true;
+        _isLoadingMore = false;
+      });
+    }
+  }
+
   Future<void> _reload() async {
-    setState(() => _future = _load());
-    await _future;
+    try {
+      final details = await _fetchPage(1);
+      if (!mounted) return;
+      setState(() {
+        _details = details;
+        _loadMoreError = null;
+        _hasMore = details.hasNext;
+        _nextPage = details.page + 1;
+      });
+    } catch (_) {
+      // Keep the visible standings if a pull-to-refresh request fails.
+    }
   }
 
   @override
@@ -455,49 +525,55 @@ class _LeagueDetailsPageState extends State<LeagueDetailsPage> {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(title: Text(l10n.leagueDetails)),
-      body: FutureBuilder<FplLeagueDetails>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting &&
-              !snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError || !snapshot.hasData) {
-            return _MessageState(
-              icon: Icons.cloud_off_rounded,
-              title: l10n.errorLoadingData,
-              message: l10n.networkError,
-              actionLabel: l10n.retry,
-              onAction: _reload,
-            );
-          }
-
-          final details = snapshot.data!;
-          if (details.standings.isEmpty) {
-            return _MessageState(
+      body: _details == null
+          ? (_isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _MessageState(
+                    icon: Icons.cloud_off_rounded,
+                    title: l10n.errorLoadingData,
+                    message: l10n.networkError,
+                    actionLabel: l10n.retry,
+                    onAction: _loadFirstPage,
+                  ))
+          : _details!.standings.isEmpty
+          ? _MessageState(
               icon: Icons.leaderboard_outlined,
               title: l10n.noStandings,
               message: l10n.noStandingsHint,
               actionLabel: l10n.retry,
-              onAction: _reload,
-            );
-          }
-
-          return RefreshIndicator(
-            onRefresh: _reload,
-            color: Theme.of(context).colorScheme.primary,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-              children: [
-                _LeagueDetailsHeader(details: details),
-                const SizedBox(height: 22),
-                _StandingsTable(details: details),
-              ],
+              onAction: _loadFirstPage,
+            )
+          : RefreshIndicator(
+              onRefresh: _reload,
+              color: Theme.of(context).colorScheme.primary,
+              child: NotificationListener<ScrollNotification>(
+                onNotification: (notification) {
+                  if (notification.metrics.extentAfter < 500) _loadMore();
+                  return false;
+                },
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                  children: [
+                    _LeagueDetailsHeader(details: _details!),
+                    const SizedBox(height: 22),
+                    _StandingsTable(details: _details!),
+                    if (_isLoadingMore)
+                      const Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if (_loadMoreError != null)
+                      Center(
+                        child: TextButton(
+                          onPressed: _loadMore,
+                          child: Text(l10n.retry),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
-          );
-        },
-      ),
     );
   }
 }
@@ -512,6 +588,7 @@ class _LeagueDetailsHeader extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final league = details.league;
+    final managerCount = league.rankCount ?? details.standings.length;
     final isHeadToHead = league.isHeadToHead || league.scoring == 'h';
     final title = league.name.isEmpty
         ? l10n.leagueName(league.id)
@@ -547,7 +624,7 @@ class _LeagueDetailsHeader extends StatelessWidget {
                   l10n.managerCount(
                     MaterialLocalizations.of(
                       context,
-                    ).formatDecimal(details.standings.length),
+                    ).formatDecimal(managerCount),
                   ),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,

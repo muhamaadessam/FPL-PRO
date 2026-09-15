@@ -85,60 +85,65 @@ void main() {
     expect(entry.leagues.last.lastRank, 3);
   });
 
-  test('loads every page of league standings', () async {
-    final pages = <int>[];
-    final dio = Dio()
-      ..httpClientAdapter = _FakeAdapter((options) {
-        final page = int.parse(
-          options.queryParameters['page_standings'].toString(),
-        );
-        pages.add(page);
-        return ResponseBody.fromString(
-          jsonEncode({
-            'league': {
-              'id': 1604868,
-              'name': 'League',
-              'league_type': 'x',
-              'scoring': 'c',
+  test(
+    'returns the first standings page without waiting for the rest',
+    () async {
+      final pages = <int>[];
+      final dio = Dio()
+        ..httpClientAdapter = _FakeAdapter((options) {
+          final page = int.parse(
+            options.queryParameters['page_standings'].toString(),
+          );
+          pages.add(page);
+          return ResponseBody.fromString(
+            jsonEncode({
+              'league': {
+                'id': 1604868,
+                'name': 'League',
+                'league_type': 'x',
+                'scoring': 'c',
+              },
+              'standings': {
+                'has_next': page == 1,
+                'page': page,
+                'results': [
+                  {
+                    'entry': page,
+                    'player_name': 'Manager $page',
+                    'entry_name': 'Team $page',
+                    'rank': page,
+                    'last_rank': page + 1,
+                    'event_total': 60 + page,
+                    'total': 200 + page,
+                  },
+                ],
+              },
+            }),
+            200,
+            headers: {
+              Headers.contentTypeHeader: [Headers.jsonContentType],
             },
-            'standings': {
-              'has_next': page == 1,
-              'page': page,
-              'results': [
-                {
-                  'entry': page,
-                  'player_name': 'Manager $page',
-                  'entry_name': 'Team $page',
-                  'rank': page,
-                  'last_rank': page + 1,
-                  'event_total': 60 + page,
-                  'total': 200 + page,
-                },
-              ],
-            },
-          }),
-          200,
-          headers: {
-            Headers.contentTypeHeader: [Headers.jsonContentType],
-          },
-        );
-      });
+          );
+        });
 
-    final details = await FplApiClient(dio: dio).getLeagueStandings(
-      league: const FplLeague(
-        id: 1604868,
-        name: 'League',
-        leagueType: 'x',
-        scoring: 'c',
-        isHeadToHead: false,
-      ),
-    );
+      final details = await FplApiClient(dio: dio).getLeagueStandings(
+        league: const FplLeague(
+          id: 1604868,
+          name: 'League',
+          leagueType: 'x',
+          scoring: 'c',
+          isHeadToHead: false,
+        ),
+      );
 
-    expect(pages, [1, 2]);
-    expect(details.standings, hasLength(2));
-    expect(details.standings.last.gameweekPoints, 62);
-    expect(details.standings.last.totalPoints, 202);
-  });
+      expect(pages, [1]);
+      expect(details.page, 1);
+      expect(details.hasNext, isTrue);
+      expect(details.standings, hasLength(1));
+      expect(details.standings.first.gameweekPoints, 61);
+      expect(details.standings.first.totalPoints, 201);
+    },
+  );
 }
 
 class _FakeAdapter implements HttpClientAdapter {

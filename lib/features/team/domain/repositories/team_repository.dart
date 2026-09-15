@@ -4,7 +4,10 @@ import '../../data/models/team_models.dart';
 abstract interface class TeamRepository {
   Future<FplEntry> getEntry(int entryId);
 
-  Future<FplLeagueDetails> getLeagueStandings({required FplLeague league});
+  Future<FplLeagueDetails> getLeagueStandings({
+    required FplLeague league,
+    int page = 1,
+  });
 
   Future<MyTeam> getMyTeam({
     required OfficialSession session,

@@ -193,10 +193,17 @@ class FplLeagueStanding {
 }
 
 class FplLeagueDetails {
-  const FplLeagueDetails({required this.league, required this.standings});
+  const FplLeagueDetails({
+    required this.league,
+    required this.standings,
+    required this.page,
+    required this.hasNext,
+  });
 
   final FplLeague league;
   final List<FplLeagueStanding> standings;
+  final int page;
+  final bool hasNext;
 }
 
 List<FplLeague> _parseLeagues(dynamic value, {bool isHeadToHead = false}) {

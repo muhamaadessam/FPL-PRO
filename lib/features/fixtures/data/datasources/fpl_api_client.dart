@@ -66,44 +66,41 @@ class FplApiClient {
 
   Future<FplLeagueDetails> getLeagueStandings({
     required FplLeague league,
+    int page = 1,
   }) async {
     final path = league.isHeadToHead
         ? '/leagues-h2h/${league.id}/standings/'
         : '/leagues-classic/${league.id}/standings/';
-    final standings = <FplLeagueStanding>[];
-    Map<String, dynamic>? leagueJson;
-    var page = 1;
-    var hasNext = true;
-
-    while (hasNext) {
-      final json = await _getMap(
-        path,
-        queryParameters: {'page_standings': page, 'page_new_entries': page},
-      );
-      final rawLeague = json['league'];
-      if (leagueJson == null && rawLeague is Map) {
-        leagueJson = Map<String, dynamic>.from(rawLeague);
-      }
-      final rawStandings = json['standings'];
-      if (rawStandings is! Map) break;
-      final results = rawStandings['results'];
-      if (results is List) {
-        standings.addAll(
-          results.whereType<Map>().map(
-            (item) =>
-                FplLeagueStanding.fromJson(Map<String, dynamic>.from(item)),
-          ),
-        );
-      }
-      hasNext = rawStandings['has_next'] == true;
-      page = (_intValue(rawStandings['page']) ?? page) + 1;
-    }
+    final json = await _getMap(
+      path,
+      queryParameters: {'page_standings': page, 'page_new_entries': page},
+    );
+    final rawLeague = json['league'];
+    final rawStandings = json['standings'];
+    final results = rawStandings is Map ? rawStandings['results'] : null;
+    final standings = results is List
+        ? results
+              .whereType<Map>()
+              .map(
+                (item) =>
+                    FplLeagueStanding.fromJson(Map<String, dynamic>.from(item)),
+              )
+              .toList(growable: false)
+        : const <FplLeagueStanding>[];
+    final currentPage = rawStandings is Map
+        ? _intValue(rawStandings['page']) ?? page
+        : page;
 
     return FplLeagueDetails(
-      league: leagueJson == null
+      league: rawLeague is! Map
           ? league
-          : FplLeague.fromJson(leagueJson, isHeadToHead: league.isHeadToHead),
+          : FplLeague.fromJson(
+              Map<String, dynamic>.from(rawLeague),
+              isHeadToHead: league.isHeadToHead,
+            ),
       standings: standings,
+      page: currentPage,
+      hasNext: rawStandings is Map && rawStandings['has_next'] == true,
     );
   }
 
