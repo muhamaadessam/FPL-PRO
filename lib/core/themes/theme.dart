@@ -60,17 +60,57 @@ ThemeData _buildTheme(ColorScheme scheme, {required bool isDark}) {
     navigationBarTheme: NavigationBarThemeData(
       height: 72,
       elevation: 0,
-      backgroundColor: scheme.surface,
-      indicatorColor: scheme.primaryContainer,
-      labelTextStyle: WidgetStatePropertyAll(
-        TextStyle(fontWeight: FontWeight.w700, color: scheme.onSurface),
+      backgroundColor: Colors.transparent,
+      indicatorColor: isDark
+          ? const Color(0xff00ff87).withValues(alpha: 0.16)
+          : scheme.primary.withValues(alpha: 0.12),
+      indicatorShape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
       ),
+      labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+      iconTheme: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return IconThemeData(
+            size: 24,
+            color: isDark ? const Color(0xff00ff87) : scheme.primary,
+          );
+        }
+        return IconThemeData(
+          size: 24,
+          color: isDark ? const Color(0xff928a9f) : const Color(0xff71717a),
+        );
+      }),
+      labelTextStyle: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: isDark ? const Color(0xff00ff87) : scheme.primary,
+            letterSpacing: -0.1,
+          );
+        }
+        return TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: isDark ? const Color(0xff928a9f) : const Color(0xff71717a),
+          letterSpacing: -0.1,
+        );
+      }),
     ),
     appBarTheme: AppBarTheme(
       backgroundColor: scheme.surface,
+      foregroundColor: isDark ? Colors.white : scheme.onSurface,
       elevation: 0,
       centerTitle: false,
       scrolledUnderElevation: 0,
+      titleTextStyle: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.w800,
+        color: isDark ? Colors.white : const Color(0xff1f1f2e),
+      ),
+      iconTheme: IconThemeData(
+        color: isDark ? Colors.white : const Color(0xff1f1f2e),
+      ),
     ),
   );
 }

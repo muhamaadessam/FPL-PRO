@@ -8,6 +8,7 @@ class Gameweek {
     required this.isNext,
     this.averageEntryScore,
     this.highestScore,
+    this.highestScoringEntry,
   });
 
   final int id;
@@ -18,6 +19,7 @@ class Gameweek {
   final bool isNext;
   final int? averageEntryScore;
   final int? highestScore;
+  final int? highestScoringEntry;
 
   factory Gameweek.fromJson(Map<String, dynamic> json) {
     return Gameweek(
@@ -29,6 +31,7 @@ class Gameweek {
       isNext: json['is_next'] as bool? ?? false,
       averageEntryScore: _nullableInt(json['average_entry_score']),
       highestScore: _nullableInt(json['highest_score']),
+      highestScoringEntry: _nullableInt(json['highest_scoring_entry']),
     );
   }
 }
@@ -68,6 +71,7 @@ class FplPlayer {
     this.nowCost,
     this.status = 'a',
     this.news = '',
+    this.chanceOfPlayingThisRound,
     this.chanceOfPlayingNextRound,
     this.canSelect = true,
     this.form = 0,
@@ -93,6 +97,7 @@ class FplPlayer {
   final int? nowCost;
   final String status;
   final String news;
+  final int? chanceOfPlayingThisRound;
   final int? chanceOfPlayingNextRound;
   final bool canSelect;
   final double form;
@@ -107,6 +112,27 @@ class FplPlayer {
   final int cleanSheets;
   final int saves;
 
+  int? get effectiveChanceOfPlaying {
+    final thisRound = chanceOfPlayingThisRound;
+    final nextRound = chanceOfPlayingNextRound;
+    if (thisRound != null && thisRound < 100) return thisRound;
+    if (nextRound != null && nextRound < 100) return nextRound;
+    return thisRound ?? nextRound;
+  }
+
+  bool get isUnavailable {
+    final s = status.toLowerCase();
+    final c = effectiveChanceOfPlaying;
+    return s == 'i' || s == 's' || s == 'u' || s == 'n' || (c != null && c == 0);
+  }
+
+  bool get isDoubtful {
+    if (isUnavailable) return false;
+    final s = status.toLowerCase();
+    final c = effectiveChanceOfPlaying;
+    return s == 'd' || (c != null && c > 0 && c < 100);
+  }
+
   factory FplPlayer.fromJson(Map<String, dynamic> json) {
     return FplPlayer(
       id: _int(json['id']),
@@ -119,6 +145,9 @@ class FplPlayer {
       nowCost: _nullableInt(json['now_cost']),
       status: json['status'] as String? ?? 'a',
       news: json['news'] as String? ?? '',
+      chanceOfPlayingThisRound: _nullableInt(
+        json['chance_of_playing_this_round'],
+      ),
       chanceOfPlayingNextRound: _nullableInt(
         json['chance_of_playing_next_round'],
       ),

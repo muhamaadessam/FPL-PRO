@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/localization/cubit/locale_cubit.dart';
 import '../../../../l10n/app_localizations.dart';
-import '../../../auth/presentation/cubit/auth_cubit.dart';
-import '../../../../core/themes/cubit/theme_cubit.dart';
 import '../../../fixtures/presentation/screens/fixtures_view.dart';
 import '../../../recommendations/presentation/screens/recommendations_view.dart';
+import '../../../settings/presentation/screens/settings_view.dart';
 import '../../../team/presentation/screens/team_view.dart';
 
 class DashboardShell extends StatefulWidget {
@@ -22,71 +19,61 @@ class _DashboardShellState extends State<DashboardShell> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final pages = [
       const TeamView(),
       const RecommendationsView(),
       const FixturesView(),
+      const SettingsView(),
     ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          l10n.appName,
-          style: const TextStyle(fontWeight: FontWeight.w900),
-        ),
-        actions: [
-          PopupMenuButton<ThemeMode>(
-            tooltip: l10n.themeTitle,
-            icon: const Icon(Icons.palette_outlined),
-            onSelected: (mode) => context.read<ThemeCubit>().setThemeMode(mode),
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: ThemeMode.system,
-                child: Text(l10n.themeSystem),
-              ),
-              PopupMenuItem(
-                value: ThemeMode.light,
-                child: Text(l10n.themeLight),
-              ),
-              PopupMenuItem(value: ThemeMode.dark, child: Text(l10n.themeDark)),
-            ],
-          ),
-          IconButton(
-            tooltip: l10n.language,
-            onPressed: context.read<LocaleCubit>().toggle,
-            icon: const Icon(Icons.translate),
-          ),
-          IconButton(
-            tooltip: l10n.logout,
-            onPressed: context.read<AuthCubit>().logout,
-            icon: const Icon(Icons.logout),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
       body: SafeArea(child: pages[_selectedIndex]),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) {
-          setState(() => _selectedIndex = index);
-        },
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.groups_outlined),
-            selectedIcon: const Icon(Icons.groups),
-            label: l10n.myTeam,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xff160d24) : Colors.white,
+          border: Border(
+            top: BorderSide(
+              color: isDark ? const Color(0x24ffffff) : const Color(0x12000000),
+              width: 0.8,
+            ),
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.auto_awesome_outlined),
-            selectedIcon: const Icon(Icons.auto_awesome),
-            label: l10n.recommendations,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.calendar_month_outlined),
-            selectedIcon: const Icon(Icons.calendar_month),
-            label: l10n.matches,
-          ),
-        ],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -3),
+            ),
+          ],
+        ),
+        child: NavigationBar(
+          selectedIndex: _selectedIndex,
+          onDestinationSelected: (index) {
+            setState(() => _selectedIndex = index);
+          },
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(Icons.groups_outlined),
+              selectedIcon: const Icon(Icons.groups_rounded),
+              label: l10n.myTeam,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.auto_awesome_outlined),
+              selectedIcon: const Icon(Icons.auto_awesome_rounded),
+              label: l10n.tips,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.calendar_month_outlined),
+              selectedIcon: const Icon(Icons.calendar_month_rounded),
+              label: l10n.matches,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.settings_outlined),
+              selectedIcon: const Icon(Icons.settings_rounded),
+              label: l10n.settings,
+            ),
+          ],
+        ),
       ),
     );
   }

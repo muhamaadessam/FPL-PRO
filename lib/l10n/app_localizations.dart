@@ -116,6 +116,7 @@ class AppLocalizations {
   String get themeLight => isArabic ? 'فاتح' : 'Light';
   String get themeDark => isArabic ? 'داكن' : 'Dark';
   String get themeTitle => isArabic ? 'المظهر' : 'Theme';
+  String get settings => isArabic ? 'الإعدادات' : 'Settings';
   String get logout => isArabic ? 'تسجيل الخروج' : 'Sign out';
   String get language => isArabic ? 'English' : 'العربية';
   String get authContractRequired => isArabic
@@ -142,6 +143,7 @@ class AppLocalizations {
   String get pitchView => isArabic ? 'الملعب' : 'Pitch view';
   String get listView => isArabic ? 'القائمة' : 'List view';
   String get recommendations => isArabic ? 'الترشيحات' : 'Recommendations';
+  String get tips => isArabic ? 'نصائح' : 'Tips';
   String get recommendationSubtitle => isArabic
       ? 'تقديرات مبنية على الإحصائيات الرسمية والمباريات القادمة.'
       : 'Estimates based on official stats and upcoming fixtures.';
