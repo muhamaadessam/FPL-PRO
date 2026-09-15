@@ -60,6 +60,36 @@ class AppLocalizations {
       ? 'اعرض بيانات المباريات الرسمية بدون تسجيل دخول.'
       : 'View official fixture data without signing in.';
   String get matches => isArabic ? 'المباريات' : 'Matches';
+  String get leagues => isArabic ? 'الليجات' : 'Leagues';
+  String get leaguesSubtitle => isArabic
+      ? 'كل الليجات اللي فريقك مشترك فيها وترتيبك الحالي.'
+      : 'Every league your team has joined, with live ranks.';
+  String get invitationClassicLeagues =>
+      isArabic ? 'ليجات كلاسيك بالدعوة' : 'Invitational Classic Leagues';
+  String get generalLeagues => isArabic ? 'الليجات العامة' : 'General Leagues';
+  String get broadcasterLeagues =>
+      isArabic ? 'ليجات المذيعين' : 'Broadcaster Leagues';
+  String get publicClassicLeagues =>
+      isArabic ? 'ليجات كلاسيك العامة' : 'Public Classic Leagues';
+  String get invitationHeadToHeadLeagues =>
+      isArabic ? 'ليجات مواجهة بالدعوة' : 'Invitational Head-to-Head Leagues';
+  String get publicHeadToHeadLeagues =>
+      isArabic ? 'ليجات مواجهة عامة' : 'Public Head-to-Head Leagues';
+  String get league => isArabic ? 'الليجة' : 'League';
+  String leagueName(int id) => isArabic ? 'ليجة $id' : 'League $id';
+  String managerCount(String count) =>
+      isArabic ? '$count مدير' : '$count managers';
+  String get fplManager => isArabic ? 'مدير FPL' : 'FPL Manager';
+  String get currentRank => isArabic ? 'الترتيب الحالي' : 'Current rank';
+  String get lastRank => isArabic ? 'الترتيب السابق' : 'Last rank';
+  String leagueCount(int count) => isArabic ? '$count ليجات' : '$count leagues';
+  String get noLeagues => isArabic ? 'لا توجد ليجات بعد' : 'No leagues yet';
+  String get noLeaguesHint => isArabic
+      ? 'لم ترجع بيانات الليجات من الخدمة الرسمية.'
+      : 'The official service returned no league data.';
+  String get rankImproved => isArabic ? 'الترتيب اتحسن' : 'Rank improved';
+  String get rankDropped => isArabic ? 'الترتيب اتراجع' : 'Rank dropped';
+  String get rankUnchanged => isArabic ? 'الترتيب ثابت' : 'Rank unchanged';
   String matchesCount(int count) =>
       isArabic ? '$count مباريات' : '$count matches';
   String get homeTeam => isArabic ? 'صاحب الأرض' : 'Home';

@@ -327,8 +327,8 @@ class _HeroLogoBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 150,
-      height: 150,
+      width: 156,
+      height: 156,
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -339,7 +339,7 @@ class _HeroLogoBadge extends StatelessWidget {
               return Transform.rotate(
                 angle: controller.value * 2 * math.pi,
                 child: CustomPaint(
-                  size: const Size(146, 146),
+                  size: const Size(150, 150),
                   painter: _SleekOrbitPainter(),
                 ),
               );
@@ -353,10 +353,10 @@ class _HeroLogoBadge extends StatelessWidget {
               return Transform.scale(
                 scale: pulseAnimation.value,
                 child: Container(
-                  width: 106,
-                  height: 106,
+                  width: 122,
+                  height: 122,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(30),
+                    shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
                         color: const Color(0xff00ff87).withValues(alpha: 0.35),
@@ -375,29 +375,27 @@ class _HeroLogoBadge extends StatelessWidget {
             },
           ),
 
-          // The Squircle Card containing the Logo
+          // The Circular Badge containing the Logo
           Container(
-            width: 106,
-            height: 106,
+            width: 122,
+            height: 122,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+              shape: BoxShape.circle,
+              gradient: const RadialGradient(
                 colors: [
                   Color(0xff2d174d),
                   Color(0xff120824),
                 ],
+                stops: [0.3, 1.0],
               ),
-              borderRadius: BorderRadius.circular(28),
               border: Border.all(
-                color: const Color(0xff00ff87).withValues(alpha: 0.5),
-                width: 2,
+                color: const Color(0xff00ff87).withValues(alpha: 0.55),
+                width: 2.2,
               ),
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(26),
+            child: ClipOval(
               child: Transform.scale(
-                scale: 1.26,
+                scale: 1.28,
                 child: Image.asset(
                   'assets/icon/app_icon.png',
                   fit: BoxFit.cover,
@@ -415,11 +413,11 @@ class _SleekOrbitPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 4;
+    final radius = size.width / 2 - 5;
 
     // Background faint ring
     final bgPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.08)
+      ..color = Colors.white.withValues(alpha: 0.1)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0;
     canvas.drawCircle(center, radius, bgPaint);
@@ -429,10 +427,10 @@ class _SleekOrbitPainter extends CustomPainter {
     final sweepGradient = SweepGradient(
       colors: [
         const Color(0xff00ff87).withValues(alpha: 0.0),
-        const Color(0xff00ff87).withValues(alpha: 0.3),
+        const Color(0xff00ff87).withValues(alpha: 0.35),
         const Color(0xff00ff87),
       ],
-      stops: const [0.0, 0.6, 1.0],
+      stops: const [0.0, 0.55, 1.0],
     );
 
     final arcPaint = Paint()

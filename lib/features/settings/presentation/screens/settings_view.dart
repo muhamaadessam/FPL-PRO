@@ -5,6 +5,7 @@ import '../../../../core/localization/cubit/locale_cubit.dart';
 import '../../../../core/themes/cubit/theme_cubit.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
+import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
 
 class SettingsView extends StatelessWidget {
   const SettingsView({super.key});
@@ -15,6 +16,13 @@ class SettingsView extends StatelessWidget {
     final themeMode = context.watch<ThemeCubit>().state;
     final authState = context.watch<AuthCubit>().state;
     final entryId = authState.session?.entryId;
+    HomePreloadState? preload;
+    try {
+      preload = context.watch<HomePreloadCubit>().state;
+    } on Object {
+      // HomePreloadCubit is supplementary in settings
+    }
+    final entry = preload?.entry;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final cardBg = isDark ? const Color(0xff1f152d) : Colors.white;
@@ -94,7 +102,11 @@ class SettingsView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Muhammad Essam',
+                      entry?.name.isNotEmpty == true
+                          ? entry!.name
+                          : (entry?.playerFullName.isNotEmpty == true
+                              ? entry!.playerFullName
+                              : (entryId != null ? 'Entry #$entryId' : 'FPL Manager')),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
@@ -103,7 +115,9 @@ class SettingsView extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      entryId != null ? 'Entry #$entryId' : 'FPL Manager',
+                      entry?.playerFullName.isNotEmpty == true && entry?.name.isNotEmpty == true
+                          ? '${entry!.playerFullName} • Entry #${entry.id}'
+                          : (entryId != null ? 'Entry #$entryId' : 'FPL Manager'),
                       style: TextStyle(
                         fontSize: 13,
                         color: subColor,

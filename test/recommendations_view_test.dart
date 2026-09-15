@@ -95,6 +95,11 @@ class _FakeTeamRepository implements TeamRepository {
     : team = team ?? MyTeam.fromJson(const {'entry_history': {}});
 
   final MyTeam team;
+
+  @override
+  Future<FplEntry> getEntry(int entryId) async =>
+      FplEntry(id: entryId, name: 'Fake FC');
+
   @override
   Future<MyTeam> getMyTeam({
     required OfficialSession session,

@@ -37,6 +37,50 @@ void main() {
       expect(api.publicRequests, [4, 3]);
     },
   );
+
+  test('delegates getEntry to api client', () async {
+    final api = _FakeFplApiClient();
+    final repository = TeamRepositoryImpl(api);
+
+    final entry = await repository.getEntry(267022);
+    expect(entry.id, 267022);
+    expect(entry.name, 'Test FC');
+    expect(api.entryRequests, [267022]);
+  });
+
+  test('parses classic and head-to-head league ranks from an entry', () {
+    final entry = FplEntry.fromJson({
+      'id': 42,
+      'name': 'Test FC',
+      'leagues': {
+        'classic': [
+          {
+            'id': 1,
+            'name': 'Overall',
+            'league_type': 's',
+            'scoring': 'c',
+            'entry_rank': 12,
+            'entry_last_rank': 18,
+          },
+        ],
+        'h2h': [
+          {
+            'id': 2,
+            'name': 'Rivals',
+            'league_type': 'x',
+            'scoring': 'h',
+            'entry_rank': 2,
+            'entry_last_rank': 3,
+          },
+        ],
+      },
+    });
+
+    expect(entry.leagues, hasLength(2));
+    expect(entry.leagues.first.currentRank, 12);
+    expect(entry.leagues.last.isHeadToHead, isTrue);
+    expect(entry.leagues.last.lastRank, 3);
+  });
 }
 
 class _FakeFplApiClient extends FplApiClient {
@@ -44,6 +88,13 @@ class _FakeFplApiClient extends FplApiClient {
 
   final privateRequests = <int>[];
   final publicRequests = <int>[];
+  final entryRequests = <int>[];
+
+  @override
+  Future<FplEntry> getEntry(int entryId) async {
+    entryRequests.add(entryId);
+    return FplEntry(id: entryId, name: 'Test FC');
+  }
 
   @override
   Future<MyTeam> getMyTeam({

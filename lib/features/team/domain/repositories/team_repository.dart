@@ -2,6 +2,8 @@ import '../../../auth/domain/entities/official_session.dart';
 import '../../data/models/team_models.dart';
 
 abstract interface class TeamRepository {
+  Future<FplEntry> getEntry(int entryId);
+
   Future<MyTeam> getMyTeam({
     required OfficialSession session,
     required int entryId,

@@ -39,6 +39,7 @@ class TeamView extends StatelessWidget {
                   status: TeamStatus.success,
                   bootstrap: preload?.bootstrap,
                   team: preload?.teamCurrent,
+                  entry: preload?.entry,
                   gameweekPoints: preload?.gameweekPoints ?? const {},
                   historyPoints: preload?.historyPoints ?? const {},
                   selectedGameweekId: preload?.bootstrap?.currentGameweekId,
@@ -97,6 +98,7 @@ class _TeamBody extends StatelessWidget {
           selectedGameweekId: state.selectedGameweekId!,
           historyPoints: state.historyPoints,
           entryId: entryId,
+          entry: state.entry,
           onGameweekChanged: (gameweekId) {
             if (gameweekId != null) {
               context.read<TeamCubit>().selectGameweek(gameweekId);
@@ -133,6 +135,7 @@ class _TeamContent extends StatefulWidget {
     required this.onGameweekChanged,
     required this.onRefresh,
     this.entryId,
+    this.entry,
   });
 
   final MyTeam team;
@@ -143,6 +146,7 @@ class _TeamContent extends StatefulWidget {
   final ValueChanged<int?> onGameweekChanged;
   final Future<void> Function() onRefresh;
   final int? entryId;
+  final FplEntry? entry;
 
   @override
   State<_TeamContent> createState() => _TeamContentState();
@@ -175,12 +179,26 @@ class _TeamContentState extends State<_TeamContent> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 6, 16, 24),
         children: [
-          // 1. Top Header: User name "Muhammad Essam", Avatar (no back button in dashboard)
-          _TeamHeader(
-            title: widget.entryId != null
-                ? 'Entry #${widget.entryId}'
-                : 'Muhammad Essam',
-            showBackButton: widget.entryId != null,
+          // 1. Top Header: Dynamic Team name & Manager name, Avatar
+          Builder(
+            builder: (context) {
+              final teamName = widget.entry?.name.isNotEmpty == true
+                  ? widget.entry!.name
+                  : (widget.entryId != null
+                      ? 'Entry #${widget.entryId}'
+                      : 'My Team');
+              final managerName = widget.entry?.playerFullName ?? '';
+              final hasDistinctManager = managerName.isNotEmpty &&
+                  managerName.trim().toLowerCase() !=
+                      teamName.trim().toLowerCase();
+              final subtitle = hasDistinctManager ? managerName : null;
+
+              return _TeamHeader(
+                title: teamName,
+                subtitle: subtitle,
+                showBackButton: widget.entryId != null,
+              );
+            },
           ),
           const SizedBox(height: 10),
 
@@ -248,10 +266,12 @@ class _TeamContentState extends State<_TeamContent> {
 class _TeamHeader extends StatelessWidget {
   const _TeamHeader({
     required this.title,
+    this.subtitle,
     this.showBackButton = false,
   });
 
   final String title;
+  final String? subtitle;
   final bool showBackButton;
 
   @override
@@ -296,13 +316,42 @@ class _TeamHeader extends StatelessWidget {
             )
           else
             const SizedBox(width: 38),
-          // User / Team Name
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: titleColor,
+          // Dynamic Team Name & Manager Subtitle
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: titleColor,
+                    ),
+                  ),
+                  if (subtitle != null && subtitle!.trim().isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle!.trim(),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: isDark
+                            ? const Color(0xffa199b8)
+                            : const Color(0xff716b84),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
           // Official FPL Multi-gradient Avatar
@@ -1193,13 +1242,26 @@ class TeamLookupPage extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     if (entryId == null || entryId! <= 0) {
       return Scaffold(
-        appBar: AppBar(title: Text(l10n.myTeam)),
-        body: Center(child: Text(l10n.entryIdInvalid)),
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _TeamHeader(
+                title: '',
+                showBackButton: true,
+              ),
+              Expanded(
+                child: Center(child: Text(l10n.entryIdInvalid)),
+              ),
+            ],
+          ),
+        ),
       );
     }
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.myTeam)),
-      body: TeamView(entryId: entryId),
+      body: SafeArea(
+        child: TeamView(entryId: entryId),
+      ),
     );
   }
 }

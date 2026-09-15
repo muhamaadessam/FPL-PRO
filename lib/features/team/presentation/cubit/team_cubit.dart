@@ -15,6 +15,7 @@ class TeamState {
     this.status = TeamStatus.initial,
     this.bootstrap,
     this.team,
+    this.entry,
     this.gameweekPoints = const {},
     this.historyPoints = const {},
     this.selectedGameweekId,
@@ -24,6 +25,7 @@ class TeamState {
   final TeamStatus status;
   final FplBootstrap? bootstrap;
   final MyTeam? team;
+  final FplEntry? entry;
   final Map<int, int> gameweekPoints;
   final Map<int, int> historyPoints;
   final int? selectedGameweekId;
@@ -33,6 +35,7 @@ class TeamState {
     TeamStatus? status,
     FplBootstrap? bootstrap,
     MyTeam? team,
+    FplEntry? entry,
     Map<int, int>? gameweekPoints,
     Map<int, int>? historyPoints,
     int? selectedGameweekId,
@@ -42,6 +45,7 @@ class TeamState {
       status: status ?? this.status,
       bootstrap: bootstrap ?? this.bootstrap,
       team: team ?? this.team,
+      entry: entry ?? this.entry,
       gameweekPoints: gameweekPoints ?? this.gameweekPoints,
       historyPoints: historyPoints ?? this.historyPoints,
       selectedGameweekId: selectedGameweekId ?? this.selectedGameweekId,
@@ -77,8 +81,8 @@ class TeamCubit extends Cubit<TeamState> {
         targetGameweekId,
       );
 
-      var historyPoints = const <int, int>{};
       final session = authCubit?.state.session;
+      var historyPoints = const <int, int>{};
       if (entryId == null && session?.entryId != null) {
         try {
           historyPoints = await fixturesRepository.getEntryHistoryPoints(
@@ -89,11 +93,22 @@ class TeamCubit extends Cubit<TeamState> {
         }
       }
 
+      FplEntry? entry = state.entry;
+      final effectiveEntryId = entryId ?? session?.entryId;
+      if (effectiveEntryId != null) {
+        try {
+          entry = await teamRepository.getEntry(effectiveEntryId);
+        } on Object {
+          // Entry metadata is supplementary
+        }
+      }
+
       emit(
         TeamState(
           status: TeamStatus.success,
           bootstrap: bootstrap,
           team: team,
+          entry: entry,
           gameweekPoints: points,
           historyPoints: historyPoints,
           selectedGameweekId: targetGameweekId,

@@ -14,6 +14,7 @@ class HomePreloadState {
     this.bootstrap,
     this.teamCurrent,
     this.teamNext,
+    this.entry,
     this.gameweekPoints = const {},
     this.historyPoints = const {},
     this.fixtures = const [],
@@ -27,6 +28,7 @@ class HomePreloadState {
   final FplBootstrap? bootstrap;
   final MyTeam? teamCurrent;
   final MyTeam? teamNext;
+  final FplEntry? entry;
   final Map<int, int> gameweekPoints;
   final Map<int, int> historyPoints;
   final List<FplFixture> fixtures;
@@ -40,6 +42,7 @@ class HomePreloadState {
     FplBootstrap? bootstrap,
     MyTeam? teamCurrent,
     MyTeam? teamNext,
+    FplEntry? entry,
     Map<int, int>? gameweekPoints,
     Map<int, int>? historyPoints,
     List<FplFixture>? fixtures,
@@ -53,6 +56,7 @@ class HomePreloadState {
       bootstrap: bootstrap ?? this.bootstrap,
       teamCurrent: teamCurrent ?? this.teamCurrent,
       teamNext: teamNext ?? this.teamNext,
+      entry: entry ?? this.entry,
       gameweekPoints: gameweekPoints ?? this.gameweekPoints,
       historyPoints: historyPoints ?? this.historyPoints,
       fixtures: fixtures ?? this.fixtures,
@@ -137,6 +141,13 @@ class HomePreloadCubit extends Cubit<HomePreloadState> {
         // history points are supplementary, failure shouldn't fail whole preload
       }
 
+      FplEntry? entry;
+      try {
+        entry = await teamRepository.getEntry(session.entryId!);
+      } catch (_) {
+        // entry metadata is supplementary, failure shouldn't fail whole preload
+      }
+
       final playerSummaries = Map<int, FplPlayerSummary>.fromEntries(
         await Future.wait(
           teamNext.picks.map((pick) async {
@@ -158,6 +169,7 @@ class HomePreloadCubit extends Cubit<HomePreloadState> {
           bootstrap: bootstrap,
           teamCurrent: teamCurrent,
           teamNext: teamNext,
+          entry: entry,
           fixtures: fixtures,
           currentGameweekFixtures: currentGameweekFixtures,
           gameweekPoints: gameweekPoints,

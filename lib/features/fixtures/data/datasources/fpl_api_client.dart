@@ -59,6 +59,11 @@ class FplApiClient {
     return MyTeam.fromJson(json);
   }
 
+  Future<FplEntry> getEntry(int entryId) async {
+    final json = await _getMap('/entry/$entryId/');
+    return FplEntry.fromJson(json);
+  }
+
   Future<Map<int, int>> getGameweekPoints(int gameweekId) async {
     final json = await _getMap('/event/$gameweekId/live/');
     return parseGameweekPoints(json);

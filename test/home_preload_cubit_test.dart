@@ -40,6 +40,7 @@ void main() {
       expect(cubit.state.teamNext, same(teamRepository.nextTeam));
       expect(cubit.state.playerSummaries.keys, {10});
       expect(cubit.state.historyPoints, isEmpty);
+      expect(cubit.state.entry?.name, 'Fake FC');
     },
   );
 }
@@ -147,6 +148,10 @@ class _FakeTeamRepository implements TeamRepository {
     ],
     'entry_history': {'event': 5},
   });
+
+  @override
+  Future<FplEntry> getEntry(int entryId) async =>
+      FplEntry(id: entryId, name: 'Fake FC');
 
   @override
   Future<MyTeam> getTeamForGameweek({

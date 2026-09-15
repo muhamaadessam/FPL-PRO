@@ -190,6 +190,11 @@ class _FakeFplApiClient extends FplApiClient {
   }
 
   @override
+  Future<FplEntry> getEntry(int entryId) async {
+    return FplEntry(id: entryId, name: 'Test FC');
+  }
+
+  @override
   Future<MyTeam> getPublicTeam({
     required int entryId,
     required int gameweekId,

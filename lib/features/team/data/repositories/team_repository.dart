@@ -9,6 +9,11 @@ class TeamRepositoryImpl implements TeamRepository {
   final FplApiClient _dataSource;
 
   @override
+  Future<FplEntry> getEntry(int entryId) {
+    return _dataSource.getEntry(entryId);
+  }
+
+  @override
   Future<MyTeam> getMyTeam({
     required OfficialSession session,
     required int entryId,

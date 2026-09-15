@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../l10n/app_localizations.dart';
 import '../../../fixtures/presentation/screens/fixtures_view.dart';
+import '../../../leagues/presentation/screens/leagues_view.dart';
 import '../../../recommendations/presentation/screens/recommendations_view.dart';
 import '../../../settings/presentation/screens/settings_view.dart';
 import '../../../team/presentation/screens/team_view.dart';
@@ -24,6 +25,7 @@ class _DashboardShellState extends State<DashboardShell> {
       const TeamView(),
       const RecommendationsView(),
       const FixturesView(),
+      const LeaguesView(),
       const SettingsView(),
     ];
 
@@ -66,6 +68,11 @@ class _DashboardShellState extends State<DashboardShell> {
               icon: const Icon(Icons.calendar_month_outlined),
               selectedIcon: const Icon(Icons.calendar_month_rounded),
               label: l10n.matches,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.emoji_events_outlined),
+              selectedIcon: const Icon(Icons.emoji_events_rounded),
+              label: l10n.leagues,
             ),
             NavigationDestination(
               icon: const Icon(Icons.settings_outlined),
