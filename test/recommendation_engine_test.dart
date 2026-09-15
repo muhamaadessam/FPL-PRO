@@ -134,6 +134,47 @@ void main() {
     expect(result.squadAnalysis.currentSeasonCoverage, 1);
     expect(result.squadAnalysis.previousSeasonPlayers, 1);
   });
+
+  test('recalculates preview metrics from the swapped starters', () {
+    final bootstrap = _bootstrap([
+      _player(1, 'Starter', 1, 3, 70, 3),
+      _player(2, 'Bench', 2, 3, 70, 8),
+    ]);
+    final team = MyTeam.fromJson({
+      'picks': [
+        {'element': 1, 'position': 1, 'element_type': 3},
+        {'element': 2, 'position': 12, 'element_type': 3},
+      ],
+    });
+    final result = const RecommendationEngine().build(
+      bootstrap: bootstrap,
+      fixtures: [_fixture(5, 1, 2)],
+      team: team,
+      gameweekId: 5,
+    );
+    final swapped = result.squadAnalysis.players
+        .map(
+          (player) => player.copyWith(
+            pick: player.pick.copyWith(
+              position: player.pick.elementId == 2 ? 1 : 12,
+            ),
+          ),
+        )
+        .toList(growable: false);
+
+    final preview = const RecommendationEngine().buildSquadAnalysisForPreview(
+      players: swapped,
+      currentSeasonCoverage: result.squadAnalysis.currentSeasonCoverage,
+      previousSeasonPlayers: result.squadAnalysis.previousSeasonPlayers,
+    );
+
+    expect(preview.starters.single.projection.player.id, 2);
+    expect(preview.bench.single.projection.player.id, 1);
+    expect(
+      preview.expectedStartingPoints,
+      closeTo(preview.starters.single.expectedPoints, 0.0001),
+    );
+  });
 }
 
 FplBootstrap _bootstrap(List<Map<String, dynamic>> players) {

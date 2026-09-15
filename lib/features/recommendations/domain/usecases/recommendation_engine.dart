@@ -62,6 +62,36 @@ class PlayerAnalysis {
   final List<bool> nextFixturesAtHome;
 
   bool get isStarter => pick.position <= 11;
+
+  PlayerAnalysis copyWith({
+    TeamPick? pick,
+    PlayerProjection? projection,
+    int? rating,
+    double? expectedPoints,
+    double? recentPoints,
+    double? seasonPoints,
+    double? previousSeasonPoints,
+    int? fixtureScore,
+    double? reliability,
+    PlayerTrend? trend,
+    List<int>? nextOpponentTeamIds,
+    List<bool>? nextFixturesAtHome,
+  }) {
+    return PlayerAnalysis(
+      pick: pick ?? this.pick,
+      projection: projection ?? this.projection,
+      rating: rating ?? this.rating,
+      expectedPoints: expectedPoints ?? this.expectedPoints,
+      recentPoints: recentPoints ?? this.recentPoints,
+      seasonPoints: seasonPoints ?? this.seasonPoints,
+      previousSeasonPoints: previousSeasonPoints ?? this.previousSeasonPoints,
+      fixtureScore: fixtureScore ?? this.fixtureScore,
+      reliability: reliability ?? this.reliability,
+      trend: trend ?? this.trend,
+      nextOpponentTeamIds: nextOpponentTeamIds ?? this.nextOpponentTeamIds,
+      nextFixturesAtHome: nextFixturesAtHome ?? this.nextFixturesAtHome,
+    );
+  }
 }
 
 class SquadAnalysis {
@@ -239,10 +269,39 @@ class RecommendationEngine {
       );
     }
     players.sort((a, b) => a.pick.position.compareTo(b.pick.position));
+    final currentSeasonCoverage = players
+        .where(
+          (player) =>
+              playerSummaries[player.projection.player.id]
+                  ?.history
+                  .isNotEmpty ??
+              false,
+        )
+        .length;
+    final previousSeasonPlayers = players
+        .where(
+          (player) =>
+              playerSummaries[player.projection.player.id]
+                  ?.historyPast
+                  .isNotEmpty ??
+              false,
+        )
+        .length;
+    return buildSquadAnalysisForPreview(
+      players: players,
+      currentSeasonCoverage: currentSeasonCoverage,
+      previousSeasonPlayers: previousSeasonPlayers,
+    );
+  }
+
+  SquadAnalysis buildSquadAnalysisForPreview({
+    required List<PlayerAnalysis> players,
+    required int currentSeasonCoverage,
+    required int previousSeasonPlayers,
+  }) {
     final starters = players.where((player) => player.isStarter).toList();
     final bench = players.where((player) => !player.isStarter).toList();
     final starterAverage = _averageRating(starters);
-    final benchAverage = _averageRating(bench);
     final expectedStartingPoints = starters.fold(
       0.0,
       (total, player) =>
@@ -254,7 +313,7 @@ class RecommendationEngine {
         : (expectedStartingPoints / bestLegalLineupPoints * 100)
               .clamp(0, 100)
               .round();
-    final squadQuality = starterAverage * 0.85 + benchAverage * 0.15;
+    final squadQuality = starterAverage.toDouble();
     final rating = starters.isEmpty
         ? 0
         : (squadQuality * 0.8 + selectionEfficiency * 0.2).round().clamp(
@@ -272,24 +331,8 @@ class RecommendationEngine {
       bestLegalLineupPoints: bestLegalLineupPoints,
       selectionEfficiency: selectionEfficiency,
       players: players,
-      currentSeasonCoverage: players
-          .where(
-            (player) =>
-                playerSummaries[player.projection.player.id]
-                    ?.history
-                    .isNotEmpty ??
-                false,
-          )
-          .length,
-      previousSeasonPlayers: players
-          .where(
-            (player) =>
-                playerSummaries[player.projection.player.id]
-                    ?.historyPast
-                    .isNotEmpty ??
-                false,
-          )
-          .length,
+      currentSeasonCoverage: currentSeasonCoverage,
+      previousSeasonPlayers: previousSeasonPlayers,
     );
   }
 

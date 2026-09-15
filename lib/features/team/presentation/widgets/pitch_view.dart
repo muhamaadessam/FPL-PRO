@@ -11,12 +11,14 @@ class PitchView extends StatelessWidget {
     required this.bench,
     required this.bootstrap,
     required this.gameweekPoints,
+    this.onSwap,
   });
 
   final List<TeamPick> starting;
   final List<TeamPick> bench;
   final FplBootstrap bootstrap;
   final Map<int, num> gameweekPoints;
+  final void Function(int draggedElementId, int targetElementId)? onSwap;
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +58,7 @@ class PitchView extends StatelessWidget {
                           picks: rows[index],
                           bootstrap: bootstrap,
                           gameweekPoints: gameweekPoints,
+                          onSwap: onSwap,
                         ),
                         if (index != rows.length - 1)
                           const SizedBox(height: 12),
@@ -94,6 +97,7 @@ class PitchView extends StatelessWidget {
                 bootstrap: bootstrap,
                 gameweekPoints: gameweekPoints,
                 isBench: true,
+                onSwap: onSwap,
               ),
             ],
           ),
@@ -149,12 +153,14 @@ class _PitchRow extends StatelessWidget {
     required this.bootstrap,
     required this.gameweekPoints,
     this.isBench = false,
+    this.onSwap,
   });
 
   final List<TeamPick> picks;
   final FplBootstrap bootstrap;
   final Map<int, num> gameweekPoints;
   final bool isBench;
+  final void Function(int draggedElementId, int targetElementId)? onSwap;
 
   @override
   Widget build(BuildContext context) {
@@ -169,6 +175,7 @@ class _PitchRow extends StatelessWidget {
               team: _teamFor(pick),
               points: _displayPoints(pick),
               isBench: isBench,
+              onSwap: onSwap,
             ),
           )
           .toList(growable: false),
@@ -194,6 +201,7 @@ class _PitchPlayer extends StatelessWidget {
     required this.team,
     required this.points,
     required this.isBench,
+    this.onSwap,
   });
 
   final TeamPick pick;
@@ -201,6 +209,7 @@ class _PitchPlayer extends StatelessWidget {
   final FplTeam? team;
   final num? points;
   final bool isBench;
+  final void Function(int draggedElementId, int targetElementId)? onSwap;
 
   @override
   Widget build(BuildContext context) {
@@ -213,104 +222,138 @@ class _PitchPlayer extends StatelessWidget {
         ? (points is int ? points.toString() : points!.toStringAsFixed(1))
         : '-';
 
-    return Expanded(
-      child: Align(
-        alignment: Alignment.topCenter,
-        child: IntrinsicWidth(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+    Widget child = IntrinsicWidth(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
             children: [
-              Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    width: 48,
-                    height: 56,
-                    child: _shirt(isGoalkeeper, localShirt),
-                  ),
-                  if (pick.isCaptain || pick.isViceCaptain)
-                    Positioned(
-                      top: 0,
-                      right: -2,
-                      child: _RoleBadge(isCaptain: pick.isCaptain),
-                    ),
-                ],
+              SizedBox(
+                width: 48,
+                height: 56,
+                child: _shirt(isGoalkeeper, localShirt),
               ),
-              const SizedBox(height: 2),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                decoration: BoxDecoration(
-                  color: panelColor,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(4),
-                    topRight: Radius.circular(4),
-                  ),
+              if (pick.isCaptain || pick.isViceCaptain)
+                Positioned(
+                  top: 0,
+                  right: -2,
+                  child: _RoleBadge(isCaptain: pick.isCaptain),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _ClubLogo(team: team, color: textColor),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        player?.webName ?? '—',
-                        style: TextStyle(
-                          color: textColor,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                alignment: Alignment.center,
-                constraints: const BoxConstraints(minHeight: 25),
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary,
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(6),
-                    bottomRight: Radius.circular(6),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      pointsText,
-                      key: ValueKey('pitch-player-points-${pick.elementId}'),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimary,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
-                    ),
-                    const SizedBox(width: 3),
-                    Text(
-                      AppLocalizations.of(context).ptsCue,
-                      style: TextStyle(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onPrimary.withValues(alpha: 0.8),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
-        ),
+          const SizedBox(height: 2),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            decoration: BoxDecoration(
+              color: panelColor,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(4),
+                topRight: Radius.circular(4),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _ClubLogo(team: team, color: textColor),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    player?.webName ?? '—',
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            alignment: Alignment.center,
+            constraints: const BoxConstraints(minHeight: 25),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(6),
+                bottomRight: Radius.circular(6),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  pointsText,
+                  key: ValueKey('pitch-player-points-${pick.elementId}'),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+                const SizedBox(width: 3),
+                Text(
+                  AppLocalizations.of(context).ptsCue,
+                  style: TextStyle(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onPrimary.withValues(alpha: 0.8),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
+    );
+
+    if (onSwap != null) {
+      return Expanded(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: DragTarget<int>(
+            onAcceptWithDetails: (details) =>
+                onSwap!(details.data, pick.elementId),
+            builder: (context, candidateData, rejectedData) {
+              final isTarget = candidateData.isNotEmpty;
+              return Container(
+                decoration: isTarget
+                    ? BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primaryContainer.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(8),
+                      )
+                    : null,
+                padding: isTarget ? const EdgeInsets.all(4) : null,
+                child: LongPressDraggable<int>(
+                  data: pick.elementId,
+                  feedback: Material(
+                    color: Colors.transparent,
+                    child: Opacity(opacity: 0.8, child: child),
+                  ),
+                  childWhenDragging: Opacity(opacity: 0.4, child: child),
+                  child: child,
+                ),
+              );
+            },
+          ),
+        ),
+      );
+    }
+
+    return Expanded(
+      child: Align(alignment: Alignment.topCenter, child: child),
     );
   }
 

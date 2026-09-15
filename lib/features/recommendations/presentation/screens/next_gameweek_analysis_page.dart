@@ -5,15 +5,125 @@ import '../../../team/presentation/widgets/pitch_view.dart';
 import '../../domain/entities/recommendation_data.dart';
 import '../../domain/usecases/recommendation_engine.dart';
 
-class NextGameweekAnalysisPage extends StatelessWidget {
+class NextGameweekAnalysisPage extends StatefulWidget {
   const NextGameweekAnalysisPage({super.key, required this.data});
 
   final RecommendationData data;
 
   @override
+  State<NextGameweekAnalysisPage> createState() =>
+      _NextGameweekAnalysisPageState();
+}
+
+class _NextGameweekAnalysisPageState extends State<NextGameweekAnalysisPage> {
+  late SquadAnalysis analysis;
+
+  @override
+  void initState() {
+    super.initState();
+    analysis = widget.data.result.squadAnalysis;
+  }
+
+  void _onSwapPlayers(int draggedElementId, int targetElementId) {
+    if (draggedElementId == targetElementId) return;
+
+    final players = List<PlayerAnalysis>.from(analysis.players);
+    final draggedIdx = players.indexWhere(
+      (p) => p.pick.elementId == draggedElementId,
+    );
+    final targetIdx = players.indexWhere(
+      (p) => p.pick.elementId == targetElementId,
+    );
+
+    if (draggedIdx == -1 || targetIdx == -1) return;
+
+    final dragged = players[draggedIdx];
+    final target = players[targetIdx];
+
+    final draggedWasBench = !dragged.isStarter;
+    final targetWasBench = !target.isStarter;
+
+    final newDragged = dragged.copyWith(
+      pick: dragged.pick.copyWith(
+        position: target.pick.position,
+        isCaptain: target.pick.isCaptain,
+        isViceCaptain: target.pick.isViceCaptain,
+        multiplier: target.pick.multiplier,
+      ),
+    );
+
+    final newTarget = target.copyWith(
+      pick: target.pick.copyWith(
+        position: dragged.pick.position,
+        isCaptain: dragged.pick.isCaptain,
+        isViceCaptain: dragged.pick.isViceCaptain,
+        multiplier: dragged.pick.multiplier,
+      ),
+    );
+
+    players[draggedIdx] = newDragged;
+    players[targetIdx] = newTarget;
+
+    const engine = RecommendationEngine();
+    final newAnalysis = engine.buildSquadAnalysisForPreview(
+      players: players,
+      currentSeasonCoverage: analysis.currentSeasonCoverage,
+      previousSeasonPlayers: analysis.previousSeasonPlayers,
+    );
+
+    setState(() {
+      analysis = newAnalysis;
+    });
+
+    if (draggedWasBench && newDragged.isStarter) {
+      _checkAvailabilityWarning(newDragged);
+    }
+    if (targetWasBench && newTarget.isStarter) {
+      _checkAvailabilityWarning(newTarget);
+    }
+  }
+
+  void _checkAvailabilityWarning(PlayerAnalysis player) {
+    if (!player.isStarter) return;
+
+    final fplPlayer = player.projection.player;
+    final status = fplPlayer.status;
+    final chance = fplPlayer.chanceOfPlayingNextRound;
+
+    if (status == 'a' && (chance == null || chance == 100)) return;
+
+    final l10n = AppLocalizations.of(context);
+    final chanceText =
+        '${chance ?? (player.projection.availability * 100).round()}%';
+    final news = fplPlayer.news.isNotEmpty ? fplPlayer.news : l10n.noNews;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(fplPlayer.webName),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('${l10n.availability}: $chanceText'),
+            const SizedBox(height: 8),
+            Text('${l10n.news}: $news'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(MaterialLocalizations.of(context).okButtonLabel),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final analysis = data.result.squadAnalysis;
+    final data = widget.data;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.nextGameweekAnalysis)),
       body: ListView(
@@ -48,6 +158,7 @@ class NextGameweekAnalysisPage extends StatelessWidget {
               for (final p in analysis.players)
                 p.pick.elementId: p.expectedPoints,
             },
+            onSwap: _onSwapPlayers,
           ),
           const SizedBox(height: 24),
           _PlayerList(

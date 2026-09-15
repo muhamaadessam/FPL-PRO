@@ -19,6 +19,28 @@ class TeamPick {
   final int? purchasePrice;
   final int? sellingPrice;
 
+  TeamPick copyWith({
+    int? elementId,
+    int? position,
+    int? multiplier,
+    bool? isCaptain,
+    bool? isViceCaptain,
+    int? elementType,
+    int? purchasePrice,
+    int? sellingPrice,
+  }) {
+    return TeamPick(
+      elementId: elementId ?? this.elementId,
+      position: position ?? this.position,
+      multiplier: multiplier ?? this.multiplier,
+      isCaptain: isCaptain ?? this.isCaptain,
+      isViceCaptain: isViceCaptain ?? this.isViceCaptain,
+      elementType: elementType ?? this.elementType,
+      purchasePrice: purchasePrice ?? this.purchasePrice,
+      sellingPrice: sellingPrice ?? this.sellingPrice,
+    );
+  }
+
   factory TeamPick.fromJson(Map<String, dynamic> json) {
     return TeamPick(
       elementId: _int(json['element']),

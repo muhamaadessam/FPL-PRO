@@ -191,6 +191,9 @@ class AppLocalizations {
       isArabic ? 'النقاط المتوقعة' : 'Projected points';
   String get nextFixtures => isArabic ? 'المباريات القادمة' : 'Next fixtures';
   String get availability => isArabic ? 'الجاهزية' : 'Availability';
+  String get unknown => isArabic ? 'غير معروف' : 'Unknown';
+  String get news => isArabic ? 'الأخبار' : 'News';
+  String get noNews => isArabic ? 'لا توجد أخبار' : 'No news';
   String get confirmTransfer => isArabic ? 'تأكيد التبديل' : 'Confirm transfer';
   String get selected => isArabic ? 'تم الاختيار' : 'Selected';
   String get transferSubmitted =>
