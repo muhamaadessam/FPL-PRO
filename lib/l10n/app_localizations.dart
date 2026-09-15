@@ -22,7 +22,7 @@ class AppLocalizations {
 
   bool get isArabic => locale.languageCode == 'ar';
 
-  String get appName => isArabic ? 'فانتازي PL' : 'Fantasy PL';
+  String get appName => isArabic ? 'FPL Pro' : 'FPL Pro';
   String get loginTitle => isArabic ? 'ادخل على فريقك' : 'Open your team';
   String get loginSubtitle => isArabic
       ? 'افتح فريقك برقم الفريق وشاهد التشكيلة والنقاط والمباريات الرسمية.'

@@ -37,7 +37,7 @@ class FantasyPlApp extends StatelessWidget {
         child: BlocBuilder<LocaleCubit, Locale>(
           builder: (context, locale) {
             return MaterialApp.router(
-              title: 'Fantasy PL',
+              title: 'FPL Pro',
               debugShowCheckedModeBanner: false,
               theme: buildLightTheme(),
               darkTheme: buildDarkTheme(),
