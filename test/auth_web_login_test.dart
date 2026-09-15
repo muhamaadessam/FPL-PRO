@@ -10,8 +10,14 @@ import 'package:fantasy_pl/features/auth/domain/entities/official_session.dart';
 import 'package:fantasy_pl/features/auth/presentation/screens/official_web_login_page.dart';
 import 'package:fantasy_pl/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:fantasy_pl/l10n/app_localizations.dart';
+import 'package:fantasy_pl/core/app/router.dart';
 
 void main() {
+  test('keeps the login route while sign-in is loading', () {
+    expect(authRedirect(const AuthLoading(), '/login'), isNull);
+    expect(authRedirect(const AuthLoading(), '/login/web'), isNull);
+  });
+
   testWidgets('starts sign-in after the first frame', (tester) async {
     WebViewPlatform.instance = _FakeWebViewPlatform();
     final client = _FailingAuthClient();

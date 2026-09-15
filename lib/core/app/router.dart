@@ -17,26 +17,8 @@ GoRouter createRouter(AuthCubit authCubit) {
   return GoRouter(
     initialLocation: '/splash',
     refreshListenable: refresh,
-    redirect: (context, state) {
-      final auth = authCubit.state;
-      final location = state.matchedLocation;
-      final isSplash = location == '/splash';
-      final isLogin = location == '/login';
-      final isWebLogin = location == '/login/web';
-      final isPreview = location == '/preview';
-      final isPublicTeam = location.startsWith('/team/');
-
-      if (auth is AuthInitial || auth.isLoading) {
-        return isSplash || isWebLogin ? null : '/splash';
-      }
-
-      if (auth.session == null) {
-        return isLogin || isWebLogin || isPreview || isPublicTeam
-            ? null
-            : '/login';
-      }
-      return isSplash || isLogin || isWebLogin ? '/home' : null;
-    },
+    redirect: (context, state) =>
+        authRedirect(authCubit.state, state.matchedLocation),
     routes: [
       GoRoute(path: '/splash', builder: (_, _) => const SplashPage()),
       GoRoute(path: '/login', builder: (_, _) => const LoginPage()),
@@ -54,4 +36,21 @@ GoRouter createRouter(AuthCubit authCubit) {
       GoRoute(path: '/home', builder: (_, _) => const DashboardShell()),
     ],
   );
+}
+
+String? authRedirect(AuthState auth, String location) {
+  final isSplash = location == '/splash';
+  final isLogin = location == '/login';
+  final isWebLogin = location == '/login/web';
+  final isPreview = location == '/preview';
+  final isPublicTeam = location.startsWith('/team/');
+
+  if (auth is AuthInitial || auth.isLoading) {
+    return isSplash || isLogin || isWebLogin ? null : '/splash';
+  }
+
+  if (auth.session == null) {
+    return isLogin || isWebLogin || isPreview || isPublicTeam ? null : '/login';
+  }
+  return isSplash || isLogin || isWebLogin ? '/home' : null;
 }
