@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -81,6 +84,79 @@ void main() {
     expect(entry.leagues.last.isHeadToHead, isTrue);
     expect(entry.leagues.last.lastRank, 3);
   });
+
+  test('loads every page of league standings', () async {
+    final pages = <int>[];
+    final dio = Dio()
+      ..httpClientAdapter = _FakeAdapter((options) {
+        final page = int.parse(
+          options.queryParameters['page_standings'].toString(),
+        );
+        pages.add(page);
+        return ResponseBody.fromString(
+          jsonEncode({
+            'league': {
+              'id': 1604868,
+              'name': 'League',
+              'league_type': 'x',
+              'scoring': 'c',
+            },
+            'standings': {
+              'has_next': page == 1,
+              'page': page,
+              'results': [
+                {
+                  'entry': page,
+                  'player_name': 'Manager $page',
+                  'entry_name': 'Team $page',
+                  'rank': page,
+                  'last_rank': page + 1,
+                  'event_total': 60 + page,
+                  'total': 200 + page,
+                },
+              ],
+            },
+          }),
+          200,
+          headers: {
+            Headers.contentTypeHeader: [Headers.jsonContentType],
+          },
+        );
+      });
+
+    final details = await FplApiClient(dio: dio).getLeagueStandings(
+      league: const FplLeague(
+        id: 1604868,
+        name: 'League',
+        leagueType: 'x',
+        scoring: 'c',
+        isHeadToHead: false,
+      ),
+    );
+
+    expect(pages, [1, 2]);
+    expect(details.standings, hasLength(2));
+    expect(details.standings.last.gameweekPoints, 62);
+    expect(details.standings.last.totalPoints, 202);
+  });
+}
+
+class _FakeAdapter implements HttpClientAdapter {
+  const _FakeAdapter(this.handler);
+
+  final ResponseBody Function(RequestOptions options) handler;
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    return handler(options);
+  }
+
+  @override
+  void close({bool force = false}) {}
 }
 
 class _FakeFplApiClient extends FplApiClient {

@@ -64,6 +64,49 @@ class FplApiClient {
     return FplEntry.fromJson(json);
   }
 
+  Future<FplLeagueDetails> getLeagueStandings({
+    required FplLeague league,
+  }) async {
+    final path = league.isHeadToHead
+        ? '/leagues-h2h/${league.id}/standings/'
+        : '/leagues-classic/${league.id}/standings/';
+    final standings = <FplLeagueStanding>[];
+    Map<String, dynamic>? leagueJson;
+    var page = 1;
+    var hasNext = true;
+
+    while (hasNext) {
+      final json = await _getMap(
+        path,
+        queryParameters: {'page_standings': page, 'page_new_entries': page},
+      );
+      final rawLeague = json['league'];
+      if (leagueJson == null && rawLeague is Map) {
+        leagueJson = Map<String, dynamic>.from(rawLeague);
+      }
+      final rawStandings = json['standings'];
+      if (rawStandings is! Map) break;
+      final results = rawStandings['results'];
+      if (results is List) {
+        standings.addAll(
+          results.whereType<Map>().map(
+            (item) =>
+                FplLeagueStanding.fromJson(Map<String, dynamic>.from(item)),
+          ),
+        );
+      }
+      hasNext = rawStandings['has_next'] == true;
+      page = (_intValue(rawStandings['page']) ?? page) + 1;
+    }
+
+    return FplLeagueDetails(
+      league: leagueJson == null
+          ? league
+          : FplLeague.fromJson(leagueJson, isHeadToHead: league.isHeadToHead),
+      standings: standings,
+    );
+  }
+
   Future<Map<int, int>> getGameweekPoints(int gameweekId) async {
     final json = await _getMap('/event/$gameweekId/live/');
     return parseGameweekPoints(json);

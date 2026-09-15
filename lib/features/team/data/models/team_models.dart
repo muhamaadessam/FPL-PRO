@@ -145,6 +145,60 @@ class FplLeague {
   }
 }
 
+class FplLeagueStanding {
+  const FplLeagueStanding({
+    required this.entryId,
+    required this.managerName,
+    required this.teamName,
+    this.currentRank,
+    this.lastRank,
+    this.gameweekPoints,
+    this.totalPoints,
+    this.pointsFor,
+    this.matchesPlayed,
+    this.matchesWon,
+    this.matchesDrawn,
+    this.matchesLost,
+  });
+
+  final int entryId;
+  final String managerName;
+  final String teamName;
+  final int? currentRank;
+  final int? lastRank;
+  final int? gameweekPoints;
+  final int? totalPoints;
+  final int? pointsFor;
+  final int? matchesPlayed;
+  final int? matchesWon;
+  final int? matchesDrawn;
+  final int? matchesLost;
+
+  factory FplLeagueStanding.fromJson(Map<String, dynamic> json) {
+    return FplLeagueStanding(
+      entryId: _int(json['entry']),
+      managerName: json['player_name'] as String? ?? '',
+      teamName: json['entry_name'] as String? ?? '',
+      currentRank: _nullableInt(json['rank'] ?? json['rank_sort']),
+      lastRank: _nullableInt(json['last_rank']),
+      gameweekPoints: _nullableInt(json['event_total']),
+      totalPoints: _nullableInt(json['total']),
+      pointsFor: _nullableInt(json['points_for']),
+      matchesPlayed: _nullableInt(json['matches_played']),
+      matchesWon: _nullableInt(json['matches_won']),
+      matchesDrawn: _nullableInt(json['matches_drawn']),
+      matchesLost: _nullableInt(json['matches_lost']),
+    );
+  }
+}
+
+class FplLeagueDetails {
+  const FplLeagueDetails({required this.league, required this.standings});
+
+  final FplLeague league;
+  final List<FplLeagueStanding> standings;
+}
+
 List<FplLeague> _parseLeagues(dynamic value, {bool isHeadToHead = false}) {
   if (value is! List) return const [];
   return value

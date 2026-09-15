@@ -101,6 +101,11 @@ class _FakeTeamRepository implements TeamRepository {
       FplEntry(id: entryId, name: 'Fake FC');
 
   @override
+  Future<FplLeagueDetails> getLeagueStandings({
+    required FplLeague league,
+  }) async => FplLeagueDetails(league: league, standings: const []);
+
+  @override
   Future<MyTeam> getMyTeam({
     required OfficialSession session,
     required int entryId,

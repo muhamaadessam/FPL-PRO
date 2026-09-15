@@ -82,6 +82,19 @@ class AppLocalizations {
   String get fplManager => isArabic ? 'مدير FPL' : 'FPL Manager';
   String get currentRank => isArabic ? 'الترتيب الحالي' : 'Current rank';
   String get lastRank => isArabic ? 'الترتيب السابق' : 'Last rank';
+  String get leagueDetails => isArabic ? 'تفاصيل الليجة' : 'League details';
+  String get standings => isArabic ? 'الترتيب' : 'Standings';
+  String get manager => isArabic ? 'المدير' : 'Manager';
+  String get gameweekPointsShort => isArabic ? 'الجولة' : 'GW';
+  String get totalPointsShort => isArabic ? 'الإجمالي' : 'Total';
+  String get classicScoring => isArabic ? 'كلاسيك' : 'Classic';
+  String get headToHeadScoring => isArabic ? 'مواجهة' : 'Head-to-head';
+  String get you => isArabic ? 'أنت' : 'You';
+  String get noStandings =>
+      isArabic ? 'لا يوجد ترتيب متاح' : 'No standings available';
+  String get noStandingsHint => isArabic
+      ? 'الخدمة الرسمية لم ترجع لاعبين لهذه الليجة.'
+      : 'The official service returned no managers for this league.';
   String leagueCount(int count) => isArabic ? '$count ليجات' : '$count leagues';
   String get noLeagues => isArabic ? 'لا توجد ليجات بعد' : 'No leagues yet';
   String get noLeaguesHint => isArabic
