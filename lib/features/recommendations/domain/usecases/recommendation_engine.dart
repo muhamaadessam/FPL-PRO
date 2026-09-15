@@ -299,15 +299,25 @@ class RecommendationEngine {
     required int currentSeasonCoverage,
     required int previousSeasonPlayers,
   }) {
-    final starters = players.where((player) => player.isStarter).toList();
-    final bench = players.where((player) => !player.isStarter).toList();
+    final starters = players.where((player) => player.isStarter).toList()
+      ..sort((a, b) => a.pick.position.compareTo(b.pick.position));
+    final bench = players.where((player) => !player.isStarter).toList()
+      ..sort((a, b) {
+        final aIsGoalkeeper = a.projection.player.positionId == 1;
+        final bIsGoalkeeper = b.projection.player.positionId == 1;
+        if (aIsGoalkeeper != bIsGoalkeeper) {
+          return aIsGoalkeeper ? -1 : 1;
+        }
+        return a.pick.position.compareTo(b.pick.position);
+      });
+    final orderedPlayers = [...starters, ...bench];
     final starterAverage = _averageRating(starters);
     final expectedStartingPoints = starters.fold(
       0.0,
       (total, player) =>
           total + player.expectedPoints * (player.pick.isCaptain ? 2 : 1),
     );
-    final bestLegalLineupPoints = _bestLegalLineupPoints(players);
+    final bestLegalLineupPoints = _bestLegalLineupPoints(orderedPlayers);
     final selectionEfficiency = bestLegalLineupPoints <= 0
         ? 0
         : (expectedStartingPoints / bestLegalLineupPoints * 100)
@@ -330,10 +340,32 @@ class RecommendationEngine {
       averageStarterRating: starterAverage,
       bestLegalLineupPoints: bestLegalLineupPoints,
       selectionEfficiency: selectionEfficiency,
-      players: players,
+      players: orderedPlayers,
       currentSeasonCoverage: currentSeasonCoverage,
       previousSeasonPlayers: previousSeasonPlayers,
     );
+  }
+
+  bool isLegalStartingLineup(Iterable<PlayerAnalysis> players) {
+    final squad = players.toList(growable: false);
+    final starters = squad.where((player) => player.isStarter).toList();
+    if (squad.length < 11) {
+      return starters
+              .where((player) => player.projection.player.positionId == 1)
+              .length <=
+          1;
+    }
+    if (starters.length != 11) return false;
+
+    final positionCounts = <int, int>{};
+    for (final player in starters) {
+      positionCounts.update(
+        player.projection.player.positionId,
+        (count) => count + 1,
+        ifAbsent: () => 1,
+      );
+    }
+    return _hasLegalPositionCounts(positionCounts);
   }
 
   PlayerAnalysis _analyzePlayer({
@@ -552,20 +584,23 @@ class RecommendationEngine {
         points += player.expectedPoints;
         if (player.expectedPoints > captain) captain = player.expectedPoints;
       }
-      if (selected != 11 ||
-          positionCounts[1] != 1 ||
-          (positionCounts[2] ?? 0) < 3 ||
-          (positionCounts[2] ?? 0) > 5 ||
-          (positionCounts[3] ?? 0) < 2 ||
-          (positionCounts[3] ?? 0) > 5 ||
-          (positionCounts[4] ?? 0) < 1 ||
-          (positionCounts[4] ?? 0) > 3) {
+      if (selected != 11 || !_hasLegalPositionCounts(positionCounts)) {
         continue;
       }
       final total = points + captain;
       if (total > best) best = total;
     }
     return best;
+  }
+
+  bool _hasLegalPositionCounts(Map<int, int> counts) {
+    return counts[1] == 1 &&
+        (counts[2] ?? 0) >= 3 &&
+        (counts[2] ?? 0) <= 5 &&
+        (counts[3] ?? 0) >= 2 &&
+        (counts[3] ?? 0) <= 5 &&
+        (counts[4] ?? 0) >= 1 &&
+        (counts[4] ?? 0) <= 3;
   }
 
   int _percentileRating(double value, Iterable<double> comparisonValues) {

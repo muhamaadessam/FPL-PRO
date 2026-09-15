@@ -175,6 +175,45 @@ void main() {
       closeTo(preview.starters.single.expectedPoints, 0.0001),
     );
   });
+
+  test('keeps the goalkeeper first on the bench and rejects two keepers', () {
+    final bootstrap = _bootstrap([
+      _player(1, 'Starter Keeper', 1, 1, 45, 4),
+      _player(2, 'Bench Mid', 2, 3, 70, 5),
+      _player(3, 'Bench Keeper', 3, 1, 45, 3),
+    ]);
+    final team = MyTeam.fromJson({
+      'picks': [
+        {'element': 1, 'position': 1, 'element_type': 1},
+        {'element': 2, 'position': 12, 'element_type': 3},
+        {'element': 3, 'position': 13, 'element_type': 1},
+      ],
+    });
+    final result = const RecommendationEngine().build(
+      bootstrap: bootstrap,
+      fixtures: [_fixture(5, 1, 2)],
+      team: team,
+      gameweekId: 5,
+    );
+
+    expect(result.squadAnalysis.bench.first.projection.player.id, 3);
+
+    final invalid = result.squadAnalysis.players
+        .map(
+          (player) => player.copyWith(
+            pick: player.pick.copyWith(
+              position: player.projection.player.id == 3
+                  ? 1
+                  : player.pick.position,
+            ),
+          ),
+        )
+        .toList(growable: false);
+    expect(
+      const RecommendationEngine().isLegalStartingLineup(invalid),
+      isFalse,
+    );
+  });
 }
 
 FplBootstrap _bootstrap(List<Map<String, dynamic>> players) {

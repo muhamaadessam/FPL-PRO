@@ -224,6 +224,9 @@ class AppLocalizations {
       ? 'دي تقديرات وليست ضمانًا؛ راجع أخبار الإصابات والتشكيل قبل الـdeadline.'
       : 'These are estimates, not guarantees. Recheck injuries and line-ups before the deadline.';
   String get goalkeeper => isArabic ? 'حراس المرمى' : 'Goalkeepers';
+  String get invalidFormation => isArabic
+      ? 'التشكيلة لازم تضم حارس واحد، و3-5 مدافعين، و2-5 لاعبي وسط، و1-3 مهاجمين.'
+      : 'Use 1 goalkeeper, 3-5 defenders, 2-5 midfielders, and 1-3 forwards.';
   String get defender => isArabic ? 'المدافعون' : 'Defenders';
   String get midfielder => isArabic ? 'لاعبو الوسط' : 'Midfielders';
   String get forward => isArabic ? 'المهاجمون' : 'Forwards';

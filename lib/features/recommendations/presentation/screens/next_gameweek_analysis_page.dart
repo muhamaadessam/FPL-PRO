@@ -65,6 +65,13 @@ class _NextGameweekAnalysisPageState extends State<NextGameweekAnalysisPage> {
     players[targetIdx] = newTarget;
 
     const engine = RecommendationEngine();
+    if (!engine.isLegalStartingLineup(players)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).invalidFormation)),
+      );
+      return;
+    }
+
     final newAnalysis = engine.buildSquadAnalysisForPreview(
       players: players,
       currentSeasonCoverage: analysis.currentSeasonCoverage,
