@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../fixtures/data/models/fpl_models.dart';
 import '../../data/models/team_models.dart';
+import '../../../../core/themes/app_colors.dart';
 import '../../../../l10n/app_localizations.dart';
 
 enum PlayerCardMetric {
@@ -273,13 +274,13 @@ class _BenchSection extends StatelessWidget {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final benchBg = isDark
-        ? const Color(0xff1f152d)
+        ? AppColors.darkBenchBg
         : const Color(0xffc5ece1);
     final benchBorder = isDark
-        ? const Color(0xff36264d)
+        ? AppColors.darkBenchBorder
         : Colors.white.withValues(alpha: 0.6);
     final labelColor = isDark
-        ? Colors.white70
+        ? AppColors.darkTextSecondary
         : const Color(0xff1f1f2e);
 
     return Container(
@@ -846,16 +847,17 @@ class _PlayerDetailBottomSheet extends StatelessWidget {
         : (isDoubtful ? 50 : 100);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final sheetBg = isDark ? const Color(0xff1f152d) : Colors.white;
-    final handleColor = isDark ? const Color(0xff36264d) : Colors.grey[300]!;
-    final titleColor = isDark ? Colors.white : const Color(0xff1f1f2e);
-    final subtitleColor = isDark ? const Color(0xffa19bb0) : Colors.grey[600]!;
+    final sheetBg = AppColors.cardElevated(isDark);
+    final handleColor = isDark ? AppColors.darkCardBorder : Colors.grey[300]!;
+    final titleColor = AppColors.textPrimary(isDark);
+    final subtitleColor = AppColors.textSecondary(isDark);
     final logoColor = isDark ? Colors.white : const Color(0xff37003c);
 
     return Container(
       decoration: BoxDecoration(
         color: sheetBg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: isDark ? Border.all(color: AppColors.darkCardBorder) : null,
       ),
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
       child: Column(
@@ -915,13 +917,13 @@ class _PlayerDetailBottomSheet extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: isUnavailable
-                    ? (isDark ? const Color(0xff3b1520) : const Color(0xfffef2f2))
-                    : (isDark ? const Color(0xff2d1d07) : const Color(0xfffffbeb)),
+                    ? (isDark ? AppColors.darkAlertErrorBg : const Color(0xfffef2f2))
+                    : (isDark ? AppColors.darkAlertWarningBg : const Color(0xfffffbeb)),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: isUnavailable
-                      ? (isDark ? const Color(0xff7f1d1d) : const Color(0xfff87171))
-                      : (isDark ? const Color(0xff78350f) : const Color(0xfffcd34d)),
+                      ? (isDark ? AppColors.darkAlertErrorBorder : const Color(0xfff87171))
+                      : (isDark ? AppColors.darkAlertWarningBorder : const Color(0xfffcd34d)),
                 ),
               ),
               child: Row(
@@ -932,8 +934,8 @@ class _PlayerDetailBottomSheet extends StatelessWidget {
                         ? Icons.error_outline_rounded
                         : Icons.warning_amber_rounded,
                     color: isUnavailable
-                        ? (isDark ? const Color(0xfff87171) : const Color(0xffdc2626))
-                        : (isDark ? const Color(0xfffbbf24) : const Color(0xffd97706)),
+                        ? (isDark ? AppColors.darkAlertErrorText : const Color(0xffdc2626))
+                        : (isDark ? AppColors.darkAlertWarningText : const Color(0xffd97706)),
                     size: 22,
                   ),
                   const SizedBox(width: 10),
@@ -949,8 +951,8 @@ class _PlayerDetailBottomSheet extends StatelessWidget {
                             fontSize: 13,
                             fontWeight: FontWeight.w800,
                             color: isUnavailable
-                                ? (isDark ? const Color(0xfffca5a5) : const Color(0xff991b1b))
-                                : (isDark ? const Color(0xfffde68a) : const Color(0xff92400e)),
+                                ? (isDark ? AppColors.darkAlertErrorText : const Color(0xff991b1b))
+                                : (isDark ? AppColors.darkAlertWarningText : const Color(0xff92400e)),
                           ),
                         ),
                         if (player?.news.isNotEmpty == true) ...[
@@ -960,8 +962,8 @@ class _PlayerDetailBottomSheet extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 12,
                               color: isUnavailable
-                                  ? (isDark ? const Color(0xfff87171) : const Color(0xffb91c1c))
-                                  : (isDark ? const Color(0xfffbbf24) : const Color(0xffb45309)),
+                                  ? (isDark ? AppColors.darkAlertErrorText.withValues(alpha: 0.85) : const Color(0xffb91c1c))
+                                  : (isDark ? AppColors.darkAlertWarningText.withValues(alpha: 0.85) : const Color(0xffb45309)),
                             ),
                           ),
                         ],
@@ -1028,8 +1030,8 @@ class _PlayerDetailBottomSheet extends StatelessWidget {
             child: FilledButton.tonal(
               onPressed: () => Navigator.of(context).pop(),
               style: FilledButton.styleFrom(
-                backgroundColor: isDark ? const Color(0xff2d1f40) : const Color(0xfff0edf6),
-                foregroundColor: isDark ? Colors.white : const Color(0xff1f1f2e),
+                backgroundColor: isDark ? AppColors.darkActiveTab : const Color(0xfff0edf6),
+                foregroundColor: AppColors.textPrimary(isDark),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

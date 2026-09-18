@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/themes/app_colors.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../fixtures/data/datasources/fpl_api_client.dart';
@@ -275,7 +276,7 @@ class _TeamHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final titleColor = isDark ? Colors.white : const Color(0xff1f1f2e);
+    final titleColor = AppColors.textPrimary(isDark);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
@@ -295,14 +296,14 @@ class _TeamHeader extends StatelessWidget {
                 height: 38,
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xff1f152d)
+                      ? AppColors.darkCard
                       : Theme.of(context)
                           .colorScheme
                           .surfaceContainerHighest
                           .withValues(alpha: 0.5),
                   shape: BoxShape.circle,
                   border: isDark
-                      ? Border.all(color: const Color(0xff2d1f40))
+                      ? Border.all(color: AppColors.darkCardBorder)
                       : null,
                 ),
                 child: Icon(
@@ -343,7 +344,7 @@ class _TeamHeader extends StatelessWidget {
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                         color: isDark
-                            ? const Color(0xffa199b8)
+                            ? AppColors.darkTextSecondary
                             : const Color(0xff716b84),
                       ),
                     ),
@@ -373,13 +374,13 @@ class _TeamHeader extends StatelessWidget {
               child: Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isDark ? const Color(0xff12091c) : Colors.white,
+                  color: isDark ? AppColors.darkBackground : Colors.white,
                 ),
                 child: Center(
                   child: Icon(
                     Icons.person_rounded,
                     size: 20,
-                    color: isDark ? const Color(0xff55d49c) : const Color(0xff37003c),
+                    color: isDark ? AppColors.plMint : const Color(0xff37003c),
                   ),
                 ),
               ),
@@ -422,8 +423,8 @@ class _GameweekSelector extends StatelessWidget {
         currentIndex < bootstrap.gameweeks.length - 1;
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : const Color(0xff1f1f2e);
-    final disabledColor = isDark ? Colors.white24 : Colors.black26;
+    final textColor = AppColors.textPrimary(isDark);
+    final disabledColor = isDark ? AppColors.darkTextMuted : Colors.black26;
 
     return Directionality(
       textDirection: TextDirection.ltr,
@@ -498,8 +499,8 @@ class _StatsSummaryCards extends StatelessWidget {
     final pointsLabel = isArabic ? l10n.points : 'Total Pts';
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryTextColor = isDark ? Colors.white : const Color(0xff1f1f2e);
-    final secondaryTextColor = isDark ? const Color(0xffa19bb0) : const Color(0xff6b7280);
+    final primaryTextColor = AppColors.textPrimary(isDark);
+    final secondaryTextColor = AppColors.textSecondary(isDark);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -648,11 +649,11 @@ class _StatsSummaryCards extends StatelessWidget {
 
   void _showHighestPlanDetails(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final sheetBg = isDark ? const Color(0xff1f152d) : Colors.white;
-    final handleColor = isDark ? const Color(0xff36264d) : Colors.grey[300]!;
-    final titleColor = isDark ? Colors.white : const Color(0xff1f1f2e);
-    final subColor = isDark ? const Color(0xffa19bb0) : Colors.grey[600]!;
-    final scoreColor = isDark ? const Color(0xff55d49c) : const Color(0xff37003c);
+    final sheetBg = AppColors.cardElevated(isDark);
+    final handleColor = isDark ? AppColors.darkCardBorder : Colors.grey[300]!;
+    final titleColor = AppColors.textPrimary(isDark);
+    final subColor = AppColors.textSecondary(isDark);
+    final scoreColor = isDark ? AppColors.plMint : const Color(0xff37003c);
 
     showModalBottomSheet(
       context: context,
@@ -661,6 +662,7 @@ class _StatsSummaryCards extends StatelessWidget {
         decoration: BoxDecoration(
           color: sheetBg,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: isDark ? Border.all(color: AppColors.darkCardBorder) : null,
         ),
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
         child: Column(
@@ -731,8 +733,8 @@ class _StatsSummaryCards extends StatelessWidget {
                     style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                   style: FilledButton.styleFrom(
-                    backgroundColor: isDark ? const Color(0xff55d49c) : const Color(0xff37003c),
-                    foregroundColor: isDark ? const Color(0xff12091c) : Colors.white,
+                    backgroundColor: isDark ? AppColors.plMint : const Color(0xff37003c),
+                    foregroundColor: isDark ? AppColors.darkBackground : Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -747,8 +749,8 @@ class _StatsSummaryCards extends StatelessWidget {
               child: FilledButton.tonal(
                 onPressed: () => Navigator.of(context).pop(),
                 style: FilledButton.styleFrom(
-                  backgroundColor: isDark ? const Color(0xff2d1f40) : const Color(0xfff0edf6),
-                  foregroundColor: isDark ? Colors.white : const Color(0xff1f1f2e),
+                  backgroundColor: isDark ? AppColors.darkActiveTab : const Color(0xfff0edf6),
+                  foregroundColor: AppColors.textPrimary(isDark),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -779,11 +781,11 @@ class _SubNavigationRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final segmentedBg = isDark ? const Color(0xff1f152d) : const Color(0xfff0edf6);
-    final dropdownBg = isDark ? const Color(0xff1f152d) : Colors.white;
-    final dropdownBorder = isDark ? const Color(0xff2d1f40) : const Color(0xffe2e0ea);
-    final dropdownAccent = isDark ? const Color(0xff55d49c) : const Color(0xff37003c);
-    final popupItemText = isDark ? Colors.white : const Color(0xff1f1f2e);
+    final segmentedBg = isDark ? AppColors.darkCard : const Color(0xfff0edf6);
+    final dropdownBg = isDark ? AppColors.darkCard : Colors.white;
+    final dropdownBorder = isDark ? AppColors.darkCardBorder : const Color(0xffe2e0ea);
+    final dropdownAccent = isDark ? AppColors.plMint : const Color(0xff37003c);
+    final popupItemText = AppColors.textPrimary(isDark);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -970,9 +972,9 @@ class _SegmentTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final activeBg = isDark ? const Color(0xff2d1f40) : Colors.white;
-    final activeText = isDark ? const Color(0xff55d49c) : const Color(0xff1f1f2e);
-    final inactiveText = isDark ? const Color(0xffa19bb0) : const Color(0xff6b7280);
+    final activeBg = isDark ? AppColors.darkActiveTab : Colors.white;
+    final activeText = isDark ? AppColors.plMint : const Color(0xff1f1f2e);
+    final inactiveText = AppColors.textSecondary(isDark);
 
     return GestureDetector(
       onTap: onTap,
@@ -1043,7 +1045,7 @@ class _TeamListView extends StatelessWidget {
         style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w800,
-          color: isDark ? Colors.white : const Color(0xff1f1f2e),
+          color: AppColors.textPrimary(isDark),
           letterSpacing: 0.3,
         ),
       ),
@@ -1052,10 +1054,10 @@ class _TeamListView extends StatelessWidget {
 
   Widget _buildPlayerTile(BuildContext context, TeamPick pick, bool isBench) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final tileBg = isDark ? const Color(0xff1f152d) : Colors.white;
-    final tileBorder = isDark ? const Color(0xff2d1f40) : const Color(0xfff0edf6);
-    final titleColor = isDark ? Colors.white : const Color(0xff1f1f2e);
-    final subColor = isDark ? const Color(0xffa19bb0) : const Color(0xff6b7280);
+    final tileBg = AppColors.card(isDark);
+    final tileBorder = isDark ? AppColors.darkCardBorder : const Color(0xfff0edf6);
+    final titleColor = AppColors.textPrimary(isDark);
+    final subColor = AppColors.textSecondary(isDark);
 
     final player = bootstrap.players[pick.elementId];
     final team = player == null ? null : bootstrap.teams[player.teamId];
@@ -1081,7 +1083,7 @@ class _TeamListView extends StatelessWidget {
             height: 32,
             decoration: BoxDecoration(
               color: isBench
-                  ? (isDark ? const Color(0xff2d1f40) : const Color(0xffc5ece1))
+                  ? (isDark ? AppColors.darkActiveTab : const Color(0xffc5ece1))
                   : const Color(0xff00d4ff).withValues(alpha: isDark ? 0.25 : 0.15),
               shape: BoxShape.circle,
             ),
@@ -1091,7 +1093,7 @@ class _TeamListView extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w900,
-                  color: isDark ? const Color(0xff55d49c) : const Color(0xff37003c),
+                  color: isDark ? AppColors.plMint : const Color(0xff37003c),
                 ),
               ),
             ),
@@ -1116,10 +1118,10 @@ class _TeamListView extends StatelessWidget {
                     ),
                     if (pick.isCaptain) ...[
                       const SizedBox(width: 6),
-                      _miniRoleBadge('C'),
+                      _miniRoleBadge('C', isDark),
                     ] else if (pick.isViceCaptain) ...[
                       const SizedBox(width: 6),
-                      _miniRoleBadge('V'),
+                      _miniRoleBadge('V', isDark),
                     ],
                   ],
                 ),
@@ -1162,13 +1164,14 @@ class _TeamListView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xff37003c),
+              color: isDark ? AppColors.darkActiveTab : const Color(0xff37003c),
               borderRadius: BorderRadius.circular(8),
+              border: isDark ? Border.all(color: AppColors.darkCardBorder) : null,
             ),
             child: Text(
               pointsText,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: isDark ? AppColors.plMint : Colors.white,
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
               ),
@@ -1179,19 +1182,20 @@ class _TeamListView extends StatelessWidget {
     );
   }
 
-  Widget _miniRoleBadge(String label) {
+  Widget _miniRoleBadge(String label, bool isDark) {
     return Container(
       width: 16,
       height: 16,
       alignment: Alignment.center,
-      decoration: const BoxDecoration(
-        color: Color(0xff1f1f2e),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkActiveTab : const Color(0xff1f1f2e),
         shape: BoxShape.circle,
+        border: isDark ? Border.all(color: AppColors.darkCardBorder, width: 0.8) : null,
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: isDark ? AppColors.plMint : Colors.white,
           fontSize: 9,
           fontWeight: FontWeight.w900,
         ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/localization/cubit/locale_cubit.dart';
+import '../../../../core/themes/app_colors.dart';
 import '../../../../core/themes/cubit/theme_cubit.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
@@ -25,11 +26,11 @@ class SettingsView extends StatelessWidget {
     final entry = preload?.entry;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final cardBg = isDark ? const Color(0xff1f152d) : Colors.white;
-    final cardBorder = isDark ? const Color(0xff2f2244) : const Color(0xfff0edf6);
-    final titleColor = isDark ? Colors.white : const Color(0xff1f1f2e);
-    final subColor = isDark ? const Color(0xffa19bb0) : const Color(0xff6b7280);
-    final primaryIconColor = isDark ? const Color(0xff55d49c) : const Color(0xff37003c);
+    final cardBg = AppColors.card(isDark);
+    final cardBorder = isDark ? AppColors.darkCardBorder : const Color(0xfff0edf6);
+    final titleColor = AppColors.textPrimary(isDark);
+    final subColor = AppColors.textSecondary(isDark);
+    final primaryIconColor = isDark ? AppColors.plMint : const Color(0xff37003c);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
@@ -56,7 +57,7 @@ class SettingsView extends StatelessWidget {
             border: Border.all(color: cardBorder),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.04),
                 blurRadius: 6,
                 offset: const Offset(0, 2),
               ),
@@ -84,13 +85,13 @@ class SettingsView extends StatelessWidget {
                   child: Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: isDark ? const Color(0xff12091c) : Colors.white,
+                      color: isDark ? AppColors.darkBackground : Colors.white,
                     ),
                     child: Center(
                       child: Icon(
                         Icons.person_rounded,
                         size: 28,
-                        color: isDark ? const Color(0xff55d49c) : const Color(0xff37003c),
+                        color: isDark ? AppColors.plMint : const Color(0xff37003c),
                       ),
                     ),
                   ),
@@ -214,7 +215,7 @@ class SettingsView extends StatelessWidget {
                 foregroundColor: primaryIconColor,
                 side: BorderSide(
                   color: isDark
-                      ? const Color(0xff55d49c).withValues(alpha: 0.6)
+                      ? AppColors.plMint.withValues(alpha: 0.6)
                       : const Color(0xff37003c).withValues(alpha: 0.3),
                 ),
                 shape: RoundedRectangleBorder(
@@ -236,20 +237,21 @@ class SettingsView extends StatelessWidget {
           onPressed: () => context.read<AuthCubit>().logout(),
           icon: Icon(
             Icons.logout_rounded,
-            color: isDark ? const Color(0xffff6b6b) : const Color(0xffdc2626),
+            color: isDark ? AppColors.darkAlertErrorText : const Color(0xffdc2626),
           ),
           label: Text(
             l10n.logout,
             style: TextStyle(
-              color: isDark ? const Color(0xffff6b6b) : const Color(0xffdc2626),
+              color: isDark ? AppColors.darkAlertErrorText : const Color(0xffdc2626),
               fontWeight: FontWeight.w800,
             ),
           ),
           style: FilledButton.styleFrom(
-            backgroundColor: isDark ? const Color(0xff38131e) : const Color(0xfffee2e2),
+            backgroundColor: isDark ? AppColors.darkAlertErrorBg : const Color(0xfffee2e2),
             padding: const EdgeInsets.symmetric(vertical: 14),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
+              side: isDark ? const BorderSide(color: AppColors.darkAlertErrorBorder) : BorderSide.none,
             ),
           ),
         ),
@@ -275,9 +277,9 @@ class _ThemeOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final titleColor = isDark ? Colors.white : const Color(0xff1f1f2e);
-    final activeColor = isDark ? const Color(0xff55d49c) : const Color(0xff37003c);
-    final inactiveColor = isDark ? const Color(0xffa19bb0) : const Color(0xff6b7280);
+    final titleColor = AppColors.textPrimary(isDark);
+    final activeColor = isDark ? AppColors.plMint : const Color(0xff37003c);
+    final inactiveColor = AppColors.textSecondary(isDark);
 
     return ListTile(
       onTap: onTap,
@@ -295,7 +297,7 @@ class _ThemeOptionTile extends StatelessWidget {
       trailing: isSelected
           ? Icon(
               Icons.check_circle_rounded,
-              color: isDark ? const Color(0xff55d49c) : const Color(0xff00b55b),
+              color: isDark ? AppColors.plMint : const Color(0xff00b55b),
             )
           : null,
     );

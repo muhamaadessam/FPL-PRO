@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/themes/app_colors.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
 import '../../../team/data/models/team_models.dart';
@@ -118,11 +119,11 @@ class _PageHeader extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: isDark
-                ? const Color(0xff1f152d)
+                ? AppColors.darkCard
                 : theme.colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
+              color: isDark ? AppColors.darkCardBorder : theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
             ),
           ),
           child: Row(
@@ -171,9 +172,9 @@ class _LeagueSection extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final surface = isDark
-        ? const Color(0xff1f152d)
+        ? AppColors.darkCard
         : theme.colorScheme.surfaceContainerHighest;
-    final border = theme.colorScheme.outlineVariant.withValues(alpha: 0.45);
+    final border = isDark ? AppColors.darkCardBorder : theme.colorScheme.outlineVariant.withValues(alpha: 0.45);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 18),

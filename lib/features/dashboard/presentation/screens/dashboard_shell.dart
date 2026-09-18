@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/themes/app_colors.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../fixtures/presentation/screens/fixtures_view.dart';
 import '../../../leagues/presentation/screens/leagues_view.dart';
@@ -33,17 +34,17 @@ class _DashboardShellState extends State<DashboardShell> {
       body: SafeArea(child: pages[_selectedIndex]),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xff160d24) : Colors.white,
+          color: isDark ? AppColors.darkNavBg : Colors.white,
           border: Border(
             top: BorderSide(
-              color: isDark ? const Color(0x24ffffff) : const Color(0x12000000),
+              color: isDark ? AppColors.darkNavBorder : const Color(0x12000000),
               width: 0.8,
             ),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.05),
-              blurRadius: 10,
+              color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.05),
+              blurRadius: 12,
               offset: const Offset(0, -3),
             ),
           ],

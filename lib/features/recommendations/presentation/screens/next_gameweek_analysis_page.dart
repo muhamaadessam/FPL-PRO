@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/themes/app_colors.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../fixtures/data/models/fpl_models.dart';
 import '../../../team/data/models/team_models.dart';
@@ -371,15 +372,13 @@ class _NextGameweekAlerts extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final titleColor = isDark ? Colors.white : const Color(0xff1f1f2e);
-    final subtitleColor = isDark
-        ? const Color(0xffb8afc4)
-        : const Color(0xff6b7280);
+    final titleColor = AppColors.textPrimary(isDark);
+    final subtitleColor = AppColors.textSecondary(isDark);
     final panelColor = isDark
-        ? const Color(0xff24182e)
+        ? AppColors.darkAlertWarningBg
         : const Color(0xfffffbf2);
     final borderColor = isDark
-        ? const Color(0xff4a3022)
+        ? AppColors.darkAlertWarningBorder
         : const Color(0xfff3dfb4);
 
     return Container(
@@ -429,8 +428,8 @@ class _NextGameweekAlerts extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 '${picks.length}',
-                style: const TextStyle(
-                  color: Color(0xffb45309),
+                style: TextStyle(
+                  color: isDark ? AppColors.darkAlertWarningText : const Color(0xffb45309),
                   fontSize: 18,
                   fontWeight: FontWeight.w900,
                 ),
@@ -462,8 +461,8 @@ class _AlertPlayerRow extends StatelessWidget {
     final isUnavailable = player.isUnavailableNextRound;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final statusColor = isUnavailable
-        ? (isDark ? const Color(0xffff8d8d) : const Color(0xffc2413d))
-        : (isDark ? const Color(0xffffc56b) : const Color(0xffb45309));
+        ? (isDark ? AppColors.darkAlertErrorText : const Color(0xffc2413d))
+        : (isDark ? AppColors.darkAlertWarningText : const Color(0xffb45309));
     final status = switch (player.status.toLowerCase()) {
       'i' => l10n.injured,
       's' => l10n.suspended,
