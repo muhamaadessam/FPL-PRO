@@ -174,6 +174,19 @@ class RecommendationResult {
 class RecommendationEngine {
   const RecommendationEngine();
 
+  List<PlayerProjection> buildPlayerProjections({
+    required FplBootstrap bootstrap,
+    required List<FplFixture> fixtures,
+    required int gameweekId,
+  }) {
+    final projections =
+        bootstrap.players.values
+            .map((player) => _project(player, fixtures, gameweekId))
+            .toList()
+          ..sort((a, b) => b.nextPoints.compareTo(a.nextPoints));
+    return List.unmodifiable(projections);
+  }
+
   RecommendationResult build({
     required FplBootstrap bootstrap,
     required List<FplFixture> fixtures,
@@ -181,12 +194,16 @@ class RecommendationEngine {
     required int gameweekId,
     Map<int, FplPlayerSummary> playerSummaries = const {},
   }) {
+    final allProjections = buildPlayerProjections(
+      bootstrap: bootstrap,
+      fixtures: fixtures,
+      gameweekId: gameweekId,
+    );
     final projections = {
-      for (final player in bootstrap.players.values)
-        player.id: _project(player, fixtures, gameweekId),
+      for (final projection in allProjections) projection.player.id: projection,
     };
     final selectable =
-        projections.values
+        allProjections
             .where(
               (projection) =>
                   projection.player.canSelect && projection.horizonPoints > 0,
@@ -243,6 +260,47 @@ class RecommendationEngine {
       freeTransfers: _freeTransfers(team.transfers),
       bank: team.transfers.bank ?? team.summary.bank,
       squadAnalysis: squadAnalysis,
+    );
+  }
+
+  TransferSuggestion? buildTransferSuggestion({
+    required MyTeam team,
+    required FplBootstrap bootstrap,
+    required PlayerProjection outgoing,
+    required PlayerProjection incoming,
+  }) {
+    final outgoingPick = team.picks
+        .where((pick) => pick.elementId == outgoing.player.id)
+        .firstOrNull;
+    final incomingPlayer = incoming.player;
+    if (outgoingPick == null ||
+        outgoing.player.positionId != incomingPlayer.positionId ||
+        incomingPlayer.id == outgoing.player.id ||
+        team.picks.any((pick) => pick.elementId == incomingPlayer.id) ||
+        !incomingPlayer.canSelect ||
+        incoming.availability < 0.5 ||
+        incomingPlayer.nowCost == null) {
+      return null;
+    }
+
+    final bank = team.transfers.bank ?? team.summary.bank ?? 0;
+    final sellingPrice =
+        outgoingPick.sellingPrice ?? outgoing.player.nowCost ?? 0;
+    if (incomingPlayer.nowCost! > sellingPrice + bank) return null;
+
+    final clubCount = team.picks.where((pick) {
+      final player = bootstrap.players[pick.elementId];
+      return player?.teamId == incomingPlayer.teamId &&
+          player?.id != outgoing.player.id;
+    }).length;
+    if (clubCount >= 3) return null;
+
+    final freeTransfers = _freeTransfers(team.transfers);
+    return TransferSuggestion(
+      outProjection: outgoing,
+      inProjection: incoming,
+      projectedGain: incoming.horizonPoints - outgoing.horizonPoints,
+      hitCost: freeTransfers == 0 ? 4 : 0,
     );
   }
 
@@ -680,53 +738,30 @@ class RecommendationEngine {
     FplBootstrap bootstrap,
     Map<int, PlayerProjection> projections,
   ) {
-    final squadIds = team.picks.map((pick) => pick.elementId).toSet();
-    final squad = squadIds
-        .map((id) => bootstrap.players[id])
-        .whereType<FplPlayer>()
-        .toList();
-    final bank = team.transfers.bank ?? team.summary.bank ?? 0;
-    final freeTransfers = _freeTransfers(team.transfers);
-    final hitCost = freeTransfers == 0 ? 4 : 0;
     final ideas = <TransferSuggestion>[];
 
     for (final pick in team.picks) {
       final outgoing = bootstrap.players[pick.elementId];
       final outgoingProjection = projections[pick.elementId];
       if (outgoing == null || outgoingProjection == null) continue;
-      final sellingPrice = pick.sellingPrice ?? outgoing.nowCost ?? 0;
-
       PlayerProjection? best;
+      TransferSuggestion? bestTransfer;
       for (final candidate in projections.values) {
-        final cost = candidate.player.nowCost;
-        if (squadIds.contains(candidate.player.id) ||
-            candidate.player.positionId != outgoing.positionId ||
-            !candidate.player.canSelect ||
-            candidate.availability < 0.5 ||
-            cost == null ||
-            cost > sellingPrice + bank) {
-          continue;
-        }
-        final clubCount = squad.where((player) {
-          return player.teamId == candidate.player.teamId &&
-              player.id != outgoing.id;
-        }).length;
-        if (clubCount >= 3) continue;
+        final transfer = buildTransferSuggestion(
+          team: team,
+          bootstrap: bootstrap,
+          outgoing: outgoingProjection,
+          incoming: candidate,
+        );
+        if (transfer == null) continue;
         if (best == null || candidate.horizonPoints > best.horizonPoints) {
           best = candidate;
+          bestTransfer = transfer;
         }
       }
-      if (best == null) continue;
-      final gain = best.horizonPoints - outgoingProjection.horizonPoints;
-      if (gain - hitCost < 0.75) continue;
-      ideas.add(
-        TransferSuggestion(
-          outProjection: outgoingProjection,
-          inProjection: best,
-          projectedGain: gain,
-          hitCost: hitCost,
-        ),
-      );
+      if (best == null || bestTransfer == null) continue;
+      if (bestTransfer.netProjectedGain < 0.75) continue;
+      ideas.add(bestTransfer);
     }
 
     ideas.sort((a, b) => b.projectedGain.compareTo(a.projectedGain));
@@ -804,14 +839,10 @@ class RecommendationEngine {
   }
 
   double _availability(FplPlayer player) {
-    if (!player.canSelect || player.status == 'u') return 0;
+    if (!player.canSelect || player.isUnavailableNextRound) return 0;
     final chance = player.chanceOfPlayingNextRound;
     if (chance != null) return (chance / 100).clamp(0, 1);
-    return switch (player.status) {
-      'a' => 1,
-      'd' => 0.75,
-      _ => 0.35,
-    };
+    return player.isDoubtfulNextRound ? 0.75 : 1;
   }
 
   int? _freeTransfers(TeamTransferState transfers) {

@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
 
 import '../../../../l10n/app_localizations.dart';
+import '../../../fixtures/data/models/fpl_models.dart';
+import '../../../team/data/models/team_models.dart';
 import '../../../team/presentation/widgets/pitch_view.dart';
 import '../../domain/entities/recommendation_data.dart';
 import '../../domain/usecases/recommendation_engine.dart';
+import 'player_directory_page.dart';
 
 class NextGameweekAnalysisPage extends StatefulWidget {
-  const NextGameweekAnalysisPage({super.key, required this.data});
+  const NextGameweekAnalysisPage({
+    super.key,
+    required this.data,
+    this.onTransfer,
+  });
 
   final RecommendationData data;
+  final Future<void> Function(TransferSuggestion transfer)? onTransfer;
 
   @override
   State<NextGameweekAnalysisPage> createState() =>
@@ -127,10 +135,163 @@ class _NextGameweekAnalysisPageState extends State<NextGameweekAnalysisPage> {
     );
   }
 
+  Future<void> _onComparePlayer(int playerId) async {
+    final current = analysis.players
+        .where((player) => player.projection.player.id == playerId)
+        .firstOrNull;
+    if (current == null) return;
+
+    final projections = const RecommendationEngine()
+        .buildPlayerProjections(
+          bootstrap: widget.data.bootstrap,
+          fixtures: widget.data.fixtures,
+          gameweekId: widget.data.result.gameweekId,
+        )
+        .where(
+          (projection) =>
+              projection.player.positionId ==
+                  current.projection.player.positionId &&
+              projection.player.id != playerId,
+        )
+        .toList();
+    projections.sort((a, b) => b.horizonPoints.compareTo(a.horizonPoints));
+
+    final candidate = await showModalBottomSheet<PlayerProjection>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        final l10n = AppLocalizations.of(sheetContext);
+        return SafeArea(
+          child: SizedBox(
+            height: MediaQuery.sizeOf(sheetContext).height * 0.72,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Text(
+                    '${l10n.comparePlayers} • ${current.projection.player.webName}',
+                    style: Theme.of(sheetContext).textTheme.titleLarge
+                        ?.copyWith(fontWeight: FontWeight.w900),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    l10n.samePositionAlternatives,
+                    style: Theme.of(sheetContext).textTheme.bodySmall,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: projections.isEmpty
+                      ? Center(child: Text(l10n.noPlayersFound))
+                      : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(12, 4, 12, 20),
+                          itemCount: projections.length,
+                          separatorBuilder: (_, _) => const SizedBox(height: 4),
+                          itemBuilder: (context, index) {
+                            final projection = projections[index];
+                            final player = projection.player;
+                            final team =
+                                widget.data.bootstrap.teams[player.teamId];
+                            return ListTile(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              tileColor: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest
+                                  .withValues(alpha: 0.45),
+                              onTap: () =>
+                                  Navigator.of(sheetContext).pop(projection),
+                              leading: CircleAvatar(
+                                child: Text(team?.shortName ?? 'PL'),
+                              ),
+                              title: Text(
+                                player.webName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              subtitle: Text(
+                                '${team?.name ?? l10n.unknown} • ${l10n.playerPrice}: £${((player.nowCost ?? 0) / 10).toStringAsFixed(1)}m',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              trailing: SizedBox(
+                                width: 88,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      projection.nextPoints.toStringAsFixed(1),
+                                      style: TextStyle(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                    Text(
+                                      l10n.expectedNextGameweekPoints,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.labelSmall,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    if (candidate == null || !mounted) return;
+
+    final transfer = const RecommendationEngine().buildTransferSuggestion(
+      team: widget.data.team,
+      bootstrap: widget.data.bootstrap,
+      outgoing: current.projection,
+      incoming: candidate,
+    );
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => PlayerComparisonPage(
+          left: current.projection,
+          right: candidate,
+          bootstrap: widget.data.bootstrap,
+          transfer: transfer,
+          onTransfer: transfer == null || widget.onTransfer == null
+              ? null
+              : widget.onTransfer,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final data = widget.data;
+    final nextGameweekAlerts = analysis.players
+        .where(
+          (player) =>
+              player.projection.player.isUnavailableNextRound ||
+              player.projection.player.isDoubtfulNextRound,
+        )
+        .map((player) => player.pick)
+        .toList(growable: false);
     return Scaffold(
       appBar: AppBar(title: Text(l10n.nextGameweekAnalysis)),
       body: ListView(
@@ -144,6 +305,14 @@ class _NextGameweekAnalysisPageState extends State<NextGameweekAnalysisPage> {
             ),
           ),
           const SizedBox(height: 8),
+          if (nextGameweekAlerts.isNotEmpty) ...[
+            _NextGameweekAlerts(
+              key: const ValueKey('next-gameweek-alerts'),
+              picks: nextGameweekAlerts,
+              bootstrap: data.bootstrap,
+            ),
+            const SizedBox(height: 16),
+          ],
           _OverviewPanel(analysis: analysis),
           const SizedBox(height: 8),
           Text(
@@ -166,6 +335,7 @@ class _NextGameweekAnalysisPageState extends State<NextGameweekAnalysisPage> {
                 p.pick.elementId: p.expectedPoints,
             },
             onSwap: _onSwapPlayers,
+            onCompare: _onComparePlayer,
           ),
           const SizedBox(height: 24),
           _PlayerList(
@@ -180,6 +350,181 @@ class _NextGameweekAnalysisPageState extends State<NextGameweekAnalysisPage> {
             style: Theme.of(
               context,
             ).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NextGameweekAlerts extends StatelessWidget {
+  const _NextGameweekAlerts({
+    super.key,
+    required this.picks,
+    required this.bootstrap,
+  });
+
+  final List<TeamPick> picks;
+  final FplBootstrap bootstrap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? Colors.white : const Color(0xff1f1f2e);
+    final subtitleColor = isDark
+        ? const Color(0xffb8afc4)
+        : const Color(0xff6b7280);
+    final panelColor = isDark
+        ? const Color(0xff24182e)
+        : const Color(0xfffffbf2);
+    final borderColor = isDark
+        ? const Color(0xff4a3022)
+        : const Color(0xfff3dfb4);
+
+    return Container(
+      key: const ValueKey('next-gameweek-alerts-panel'),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
+      decoration: BoxDecoration(
+        color: panelColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: Color(0xffd97706),
+                size: 22,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.nextGameweekAlerts,
+                      style: TextStyle(
+                        color: titleColor,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      l10n.nextGameweekAlertsSubtitle,
+                      style: TextStyle(
+                        color: subtitleColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${picks.length}',
+                style: const TextStyle(
+                  color: Color(0xffb45309),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ...picks.map(
+            (pick) => _AlertPlayerRow(
+              player: bootstrap.players[pick.elementId]!,
+              team: bootstrap.teams[bootstrap.players[pick.elementId]!.teamId],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AlertPlayerRow extends StatelessWidget {
+  const _AlertPlayerRow({required this.player, required this.team});
+
+  final FplPlayer player;
+  final FplTeam? team;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final isUnavailable = player.isUnavailableNextRound;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final statusColor = isUnavailable
+        ? (isDark ? const Color(0xffff8d8d) : const Color(0xffc2413d))
+        : (isDark ? const Color(0xffffc56b) : const Color(0xffb45309));
+    final status = switch (player.status.toLowerCase()) {
+      'i' => l10n.injured,
+      's' => l10n.suspended,
+      _ => isUnavailable ? l10n.unavailable : l10n.doubtful,
+    };
+    final chance = player.nextRoundChanceOfPlaying;
+    final details = player.news.trim().isNotEmpty
+        ? player.news.trim()
+        : chance != null
+        ? l10n.chanceOfPlaying(chance)
+        : status;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Row(
+        children: [
+          Icon(
+            isUnavailable
+                ? Icons.event_busy_rounded
+                : Icons.help_outline_rounded,
+            color: statusColor,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${player.webName} · ${team?.shortName ?? 'PL'}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : const Color(0xff1f1f2e),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  details,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            status,
+            textAlign: TextAlign.end,
+            style: TextStyle(
+              color: statusColor,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ],
       ),

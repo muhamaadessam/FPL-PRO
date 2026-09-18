@@ -42,12 +42,20 @@ class FplTeam {
     required this.name,
     required this.shortName,
     this.code,
+    this.strengthAttackHome = 1000,
+    this.strengthAttackAway = 1000,
+    this.strengthDefenceHome = 1000,
+    this.strengthDefenceAway = 1000,
   });
 
   final int id;
   final String name;
   final String shortName;
   final int? code;
+  final int strengthAttackHome;
+  final int strengthAttackAway;
+  final int strengthDefenceHome;
+  final int strengthDefenceAway;
 
   factory FplTeam.fromJson(Map<String, dynamic> json) {
     return FplTeam(
@@ -55,6 +63,10 @@ class FplTeam {
       name: json['name'] as String? ?? 'Team ${json['id']}',
       shortName: json['short_name'] as String? ?? '',
       code: _nullableInt(json['code']),
+      strengthAttackHome: _int(json['strength_attack_home'], fallback: 1000),
+      strengthAttackAway: _int(json['strength_attack_away'], fallback: 1000),
+      strengthDefenceHome: _int(json['strength_defence_home'], fallback: 1000),
+      strengthDefenceAway: _int(json['strength_defence_away'], fallback: 1000),
     );
   }
 }
@@ -80,6 +92,10 @@ class FplPlayer {
     this.selectedByPercent = 0,
     this.minutes = 0,
     this.starts = 0,
+    this.goalsScored = 0,
+    this.assists = 0,
+    this.expectedGoals = 0,
+    this.expectedAssists = 0,
     this.expectedGoalInvolvements = 0,
     this.expectedGoalsConceded = 0,
     this.defensiveContribution = 0,
@@ -106,6 +122,10 @@ class FplPlayer {
   final double selectedByPercent;
   final int minutes;
   final int starts;
+  final int goalsScored;
+  final int assists;
+  final double expectedGoals;
+  final double expectedAssists;
   final double expectedGoalInvolvements;
   final double expectedGoalsConceded;
   final int defensiveContribution;
@@ -120,10 +140,32 @@ class FplPlayer {
     return thisRound ?? nextRound;
   }
 
+  int? get nextRoundChanceOfPlaying => chanceOfPlayingNextRound;
+
+  bool get isUnavailableNextRound {
+    final s = status.toLowerCase();
+    return s == 'i' ||
+        s == 's' ||
+        s == 'u' ||
+        s == 'n' ||
+        nextRoundChanceOfPlaying == 0;
+  }
+
+  bool get isDoubtfulNextRound {
+    if (isUnavailableNextRound) return false;
+    final s = status.toLowerCase();
+    final c = nextRoundChanceOfPlaying;
+    return s == 'd' || (c != null && c > 0 && c < 100);
+  }
+
   bool get isUnavailable {
     final s = status.toLowerCase();
     final c = effectiveChanceOfPlaying;
-    return s == 'i' || s == 's' || s == 'u' || s == 'n' || (c != null && c == 0);
+    return s == 'i' ||
+        s == 's' ||
+        s == 'u' ||
+        s == 'n' ||
+        (c != null && c == 0);
   }
 
   bool get isDoubtful {
@@ -158,6 +200,10 @@ class FplPlayer {
       selectedByPercent: _double(json['selected_by_percent']),
       minutes: _int(json['minutes']),
       starts: _int(json['starts']),
+      goalsScored: _int(json['goals_scored']),
+      assists: _int(json['assists']),
+      expectedGoals: _double(json['expected_goals']),
+      expectedAssists: _double(json['expected_assists']),
       expectedGoalInvolvements: _double(json['expected_goal_involvements']),
       expectedGoalsConceded: _double(json['expected_goals_conceded']),
       defensiveContribution: _int(json['defensive_contribution']),
@@ -397,7 +443,8 @@ class FplPlayerSummary {
   }
 }
 
-int _int(dynamic value) => value is int ? value : int.tryParse('$value') ?? 0;
+int _int(dynamic value, {int fallback = 0}) =>
+    value is int ? value : int.tryParse('$value') ?? fallback;
 
 double _double(dynamic value) =>
     value is num ? value.toDouble() : double.tryParse('$value') ?? 0;

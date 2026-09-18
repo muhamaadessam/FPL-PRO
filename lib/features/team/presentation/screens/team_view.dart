@@ -53,7 +53,6 @@ class TeamView extends StatelessWidget {
     );
   }
 }
-
 class _TeamBody extends StatelessWidget {
   const _TeamBody({required this.entryId});
 
@@ -173,7 +172,6 @@ class _TeamContentState extends State<_TeamContent> {
         (widget.team.summary.gameweekId == widget.selectedGameweekId
             ? widget.team.summary.points
             : null);
-
     return RefreshIndicator(
       onRefresh: widget.onRefresh,
       child: ListView(

@@ -12,6 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 class FakeFplApiClient implements FplApiClient {
   bool shouldThrowError = false;
   bool includeLongDetailsFixture = false;
+  bool includeSecondGameweek = false;
 
   @override
   Future<FplBootstrap> getBootstrap() async {
@@ -32,14 +33,47 @@ class FakeFplApiClient implements FplApiClient {
           isCurrent: true,
           isNext: false,
         ),
+        if (includeSecondGameweek)
+          Gameweek(
+            id: 2,
+            name: 'Gameweek 2',
+            deadlineTime: DateTime.now().add(const Duration(days: 8)),
+            finished: false,
+            isCurrent: false,
+            isNext: true,
+          ),
       ],
       teams: const {
         1: FplTeam(id: 1, name: 'Arsenal', shortName: 'ARS', code: 3),
         2: FplTeam(id: 2, name: 'Chelsea', shortName: 'CHE', code: 8),
       },
       players: const {
-        99: FplPlayer(id: 99, webName: 'Scorer', teamId: 1, positionId: 4),
-        100: FplPlayer(id: 100, webName: 'Booked', teamId: 2, positionId: 2),
+        99: FplPlayer(
+          id: 99,
+          webName: 'Scorer',
+          teamId: 1,
+          positionId: 4,
+          minutes: 900,
+          starts: 10,
+          goalsScored: 7,
+          expectedGoals: 7.8,
+          expectedAssists: 1.5,
+          form: 7,
+          pointsPerGame: 7,
+        ),
+        100: FplPlayer(
+          id: 100,
+          webName: 'Booked',
+          teamId: 2,
+          positionId: 2,
+          minutes: 900,
+          starts: 10,
+          assists: 5,
+          expectedGoals: 0.8,
+          expectedAssists: 5.5,
+          form: 5,
+          pointsPerGame: 5,
+        ),
       },
     );
   }
@@ -129,6 +163,20 @@ class FakeFplApiClient implements FplApiClient {
         started: true,
       ),
     ];
+
+    if (includeSecondGameweek) {
+      fixtures.add(
+        FplFixture(
+          id: 6,
+          gameweekId: 2,
+          homeTeamId: 1,
+          awayTeamId: 2,
+          kickoffTime: DateTime.now().add(const Duration(days: 8)),
+          finished: false,
+          started: false,
+        ),
+      );
+    }
 
     if (includeLongDetailsFixture) {
       fixtures.add(
@@ -274,6 +322,67 @@ void main() {
     },
   );
 
+  testWidgets('groups fixtures by matchday with date headers', (tester) async {
+    final apiClient = FakeFplApiClient();
+    await tester.pumpWidget(createWidgetUnderTest(apiClient));
+    await tester.pumpAndSettle();
+
+    final l10n = AppLocalizations(const Locale('en'));
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    final today = DateTime.now();
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+
+    expect(find.text(l10n.matchDayHeader(yesterday)), findsOneWidget);
+    expect(find.text(l10n.matchDayHeader(today)), findsOneWidget);
+    expect(find.text(l10n.matchDayHeader(tomorrow)), findsOneWidget);
+  });
+
+  testWidgets('switches between gameweek fixture tables', (tester) async {
+    final apiClient = FakeFplApiClient()..includeSecondGameweek = true;
+    await tester.pumpWidget(createWidgetUnderTest(apiClient));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Gameweek 1'), findsOneWidget);
+    expect(find.text('4 matches'), findsOneWidget);
+    expect(find.byType(DropdownButton<int>), findsNothing);
+    expect(
+      tester
+          .widget<IconButton>(
+            find.byKey(const Key('fixtures-gameweek-previous')),
+          )
+          .onPressed,
+      isNull,
+    );
+    expect(
+      tester
+          .widget<IconButton>(find.byKey(const Key('fixtures-gameweek-next')))
+          .onPressed,
+      isNotNull,
+    );
+
+    await tester.tap(find.byKey(const Key('fixtures-gameweek-next')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Gameweek 2'), findsOneWidget);
+    expect(find.text('1 matches'), findsOneWidget);
+    expect(find.byKey(const Key('fixture-card-6')), findsOneWidget);
+    expect(find.byKey(const Key('fixture-card-1')), findsNothing);
+    expect(
+      tester
+          .widget<IconButton>(
+            find.byKey(const Key('fixtures-gameweek-previous')),
+          )
+          .onPressed,
+      isNotNull,
+    );
+    expect(
+      tester
+          .widget<IconButton>(find.byKey(const Key('fixtures-gameweek-next')))
+          .onPressed,
+      isNull,
+    );
+  });
+
   testWidgets('renders official badges gracefully', (tester) async {
     final apiClient = FakeFplApiClient();
     await tester.pumpWidget(createWidgetUnderTest(apiClient));
@@ -301,6 +410,49 @@ void main() {
     expect(find.text('Scorer'), findsNWidgets(2));
     expect(find.text('+8'), findsOneWidget);
     expect(find.text('+3'), findsOneWidget);
+  });
+
+  testWidgets('shows statistical predictions for upcoming fixtures', (
+    tester,
+  ) async {
+    final apiClient = FakeFplApiClient();
+    await tester.pumpWidget(createWidgetUnderTest(apiClient));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('fixture-card-1')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('fixture-prediction-panel')), findsOneWidget);
+    expect(find.text('Match prediction'), findsOneWidget);
+    expect(find.text('Predicted score'), findsOneWidget);
+    expect(find.text('Most likely scorers'), findsOneWidget);
+    expect(find.text('Most likely assists'), findsOneWidget);
+    expect(find.textContaining('Scorer'), findsWidgets);
+    expect(find.textContaining('Booked'), findsWidgets);
+  });
+
+  testWidgets('prediction panel fits a narrow Arabic screen', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final apiClient = FakeFplApiClient();
+    await tester.pumpWidget(
+      createWidgetUnderTest(apiClient, locale: const Locale('ar')),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull, reason: 'fixtures list overflowed');
+
+    await tester.tap(find.byKey(const Key('fixture-card-1')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('توقع المباراة'), findsOneWidget);
+    final exception = tester.takeException();
+    expect(
+      exception,
+      isNull,
+      reason: exception is FlutterError
+          ? exception.toStringDeep()
+          : '$exception',
+    );
   });
 
   testWidgets('long match details can be dismissed after scrolling', (

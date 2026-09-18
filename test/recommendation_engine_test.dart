@@ -5,6 +5,52 @@ import 'package:fantasy_pl/features/recommendations/domain/usecases/recommendati
 import 'package:fantasy_pl/features/team/data/models/team_models.dart';
 
 void main() {
+  test('builds next-gameweek projections for every listed player', () {
+    final bootstrap = _bootstrap([
+      _player(1, 'Available', 1, 3, 70, 6),
+      {..._player(2, 'Unavailable', 2, 3, 70, 10), 'status': 'u'},
+    ]);
+
+    final projections = const RecommendationEngine().buildPlayerProjections(
+      bootstrap: bootstrap,
+      fixtures: [_fixture(5, 1, 2)],
+      gameweekId: 5,
+    );
+
+    expect(projections, hasLength(2));
+    expect(projections.first.player.id, 1);
+    expect(projections.last.nextPoints, 0);
+  });
+
+  test('allows a same-position transfer within the squad budget', () {
+    final bootstrap = _bootstrap([
+      _player(1, 'Outgoing Mid', 1, 3, 70, 4),
+      _player(2, 'Incoming Mid', 2, 3, 75, 8),
+    ]);
+    final team = MyTeam.fromJson({
+      'picks': [
+        {'element': 1, 'position': 1, 'element_type': 3, 'selling_price': 70},
+      ],
+      'transfers': {'bank': 10, 'limit': 1, 'made': 0},
+    });
+    final projections = const RecommendationEngine().buildPlayerProjections(
+      bootstrap: bootstrap,
+      fixtures: [_fixture(5, 1, 2)],
+      gameweekId: 5,
+    );
+
+    final transfer = const RecommendationEngine().buildTransferSuggestion(
+      team: team,
+      bootstrap: bootstrap,
+      outgoing: projections.firstWhere((item) => item.player.id == 1),
+      incoming: projections.firstWhere((item) => item.player.id == 2),
+    );
+
+    expect(transfer?.outPlayer.id, 1);
+    expect(transfer?.inPlayer.id, 2);
+    expect(transfer?.hitCost, 0);
+  });
+
   test('recommends an affordable same-position transfer and captain', () {
     final bootstrap = _bootstrap([
       _player(1, 'Weak Mid', 1, 3, 70, 1),

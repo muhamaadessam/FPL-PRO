@@ -13,6 +13,7 @@ import '../../domain/usecases/recommendation_engine.dart';
 import '../cubit/recommendations_cubit.dart';
 import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
 import 'next_gameweek_analysis_page.dart';
+import 'player_directory_page.dart';
 
 export '../../domain/entities/recommendation_data.dart';
 
@@ -57,6 +58,7 @@ class RecommendationsView extends StatelessWidget {
               ),
               bootstrap: p.bootstrap!,
               team: p.teamNext!,
+              fixtures: p.fixtures,
             ),
           );
         }
@@ -357,12 +359,34 @@ class _RecommendationContentState extends State<_RecommendationContent> {
                   ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ],
+              Text(
+                l10n.playerDirectorySubtitle,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
               const SizedBox(height: 16),
+              OutlinedButton.icon(
+                key: const ValueKey('player-directory'),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => PlayerDirectoryPage(
+                      bootstrap: data.bootstrap,
+                      fixtures: data.fixtures,
+                      gameweekId: data.result.gameweekId,
+                    ),
+                  ),
+                ),
+                icon: const Icon(Icons.manage_search_rounded),
+                label: Text(l10n.playerDirectory),
+              ),
+              const SizedBox(height: 12),
               _AnalysisEntryCard(
                 analysis: result.squadAnalysis,
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
-                    builder: (_) => NextGameweekAnalysisPage(data: data),
+                    builder: (_) => NextGameweekAnalysisPage(
+                      data: data,
+                      onTransfer: widget.onTransfer,
+                    ),
                   ),
                 ),
               ),

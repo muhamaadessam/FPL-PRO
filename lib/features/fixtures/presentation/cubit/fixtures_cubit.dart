@@ -43,9 +43,7 @@ class FixturesCubit extends Cubit<FixturesState> {
     emit(state.copyWith(status: FixturesStatus.loading, error: null));
     try {
       final bootstrap = await _repository.getBootstrap();
-      final fixtures = await _repository.getFixtures(
-        gameweekId: bootstrap.currentGameweekId,
-      );
+      final fixtures = await _repository.getFixtures();
       emit(
         state.copyWith(
           status: FixturesStatus.success,

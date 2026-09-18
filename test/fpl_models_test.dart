@@ -29,7 +29,13 @@ void main() {
         },
       ],
       'teams': [
-        {'id': 1, 'name': 'Arsenal', 'short_name': 'ARS'},
+        {
+          'id': 1,
+          'name': 'Arsenal',
+          'short_name': 'ARS',
+          'strength_attack_home': 1210,
+          'strength_defence_home': 1190,
+        },
       ],
       'elements': [
         {
@@ -39,6 +45,10 @@ void main() {
           'element_type': 3,
           'total_points': 42,
           'now_cost': 70,
+          'goals_scored': 4,
+          'assists': 3,
+          'expected_goals': '3.8',
+          'expected_assists': '2.7',
         },
       ],
     });
@@ -48,7 +58,46 @@ void main() {
     expect(gw2.averageEntryScore, 45);
     expect(gw2.highestScore, 120);
     expect(bootstrap.teams[1]?.shortName, 'ARS');
+    expect(bootstrap.teams[1]?.strengthAttackHome, 1210);
+    expect(bootstrap.teams[1]?.strengthDefenceHome, 1190);
     expect(bootstrap.players[10]?.totalPoints, 42);
+    expect(bootstrap.players[10]?.goalsScored, 4);
+    expect(bootstrap.players[10]?.assists, 3);
+    expect(bootstrap.players[10]?.expectedGoals, 3.8);
+    expect(bootstrap.players[10]?.expectedAssists, 2.7);
+  });
+
+  test('detects next-gameweek availability risks', () {
+    final player = FplPlayer.fromJson({
+      'id': 10,
+      'web_name': 'Player',
+      'team': 1,
+      'element_type': 3,
+      'status': 'd',
+      'chance_of_playing_next_round': 50,
+    });
+    final suspended = FplPlayer.fromJson({
+      'id': 11,
+      'web_name': 'Suspended',
+      'team': 1,
+      'element_type': 3,
+      'status': 's',
+    });
+
+    expect(player.isDoubtfulNextRound, isTrue);
+    expect(player.nextRoundChanceOfPlaying, 50);
+    expect(suspended.isUnavailableNextRound, isTrue);
+    expect(suspended.isDoubtfulNextRound, isFalse);
+
+    final currentRoundOnly = FplPlayer.fromJson({
+      'id': 12,
+      'web_name': 'Current round only',
+      'team': 1,
+      'element_type': 3,
+      'status': 'a',
+      'chance_of_playing_this_round': 0,
+    });
+    expect(currentRoundOnly.isUnavailableNextRound, isFalse);
   });
 
   test('parses team picks and gameweek summary', () {

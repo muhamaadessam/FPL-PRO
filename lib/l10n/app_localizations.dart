@@ -118,6 +118,7 @@ class AppLocalizations {
   String get yellowCards => isArabic ? 'بطاقات صفراء' : 'Yellow cards';
   String get redCards => isArabic ? 'بطاقات حمراء' : 'Red cards';
   String get saves => isArabic ? 'التصديات' : 'Saves';
+  String get cleanSheets => isArabic ? 'الشباك النظيفة' : 'Clean sheets';
   String get defensiveContribution =>
       isArabic ? 'المساهمة الدفاعية' : 'Defensive contribution';
   String get bonusPoints => isArabic ? 'نقاط البونص' : 'Bonus points';
@@ -126,11 +127,34 @@ class AppLocalizations {
       : '${value > 0 ? '+' : ''}$value pts';
   String get noMatchEvents =>
       isArabic ? 'لا توجد أحداث مسجلة بعد.' : 'No player events recorded yet.';
+  String get matchPrediction => isArabic ? 'توقع المباراة' : 'Match prediction';
+  String get predictedScore =>
+      isArabic ? 'النتيجة المتوقعة' : 'Predicted score';
+  String get likelyScorers =>
+      isArabic ? 'الأقرب للتسجيل' : 'Most likely scorers';
+  String get likelyAssists =>
+      isArabic ? 'الأقرب لصناعة هدف' : 'Most likely assists';
+  String get cleanSheetChance =>
+      isArabic ? 'فرصة الشباك النظيفة' : 'Clean-sheet chance';
+  String predictionConfidence(int value) =>
+      isArabic ? 'ثقة $value٪' : '$value% confidence';
+  String get predictionDisclaimer => isArabic
+      ? 'توقع إحصائي مبني على xG وxA والفورمة والدقائق وصعوبة المباراة؛ وليس ضمانًا للنتيجة الفعلية.'
+      : 'Statistical estimate using xG, xA, form, minutes and fixture difficulty; it is not a guarantee.';
+  String get predictionWindowHint => isArabic
+      ? 'التوقعات متاحة لمباريات الجولات الثلاث القادمة.'
+      : 'Predictions are available for fixtures in the next three gameweeks.';
+  String get notEnoughPredictionData => isArabic
+      ? 'لا توجد بيانات كافية لتحديد لاعب.'
+      : 'Not enough data to name a player.';
   String playerName(int id) => isArabic ? 'لاعب $id' : 'Player $id';
   String get myTeam => isArabic ? 'فريقي' : 'My Team';
   String get currentGameweek =>
       isArabic ? 'الأسبوع الحالي' : 'Current gameweek';
   String get gameweek => isArabic ? 'الأسبوع' : 'Gameweek';
+  String get previousGameweek =>
+      isArabic ? 'الأسبوع السابق' : 'Previous gameweek';
+  String get nextGameweek => isArabic ? 'الأسبوع التالي' : 'Next gameweek';
   String get teamOverview => isArabic ? 'ملخص الفريق' : 'Team overview';
   String get startingXi => isArabic ? 'التشكيلة الأساسية' : 'Starting XI';
   String get bench => isArabic ? 'البدلاء' : 'Bench';
@@ -246,6 +270,54 @@ class AppLocalizations {
       isArabic ? 'النقاط المتوقعة' : 'Projected points';
   String get nextFixtures => isArabic ? 'المباريات القادمة' : 'Next fixtures';
   String get availability => isArabic ? 'الجاهزية' : 'Availability';
+  String get playerDirectory => isArabic ? 'كل اللاعبين' : 'All players';
+  String get playerDirectorySubtitle => isArabic
+      ? 'ابحث في كل اللاعبين وقارن بينهم قبل الجولة القادمة.'
+      : 'Search every player and compare them before the next gameweek.';
+  String get comparePlayers => isArabic ? 'مقارنة اللاعبين' : 'Compare players';
+  String get samePositionAlternatives => isArabic
+      ? 'اختار لاعبًا آخر من نفس المركز للمقارنة.'
+      : 'Choose another player from the same position to compare.';
+  String get searchPlayersHint =>
+      isArabic ? 'ابحث باسم اللاعب أو الفريق' : 'Search by player or team';
+  String get allPositions => isArabic ? 'كل المراكز' : 'All positions';
+  String get allTeams => isArabic ? 'كل الفرق' : 'All teams';
+  String get compareSelected =>
+      isArabic ? 'قارن المختارين' : 'Compare selected';
+  String get selectOneMorePlayer => isArabic
+      ? 'اختار لاعبًا آخر للمقارنة'
+      : 'Select one more player to compare';
+  String get maxTwoPlayers =>
+      isArabic ? 'المقارنة بين لاعبين فقط' : 'Compare two players at a time';
+  String get expectedNextGameweekPoints =>
+      isArabic ? 'المتوقع في الجولة القادمة' : 'Expected next GW points';
+  String get projectedThreeGameweeks =>
+      isArabic ? 'المتوقع لـ3 جولات' : 'Projected 3-GW points';
+  String get fixtureDifficulty =>
+      isArabic ? 'صعوبة المباريات' : 'Fixture difficulty';
+  String get playerPrice => isArabic ? 'السعر' : 'Price';
+  String get selectedBy => isArabic ? 'نسبة الاختيار' : 'Selected by';
+  String get minutesPlayed => isArabic ? 'الدقائق' : 'Minutes';
+  String get starts => isArabic ? 'بدأ أساسيًا' : 'Starts';
+  String get expectedGoalInvolvements => isArabic ? 'xGI' : 'xGI';
+  String get expectedGoalsConceded => isArabic ? 'xGC' : 'xGC';
+  String get noPlayersFound =>
+      isArabic ? 'لا يوجد لاعبون مطابقون' : 'No matching players';
+  String get comparisonDisclaimer => isArabic
+      ? 'التوقعات تقديرية مبنية على الإحصائيات الرسمية وليست ضمانًا.'
+      : 'Projections use official statistics and are not guarantees.';
+  String get compareData => isArabic ? 'بيانات المقارنة' : 'Comparison data';
+  String get nextGameweekAlerts =>
+      isArabic ? 'تنبيهات الجولة القادمة' : 'Next gameweek alerts';
+  String get nextGameweekAlertsSubtitle => isArabic
+      ? 'لاعبون من فريقك قد لا يشاركوا الجولة القادمة'
+      : 'Players in your squad who may miss the next gameweek';
+  String get injured => isArabic ? 'مصاب' : 'Injured';
+  String get suspended => isArabic ? 'موقوف' : 'Suspended';
+  String get doubtful => isArabic ? 'مشكوك في مشاركته' : 'Doubtful';
+  String get unavailable => isArabic ? 'غير متاح' : 'Unavailable';
+  String chanceOfPlaying(int chance) =>
+      isArabic ? '$chance٪ احتمال المشاركة' : '$chance% chance of playing';
   String get unknown => isArabic ? 'غير معروف' : 'Unknown';
   String get news => isArabic ? 'الأخبار' : 'News';
   String get noNews => isArabic ? 'لا توجد أخبار' : 'No news';
@@ -340,6 +412,81 @@ class AppLocalizations {
     final local = dateTime.toLocal();
     final minute = local.minute.toString().padLeft(2, '0');
     return '${local.day}/${local.month} • ${local.hour}:$minute';
+  }
+
+  String kickoffTimeOnly(DateTime? dateTime) {
+    if (dateTime == null) return kickoff;
+    final local = dateTime.toLocal();
+    final minute = local.minute.toString().padLeft(2, '0');
+    return '${local.hour}:$minute';
+  }
+
+  String matchDayHeader(DateTime? dateTime) {
+    if (dateTime == null) return isArabic ? 'يحدد لاحقاً' : 'To be decided';
+    final local = dateTime.toLocal();
+    final weekday = _weekdayName(local.weekday);
+    final month = _monthName(local.month);
+    return '$weekday ${local.day} $month';
+  }
+
+  String _weekdayName(int weekday) {
+    if (isArabic) {
+      return switch (weekday) {
+        DateTime.monday => 'الاثنين',
+        DateTime.tuesday => 'الثلاثاء',
+        DateTime.wednesday => 'الأربعاء',
+        DateTime.thursday => 'الخميس',
+        DateTime.friday => 'الجمعة',
+        DateTime.saturday => 'السبت',
+        DateTime.sunday => 'الأحد',
+        _ => '',
+      };
+    }
+    return switch (weekday) {
+      DateTime.monday => 'Monday',
+      DateTime.tuesday => 'Tuesday',
+      DateTime.wednesday => 'Wednesday',
+      DateTime.thursday => 'Thursday',
+      DateTime.friday => 'Friday',
+      DateTime.saturday => 'Saturday',
+      DateTime.sunday => 'Sunday',
+      _ => '',
+    };
+  }
+
+  String _monthName(int month) {
+    if (isArabic) {
+      return switch (month) {
+        1 => 'يناير',
+        2 => 'فبراير',
+        3 => 'مارس',
+        4 => 'أبريل',
+        5 => 'مايو',
+        6 => 'يونيو',
+        7 => 'يوليو',
+        8 => 'أغسطس',
+        9 => 'سبتمبر',
+        10 => 'أكتوبر',
+        11 => 'نوفمبر',
+        12 => 'ديسمبر',
+        _ => '',
+      };
+    }
+    return switch (month) {
+      1 => 'January',
+      2 => 'February',
+      3 => 'March',
+      4 => 'April',
+      5 => 'May',
+      6 => 'June',
+      7 => 'July',
+      8 => 'August',
+      9 => 'September',
+      10 => 'October',
+      11 => 'November',
+      12 => 'December',
+      _ => '',
+    };
   }
 }
 

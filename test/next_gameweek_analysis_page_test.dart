@@ -148,6 +148,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(
+      find.byKey(const ValueKey('next-gameweek-alerts-panel')),
+      findsOneWidget,
+    );
+
     final benchPlayerDrag = find.descendant(
       of: find.byType(PitchView),
       matching: find.text('Martinelli'),

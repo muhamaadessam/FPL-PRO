@@ -12,7 +12,6 @@ enum PlayerCardMetric {
   selectedPercent,
   totalPoints,
 }
-
 class PitchView extends StatelessWidget {
   const PitchView({
     super.key,
@@ -21,6 +20,7 @@ class PitchView extends StatelessWidget {
     required this.bootstrap,
     required this.gameweekPoints,
     this.onSwap,
+    this.onCompare,
     this.metric = PlayerCardMetric.points,
   });
 
@@ -29,6 +29,7 @@ class PitchView extends StatelessWidget {
   final FplBootstrap bootstrap;
   final Map<int, num> gameweekPoints;
   final void Function(int draggedElementId, int targetElementId)? onSwap;
+  final void Function(int playerId)? onCompare;
   final PlayerCardMetric metric;
 
   @override
@@ -68,6 +69,7 @@ class PitchView extends StatelessWidget {
                           bootstrap: bootstrap,
                           gameweekPoints: gameweekPoints,
                           onSwap: onSwap,
+                          onCompare: onCompare,
                           metric: metric,
                         ),
                         if (index != rows.length - 1)
@@ -87,6 +89,7 @@ class PitchView extends StatelessWidget {
           bootstrap: bootstrap,
           gameweekPoints: gameweekPoints,
           onSwap: onSwap,
+          onCompare: onCompare,
           metric: metric,
         ),
       ],
@@ -249,6 +252,7 @@ class _BenchSection extends StatelessWidget {
     required this.bootstrap,
     required this.gameweekPoints,
     this.onSwap,
+    this.onCompare,
     required this.metric,
   });
 
@@ -256,6 +260,7 @@ class _BenchSection extends StatelessWidget {
   final FplBootstrap bootstrap;
   final Map<int, num> gameweekPoints;
   final void Function(int draggedElementId, int targetElementId)? onSwap;
+  final void Function(int playerId)? onCompare;
   final PlayerCardMetric metric;
 
   @override
@@ -318,6 +323,7 @@ class _BenchSection extends StatelessWidget {
                 points: _displayPoints(pick),
                 isBench: true,
                 onSwap: onSwap,
+                onCompare: onCompare,
                 metric: metric,
               );
             }).toList(growable: false),
@@ -360,6 +366,7 @@ class _PitchRow extends StatelessWidget {
     required this.bootstrap,
     required this.gameweekPoints,
     this.onSwap,
+    this.onCompare,
     required this.metric,
   });
 
@@ -367,6 +374,7 @@ class _PitchRow extends StatelessWidget {
   final FplBootstrap bootstrap;
   final Map<int, num> gameweekPoints;
   final void Function(int draggedElementId, int targetElementId)? onSwap;
+  final void Function(int playerId)? onCompare;
   final PlayerCardMetric metric;
 
   @override
@@ -384,6 +392,7 @@ class _PitchRow extends StatelessWidget {
               points: _displayPoints(pick),
               isBench: false,
               onSwap: onSwap,
+              onCompare: onCompare,
               metric: metric,
               cardWidth: cardWidth,
             ),
@@ -412,6 +421,7 @@ class _PitchPlayer extends StatelessWidget {
     required this.points,
     required this.isBench,
     this.onSwap,
+    this.onCompare,
     this.metric = PlayerCardMetric.points,
     this.cardWidth = 78.0,
   });
@@ -422,6 +432,7 @@ class _PitchPlayer extends StatelessWidget {
   final num? points;
   final bool isBench;
   final void Function(int draggedElementId, int targetElementId)? onSwap;
+  final void Function(int playerId)? onCompare;
   final PlayerCardMetric metric;
   final double cardWidth;
 
@@ -662,6 +673,7 @@ class _PitchPlayer extends StatelessWidget {
         team: team,
         pick: pick,
         points: points,
+        onCompare: onCompare,
       ),
     );
   }
@@ -815,12 +827,14 @@ class _PlayerDetailBottomSheet extends StatelessWidget {
     required this.team,
     required this.pick,
     required this.points,
+    this.onCompare,
   });
 
   final FplPlayer? player;
   final FplTeam? team;
   final TeamPick pick;
   final num? points;
+  final void Function(int playerId)? onCompare;
 
   @override
   Widget build(BuildContext context) {
@@ -986,6 +1000,27 @@ class _PlayerDetailBottomSheet extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
+
+          if (onCompare != null && player != null) ...[
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  onCompare!(player!.id);
+                },
+                icon: const Icon(Icons.compare_arrows_rounded),
+                label: Text(AppLocalizations.of(context).comparePlayers),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
 
           // Close Button
           SizedBox(

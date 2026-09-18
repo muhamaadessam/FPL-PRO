@@ -8,10 +8,12 @@ class RecommendationData {
     required this.gameweek,
     required this.bootstrap,
     required this.team,
+    this.fixtures = const [],
   });
 
   final RecommendationResult result;
   final Gameweek gameweek;
   final FplBootstrap bootstrap;
   final MyTeam team;
+  final List<FplFixture> fixtures;
 }

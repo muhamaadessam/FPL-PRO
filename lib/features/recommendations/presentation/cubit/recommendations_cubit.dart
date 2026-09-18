@@ -91,6 +91,7 @@ class RecommendationsCubit extends Cubit<RecommendationsState> {
             gameweek: gameweek,
             bootstrap: bootstrap,
             team: team,
+            fixtures: fixtures,
           ),
         ),
       );

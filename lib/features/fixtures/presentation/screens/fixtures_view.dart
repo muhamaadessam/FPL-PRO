@@ -5,6 +5,7 @@ import '../../../../l10n/app_localizations.dart';
 import '../../data/datasources/fpl_api_client.dart';
 import '../../data/models/fpl_models.dart';
 import '../../domain/repositories/fixtures_repository.dart';
+import '../../domain/usecases/predict_fixtures.dart';
 import '../cubit/fixtures_cubit.dart';
 import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
 
@@ -26,7 +27,7 @@ class FixturesView extends StatelessWidget {
               ? FixturesState(
                   status: FixturesStatus.success,
                   bootstrap: preload?.bootstrap,
-                  fixtures: preload?.currentGameweekFixtures ?? const [],
+                  fixtures: preload?.fixtures ?? const [],
                 )
               : null,
         );
@@ -58,6 +59,7 @@ class _FixturesBody extends StatelessWidget {
         final bootstrap = state.bootstrap!;
         return _FixtureList(
           gameweekId: bootstrap.currentGameweekId,
+          gameweeks: bootstrap.gameweeks,
           fixtures: state.fixtures,
           teams: bootstrap.teams,
           players: bootstrap.players,
@@ -67,65 +69,178 @@ class _FixturesBody extends StatelessWidget {
   }
 }
 
-class _FixtureList extends StatelessWidget {
+class _FixtureList extends StatefulWidget {
   const _FixtureList({
     required this.gameweekId,
+    required this.gameweeks,
     required this.fixtures,
     required this.teams,
     required this.players,
   });
 
   final int gameweekId;
+  final List<Gameweek> gameweeks;
   final List<FplFixture> fixtures;
   final Map<int, FplTeam> teams;
   final Map<int, FplPlayer> players;
 
   @override
+  State<_FixtureList> createState() => _FixtureListState();
+}
+
+class _FixtureListState extends State<_FixtureList> {
+  late int _selectedGameweekId;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedGameweekId = widget.gameweekId;
+  }
+
+  @override
+  void didUpdateWidget(covariant _FixtureList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.gameweeks.any(
+      (gameweek) => gameweek.id == _selectedGameweekId,
+    )) {
+      _selectedGameweekId = widget.gameweekId;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    if (fixtures.isEmpty) {
-      return Center(child: Text(l10n.noFixtures));
+    final fixtures = widget.fixtures
+        .where((fixture) => fixture.gameweekId == _selectedGameweekId)
+        .toList()
+      ..sort((a, b) {
+        if (a.kickoffTime == null && b.kickoffTime == null) {
+          return a.id.compareTo(b.id);
+        }
+        if (a.kickoffTime == null) return 1;
+        if (b.kickoffTime == null) return -1;
+        return a.kickoffTime!.compareTo(b.kickoffTime!);
+      });
+
+    final dayGroups = <DateTime?, List<FplFixture>>{};
+    for (final fixture in fixtures) {
+      final localDate = fixture.kickoffTime != null
+          ? DateTime(
+              fixture.kickoffTime!.toLocal().year,
+              fixture.kickoffTime!.toLocal().month,
+              fixture.kickoffTime!.toLocal().day,
+            )
+          : null;
+      dayGroups.putIfAbsent(localDate, () => []).add(fixture);
     }
+
+    final selectedGameweekIndex = widget.gameweeks.indexWhere(
+      (gameweek) => gameweek.id == _selectedGameweekId,
+    );
+    final canGoPrevious = selectedGameweekIndex > 0;
+    final canGoNext =
+        selectedGameweekIndex >= 0 &&
+        selectedGameweekIndex < widget.gameweeks.length - 1;
+    final predictions = const FixturePredictionEngine().predictNextGameweeks(
+      fixtures: widget.fixtures,
+      teams: widget.teams,
+      players: widget.players,
+      fromGameweekId: widget.gameweekId,
+    );
 
     return RefreshIndicator(
       onRefresh: () async {
         await context.read<FixturesCubit>().refresh();
       },
-      child: ListView.separated(
+      child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        itemCount: fixtures.length + 1,
-        separatorBuilder: (_, index) =>
-            index == 0 ? const SizedBox.shrink() : const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(
-                children: [
-                  Text(
-                    l10n.gameweekLabel(gameweekId),
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        key: const ValueKey('fixtures-gameweek-previous'),
+                        tooltip: l10n.previousGameweek,
+                        onPressed: canGoPrevious
+                            ? () => setState(
+                                () => _selectedGameweekId = widget
+                                    .gameweeks[selectedGameweekIndex - 1]
+                                    .id,
+                              )
+                            : null,
+                        icon: const Icon(Icons.chevron_left_rounded),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text(
+                          l10n.gameweekLabel(_selectedGameweekId),
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                      IconButton(
+                        key: const ValueKey('fixtures-gameweek-next'),
+                        tooltip: l10n.nextGameweek,
+                        onPressed: canGoNext
+                            ? () => setState(
+                                () => _selectedGameweekId = widget
+                                    .gameweeks[selectedGameweekIndex + 1]
+                                    .id,
+                              )
+                            : null,
+                        icon: const Icon(Icons.chevron_right_rounded),
+                      ),
+                    ],
                   ),
-                  const Spacer(),
-                  Text(
-                    l10n.matchesCount(fixtures.length),
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                ),
+                Text(
+                  l10n.matchesCount(fixtures.length),
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
-                ],
+                ),
+              ],
+            ),
+          ),
+          if (fixtures.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 48),
+              child: Center(child: Text(l10n.noFixtures)),
+            )
+          else
+            for (final entry in dayGroups.entries) ...[
+              Padding(
+                padding: const EdgeInsets.only(top: 14, bottom: 8, left: 4, right: 4),
+                child: Text(
+                  l10n.matchDayHeader(entry.key),
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
               ),
-            );
-          }
-          return _FixtureCard(
-            fixture: fixtures[index - 1],
-            teams: teams,
-            players: players,
-          );
-        },
+              for (final fixture in entry.value) ...[
+                _FixtureCard(
+                  fixture: fixture,
+                  teams: widget.teams,
+                  players: widget.players,
+                  prediction: predictions[fixture.id],
+                ),
+                const SizedBox(height: 8),
+              ],
+            ],
+        ],
       ),
     );
   }
@@ -136,11 +251,13 @@ class _FixtureCard extends StatelessWidget {
     required this.fixture,
     required this.teams,
     required this.players,
+    required this.prediction,
   });
 
   final FplFixture fixture;
   final Map<int, FplTeam> teams;
   final Map<int, FplPlayer> players;
+  final FixturePrediction? prediction;
 
   @override
   Widget build(BuildContext context) {
@@ -152,24 +269,24 @@ class _FixtureCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         key: Key('fixture-card-${fixture.id}'),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         onTap: () => _showFixtureDetails(context),
         child: Ink(
           decoration: BoxDecoration(
             color: Theme.of(
               context,
             ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(14),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Expanded(
                 child: Column(
                   children: [
-                    _TeamBadge(teamCode: home?.code),
-                    const SizedBox(height: 8),
+                    _TeamBadge(teamCode: home?.code, size: 38),
+                    const SizedBox(height: 6),
                     Text(
                       home?.shortName.isNotEmpty == true
                           ? home!.shortName
@@ -177,7 +294,7 @@ class _FixtureCard extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontWeight: FontWeight.w800,
-                        fontSize: 14,
+                        fontSize: 13,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -186,11 +303,11 @@ class _FixtureCard extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: Column(
                   children: [
-                    _ScoreArea(fixture: fixture, l10n: l10n),
-                    const SizedBox(height: 8),
+                    _ScoreArea(fixture: fixture, l10n: l10n, compact: true),
+                    const SizedBox(height: 6),
                     _StateBadge(fixture: fixture, l10n: l10n),
                   ],
                 ),
@@ -198,8 +315,8 @@ class _FixtureCard extends StatelessWidget {
               Expanded(
                 child: Column(
                   children: [
-                    _TeamBadge(teamCode: away?.code),
-                    const SizedBox(height: 8),
+                    _TeamBadge(teamCode: away?.code, size: 38),
+                    const SizedBox(height: 6),
                     Text(
                       away?.shortName.isNotEmpty == true
                           ? away!.shortName
@@ -207,7 +324,7 @@ class _FixtureCard extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontWeight: FontWeight.w800,
-                        fontSize: 14,
+                        fontSize: 13,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -236,6 +353,7 @@ class _FixtureCard extends StatelessWidget {
           fixture: fixture,
           teams: teams,
           players: players,
+          prediction: prediction,
           scrollController: scrollController,
         ),
       ),
@@ -244,30 +362,33 @@ class _FixtureCard extends StatelessWidget {
 }
 
 class _TeamBadge extends StatelessWidget {
-  const _TeamBadge({required this.teamCode});
+  const _TeamBadge({required this.teamCode, this.size = 38});
 
   final int? teamCode;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
-    if (teamCode == null) return const _FallbackShield();
+    if (teamCode == null) return _FallbackShield(size: size);
     return Image.network(
       'https://resources.premierleague.com/premierleague/badges/70/t$teamCode.png',
-      width: 48,
-      height: 48,
-      errorBuilder: (context, error, stackTrace) => const _FallbackShield(),
+      width: size,
+      height: size,
+      errorBuilder: (context, error, stackTrace) => _FallbackShield(size: size),
     );
   }
 }
 
 class _FallbackShield extends StatelessWidget {
-  const _FallbackShield();
+  const _FallbackShield({this.size = 38});
+
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 48,
-      height: 48,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHigh,
         shape: BoxShape.circle,
@@ -275,17 +396,22 @@ class _FallbackShield extends StatelessWidget {
       child: Icon(
         Icons.shield_outlined,
         color: Theme.of(context).colorScheme.onSurfaceVariant,
-        size: 24,
+        size: size * 0.5,
       ),
     );
   }
 }
 
 class _ScoreArea extends StatelessWidget {
-  const _ScoreArea({required this.fixture, required this.l10n});
+  const _ScoreArea({
+    required this.fixture,
+    required this.l10n,
+    this.compact = false,
+  });
 
   final FplFixture fixture;
   final AppLocalizations l10n;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -295,7 +421,10 @@ class _ScoreArea extends StatelessWidget {
 
     if (showScore) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 12 : 16,
+          vertical: compact ? 5 : 8,
+        ),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.primaryContainer,
           borderRadius: BorderRadius.circular(8),
@@ -304,7 +433,7 @@ class _ScoreArea extends StatelessWidget {
           '$homeScore - $awayScore',
           style: TextStyle(
             fontWeight: FontWeight.w900,
-            fontSize: 24,
+            fontSize: compact ? 18 : 24,
             color: Theme.of(context).colorScheme.onPrimaryContainer,
             fontFeatures: const [FontFeature.tabularFigures()],
           ),
@@ -313,7 +442,10 @@ class _ScoreArea extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 10 : 12,
+        vertical: compact ? 5 : 8,
+      ),
       decoration: BoxDecoration(
         color: Theme.of(
           context,
@@ -323,10 +455,12 @@ class _ScoreArea extends StatelessWidget {
       child: Text(
         fixture.isLive || fixture.isFinished
             ? '—'
-            : l10n.kickoffLabel(fixture.kickoffTime),
+            : (compact
+                ? l10n.kickoffTimeOnly(fixture.kickoffTime)
+                : l10n.kickoffLabel(fixture.kickoffTime)),
         style: TextStyle(
           fontWeight: FontWeight.w800,
-          fontSize: 14,
+          fontSize: compact ? 13 : 14,
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
@@ -386,12 +520,14 @@ class _FixtureDetailsSheet extends StatelessWidget {
     required this.fixture,
     required this.teams,
     required this.players,
+    required this.prediction,
     required this.scrollController,
   });
 
   final FplFixture fixture;
   final Map<int, FplTeam> teams;
   final Map<int, FplPlayer> players;
+  final FixturePrediction? prediction;
   final ScrollController scrollController;
 
   @override
@@ -512,6 +648,15 @@ class _FixtureDetailsSheet extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 32),
+            if (prediction != null) ...[
+              _FixturePredictionPanel(
+                prediction: prediction!,
+                home: home,
+                away: away,
+                teams: teams,
+              ),
+              const SizedBox(height: 24),
+            ],
             for (final section in entries)
               _CategoryEventSection(
                 title: section.$1.title,
@@ -520,11 +665,13 @@ class _FixtureDetailsSheet extends StatelessWidget {
                 awayEvents: section.$3,
                 l10n: l10n,
               ),
-            if (!hasAnyEvents)
+            if (!hasAnyEvents && prediction == null)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
-                  l10n.noMatchEvents,
+                  !fixture.started && !fixture.isFinished
+                      ? l10n.predictionWindowHint
+                      : l10n.noMatchEvents,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -532,6 +679,551 @@ class _FixtureDetailsSheet extends StatelessWidget {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FixturePredictionPanel extends StatelessWidget {
+  const _FixturePredictionPanel({
+    required this.prediction,
+    required this.home,
+    required this.away,
+    required this.teams,
+  });
+
+  final FixturePrediction prediction;
+  final FplTeam? home;
+  final FplTeam? away;
+  final Map<int, FplTeam> teams;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final homeName = home?.shortName.isNotEmpty == true
+        ? home!.shortName
+        : l10n.homeTeam;
+    final awayName = away?.shortName.isNotEmpty == true
+        ? away!.shortName
+        : l10n.awayTeam;
+
+    final homeTeamId = home?.id;
+    final awayTeamId = away?.id;
+
+    var homeScorers = prediction.homeScorers.isNotEmpty
+        ? prediction.homeScorers
+        : (homeTeamId != null
+            ? prediction.scorers
+                .where((s) => s.player.teamId == homeTeamId)
+                .toList()
+            : <PlayerEventPrediction>[]);
+    var awayScorers = prediction.awayScorers.isNotEmpty
+        ? prediction.awayScorers
+        : (awayTeamId != null
+            ? prediction.scorers
+                .where((s) => s.player.teamId == awayTeamId)
+                .toList()
+            : <PlayerEventPrediction>[]);
+
+    if (homeScorers.isEmpty &&
+        awayScorers.isEmpty &&
+        prediction.scorers.isNotEmpty) {
+      homeScorers = prediction.scorers;
+    }
+
+    var homeAssists = prediction.homeAssists.isNotEmpty
+        ? prediction.homeAssists
+        : (homeTeamId != null
+            ? prediction.assists
+                .where((a) => a.player.teamId == homeTeamId)
+                .toList()
+            : <PlayerEventPrediction>[]);
+    var awayAssists = prediction.awayAssists.isNotEmpty
+        ? prediction.awayAssists
+        : (awayTeamId != null
+            ? prediction.assists
+                .where((a) => a.player.teamId == awayTeamId)
+                .toList()
+            : <PlayerEventPrediction>[]);
+
+    if (homeAssists.isEmpty &&
+        awayAssists.isEmpty &&
+        prediction.assists.isNotEmpty) {
+      homeAssists = prediction.assists;
+    }
+
+    return Column(
+      key: const ValueKey('fixture-prediction-panel'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _PredictedScoreCard(
+          prediction: prediction,
+          homeName: homeName,
+          awayName: awayName,
+          l10n: l10n,
+        ),
+        const SizedBox(height: 20),
+        _PredictionCategorySection(
+          title: l10n.likelyScorers,
+          icon: Icons.sports_soccer,
+          homeCandidates: homeScorers,
+          awayCandidates: awayScorers,
+          l10n: l10n,
+        ),
+        _PredictionCategorySection(
+          title: l10n.likelyAssists,
+          icon: Icons.handshake_outlined,
+          homeCandidates: homeAssists,
+          awayCandidates: awayAssists,
+          l10n: l10n,
+        ),
+        _PredictionCleanSheetSection(
+          title: l10n.cleanSheetChance,
+          homeName: homeName,
+          awayName: awayName,
+          homeChance: prediction.homeCleanSheetChance,
+          awayChance: prediction.awayCleanSheetChance,
+        ),
+        _PredictionDisclaimer(text: l10n.predictionDisclaimer),
+      ],
+    );
+  }
+}
+
+class _PredictedScoreCard extends StatelessWidget {
+  const _PredictedScoreCard({
+    required this.prediction,
+    required this.homeName,
+    required this.awayName,
+    required this.l10n,
+  });
+
+  final FixturePrediction prediction;
+  final String homeName;
+  final String awayName;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colors.outlineVariant.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(Icons.auto_graph_rounded, size: 18, color: colors.primary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  l10n.matchPrediction,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: colors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  l10n.predictionConfidence(prediction.confidence),
+                  style: TextStyle(
+                    color: colors.primary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            l10n.predictedScore,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: colors.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.3,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  homeName,
+                  textAlign: TextAlign.end,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colors.primaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${prediction.homeGoals} - ${prediction.awayGoals}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 22,
+                      color: colors.onPrimaryContainer,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  awayName,
+                  textAlign: TextAlign.start,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PredictionCategorySection extends StatelessWidget {
+  const _PredictionCategorySection({
+    required this.title,
+    required this.icon,
+    required this.homeCandidates,
+    required this.awayCandidates,
+    required this.l10n,
+  });
+
+  final String title;
+  final IconData icon;
+  final List<PlayerEventPrediction> homeCandidates;
+  final List<PlayerEventPrediction> awayCandidates;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    if (homeCandidates.isEmpty && awayCandidates.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final scheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: scheme.primary),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Divider(height: 1, thickness: 1),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (homeCandidates.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Text(
+                          '—',
+                          style: TextStyle(
+                            color: scheme.onSurfaceVariant.withValues(
+                              alpha: 0.5,
+                            ),
+                            fontSize: 12,
+                          ),
+                        ),
+                      )
+                    else
+                      for (final candidate in homeCandidates)
+                        _PredictionPlayerRow(
+                          candidate: candidate,
+                          isHome: true,
+                        ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (awayCandidates.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Text(
+                          '—',
+                          textAlign: TextAlign.end,
+                          style: TextStyle(
+                            color: scheme.onSurfaceVariant.withValues(
+                              alpha: 0.5,
+                            ),
+                            fontSize: 12,
+                          ),
+                        ),
+                      )
+                    else
+                      for (final candidate in awayCandidates)
+                        _PredictionPlayerRow(
+                          candidate: candidate,
+                          isHome: false,
+                        ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PredictionPlayerRow extends StatelessWidget {
+  const _PredictionPlayerRow({
+    required this.candidate,
+    required this.isHome,
+  });
+
+  final PlayerEventPrediction candidate;
+  final bool isHome;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    final badge = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: scheme.primary.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        '${candidate.chance}%',
+        style: TextStyle(
+          color: scheme.primary,
+          fontWeight: FontWeight.w900,
+          fontSize: 10,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
+      ),
+    );
+
+    final playerText = Expanded(
+      child: Text(
+        candidate.player.webName,
+        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: isHome ? TextAlign.start : TextAlign.end,
+      ),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: isHome
+            ? [
+                playerText,
+                const SizedBox(width: 6),
+                badge,
+              ]
+            : [
+                badge,
+                const SizedBox(width: 6),
+                playerText,
+              ],
+      ),
+    );
+  }
+}
+
+class _PredictionCleanSheetSection extends StatelessWidget {
+  const _PredictionCleanSheetSection({
+    required this.title,
+    required this.homeName,
+    required this.awayName,
+    required this.homeChance,
+    required this.awayChance,
+  });
+
+  final String title;
+  final String homeName;
+  final String awayName;
+  final int homeChance;
+  final int awayChance;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    Widget buildSide({
+      required String name,
+      required int chance,
+      required bool isHome,
+    }) {
+      final badge = Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: scheme.primary.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          '$chance%',
+          style: TextStyle(
+            color: scheme.primary,
+            fontWeight: FontWeight.w900,
+            fontSize: 10,
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
+        ),
+      );
+
+      final label = Expanded(
+        child: Text(
+          name,
+          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: isHome ? TextAlign.start : TextAlign.end,
+        ),
+      );
+
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: isHome
+              ? [
+                  label,
+                  const SizedBox(width: 6),
+                  badge,
+                ]
+              : [
+                  badge,
+                  const SizedBox(width: 6),
+                  label,
+                ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.shield_outlined, size: 16, color: scheme.primary),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Divider(height: 1, thickness: 1),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: buildSide(
+                  name: homeName,
+                  chance: homeChance,
+                  isHome: true,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: buildSide(
+                  name: awayName,
+                  chance: awayChance,
+                  isHome: false,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PredictionDisclaimer extends StatelessWidget {
+  const _PredictionDisclaimer({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 8),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: colors.onSurfaceVariant.withValues(alpha: 0.75),
+          fontSize: 11,
+          height: 1.35,
         ),
       ),
     );

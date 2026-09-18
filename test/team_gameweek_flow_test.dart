@@ -15,6 +15,51 @@ import 'package:fantasy_pl/features/team/presentation/widgets/pitch_view.dart';
 import 'package:fantasy_pl/l10n/app_localizations.dart';
 
 void main() {
+  testWidgets('offers same-position comparison from player details', (
+    tester,
+  ) async {
+    final bootstrap = FplBootstrap.fromJson({
+      'teams': [
+        {'id': 1, 'name': 'Test FC', 'short_name': 'TST'},
+      ],
+      'elements': [
+        {'id': 10, 'web_name': 'Saka', 'team': 1, 'element_type': 3},
+      ],
+    });
+    int? comparedPlayerId;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: PitchView(
+            starting: [
+              TeamPick.fromJson({
+                'element': 10,
+                'position': 1,
+                'element_type': 3,
+              }),
+            ],
+            bench: const [],
+            bootstrap: bootstrap,
+            gameweekPoints: const {10: 5},
+            onCompare: (playerId) => comparedPlayerId = playerId,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Saka'));
+    await tester.pumpAndSettle();
+    expect(find.text('Compare players'), findsOneWidget);
+
+    await tester.tap(find.text('Compare players'));
+    await tester.pumpAndSettle();
+    expect(comparedPlayerId, 10);
+  });
+
   testWidgets('applies captain multiplier to player points', (tester) async {
     final bootstrap = FplBootstrap.fromJson({
       'teams': [
