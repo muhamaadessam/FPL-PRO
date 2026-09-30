@@ -50,7 +50,8 @@ class SettingsView extends StatelessWidget {
 
         // Profile Card
         Container(
-          padding: const EdgeInsets.all(16),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             color: cardBg,
             borderRadius: BorderRadius.circular(16),
@@ -63,69 +64,30 @@ class SettingsView extends StatelessWidget {
               ),
             ],
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: SweepGradient(
-                    colors: [
-                      Color(0xff00ff87),
-                      Color(0xff02efff),
-                      Color(0xff963cff),
-                      Color(0xffff005a),
-                      Color(0xff00ff87),
-                    ],
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(3),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isDark ? AppColors.darkBackground : Colors.white,
-                    ),
-                    child: Center(
-                      child: Icon(
-                        Icons.person_rounded,
-                        size: 28,
-                        color: isDark ? AppColors.plMint : const Color(0xff37003c),
-                      ),
-                    ),
-                  ),
+              Text(
+                entry?.name.isNotEmpty == true
+                    ? entry!.name
+                    : (entry?.playerFullName.isNotEmpty == true
+                        ? entry!.playerFullName
+                        : (entryId != null ? 'Entry #$entryId' : 'FPL Manager')),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: titleColor,
                 ),
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      entry?.name.isNotEmpty == true
-                          ? entry!.name
-                          : (entry?.playerFullName.isNotEmpty == true
-                              ? entry!.playerFullName
-                              : (entryId != null ? 'Entry #$entryId' : 'FPL Manager')),
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: titleColor,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      entry?.playerFullName.isNotEmpty == true && entry?.name.isNotEmpty == true
-                          ? '${entry!.playerFullName} • Entry #${entry.id}'
-                          : (entryId != null ? 'Entry #$entryId' : 'FPL Manager'),
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: subColor,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
+              const SizedBox(height: 3),
+              Text(
+                entry?.playerFullName.isNotEmpty == true && entry?.name.isNotEmpty == true
+                    ? '${entry!.playerFullName} • Entry #${entry.id}'
+                    : (entryId != null ? 'Entry #$entryId' : 'FPL Manager'),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: subColor,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],

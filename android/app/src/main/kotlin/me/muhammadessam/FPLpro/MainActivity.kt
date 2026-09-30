@@ -1,4 +1,4 @@
-package com.fantasypl.fantasy_pl
+package me.muhammadessam.FPLpro
 
 import io.flutter.embedding.android.FlutterActivity
 

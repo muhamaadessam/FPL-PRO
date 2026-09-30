@@ -11,13 +11,19 @@ import '../../../../l10n/app_localizations.dart';
 
 enum PlayerCardMetric { points, price, form, selectedPercent, totalPoints }
 
-const _benchGradient = BoxDecoration(
-  gradient: LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-    colors: [Color(0xff00A34F), Colors.white],
-  ),
-);
+BoxDecoration _benchGradient(BuildContext context) {
+  final bgColor = Theme.of(context).scaffoldBackgroundColor;
+  return BoxDecoration(
+    gradient: LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        const Color(0xff00A34F),
+        bgColor,
+      ],
+    ),
+  );
+}
 
 class PitchView extends StatelessWidget {
   const PitchView({
@@ -73,8 +79,8 @@ class PitchView extends StatelessWidget {
         ),
         if (bench.isNotEmpty)
           Container(
-            decoration: _benchGradient,
-            padding: const EdgeInsets.only(bottom: 20, top: 20),
+            decoration: _benchGradient(context),
+            padding: const EdgeInsets.only(top: 14),
             child: _BenchSection(
               bench: bench,
               bootstrap: bootstrap,
@@ -110,15 +116,12 @@ class _PitchSurface extends StatelessWidget {
       child: IgnorePointer(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            const svgWidth = 1417.0;
             const svgHeight = 788.0;
             const cropWidth = 696.0;
             final scale = math.min(
               constraints.maxWidth / cropWidth,
               constraints.maxHeight / svgHeight,
             );
-            final cropLeft = (svgWidth * scale - constraints.maxWidth) / 2;
-            final logoSize = 23 * scale;
             final pitchHeight = svgHeight * scale;
             if (constraints.maxWidth <= 0 ||
                 constraints.maxHeight <= 0 ||
@@ -147,19 +150,6 @@ class _PitchSurface extends StatelessWidget {
                     ),
                   ),
                 ),
-                for (final logoX in const [465.3, 856.9])
-                  Positioned(
-                    left: logoX * scale - cropLeft - logoSize / 2,
-                    top: 22 * scale * verticalScale - logoSize / 2,
-                    width: logoSize,
-                    height: logoSize,
-                    child: ClipOval(
-                      child: Image.asset(
-                        'assets/icon/app_icon.png',
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
               ],
             );
           },
@@ -194,18 +184,26 @@ class _BenchSection extends StatelessWidget {
     final sortedBench = List<TeamPick>.from(bench)
       ..sort((a, b) => a.position.compareTo(b.position));
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(4, 10, 4, 12),
+          padding: const EdgeInsets.fromLTRB(4, 10, 4, 18),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.28),
+            color: isDark
+                ? AppColors.darkBenchBg.withValues(alpha: 0.75)
+                : Colors.white.withValues(alpha: 0.35),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
             border: Border(
-              top: BorderSide(color: Colors.white.withValues(alpha: 0.55)),
+              top: BorderSide(
+                color: isDark
+                    ? AppColors.darkBenchBorder.withValues(alpha: 0.8)
+                    : Colors.white.withValues(alpha: 0.6),
+              ),
             ),
           ),
           child: Column(
@@ -224,8 +222,10 @@ class _BenchSection extends StatelessWidget {
                         child: Text(
                           label,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Color(0xff1f1f2e),
+                          style: TextStyle(
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : const Color(0xff1f1f2e),
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 0.5,
@@ -440,12 +440,15 @@ class _PitchPlayer extends StatelessWidget {
 
     // Bench chic soft glass container
     if (isBench) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
       shirtWidget = Container(
         width: cardWidth,
         height: 58,
         alignment: Alignment.bottomCenter,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.3),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.white.withValues(alpha: 0.35),
           borderRadius: BorderRadius.circular(8),
         ),
         child: shirtWidget,
@@ -1091,42 +1094,50 @@ class PitchSkeleton extends StatelessWidget {
           ],
         ),
         Container(
-          decoration: _benchGradient,
-          padding: const EdgeInsets.only(bottom: 20),
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(4, 10, 4, 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.28),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: Colors.white54),
+          decoration: _benchGradient(context),
+          padding: const EdgeInsets.only(top: 14),
+          child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(4, 10, 4, 18),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.darkBenchBg.withValues(alpha: 0.75)
+                      : Colors.white.withValues(alpha: 0.35),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+                  border: Border(
+                    top: BorderSide(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.darkBenchBorder.withValues(alpha: 0.8)
+                          : Colors.white.withValues(alpha: 0.6),
+                    ),
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        children: const ['GKP', '1. DEF', '2. FWD', '3. MID']
-                            .map(
-                              (label) => Expanded(
-                                child: Text(
-                                  label,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: Color(0xff1f1f2e),
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w800,
-                                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: const ['GKP', '1. DEF', '2. FWD', '3. MID']
+                          .map(
+                            (label) => Expanded(
+                              child: Text(
+                                label,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                      ? AppColors.darkTextSecondary
+                                      : const Color(0xff1f1f2e),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
-                            )
-                            .toList(growable: false),
-                      ),
+                            ),
+                          )
+                          .toList(growable: false),
+                    ),
                       const SizedBox(height: 6),
                       const _PitchSkeletonRow(count: 4, isBench: true),
                     ],
@@ -1135,7 +1146,6 @@ class PitchSkeleton extends StatelessWidget {
               ),
             ),
           ),
-        ),
       ],
     );
   }

@@ -423,19 +423,6 @@ class _RecommendationContentState extends State<_RecommendationContent>
                         ],
                       ),
                     ],
-                    const SizedBox(height: 8),
-                    // Hero Squad Rating Card (Always accessible to jump into pitch analysis)
-                    _AnalysisHeroCard(
-                      analysis: result.squadAnalysis,
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => NextGameweekAnalysisPage(
-                            data: data,
-                            onTransfer: widget.onTransfer,
-                          ),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -551,6 +538,7 @@ class _RecommendationContentState extends State<_RecommendationContent>
                       selectedChip: _selectedChip,
                       submittingChip: _submittingChip,
                       onChipTap: (chip) => _showChipSelection(chip),
+                      onTransfer: widget.onTransfer,
                     ),
 
                     // Tab 2: Suggested Transfers
@@ -582,135 +570,6 @@ class _RecommendationContentState extends State<_RecommendationContent>
 }
 
 // -----------------------------------------------------------------------------
-// Hero Squad Rating Card
-// -----------------------------------------------------------------------------
-class _AnalysisHeroCard extends StatelessWidget {
-  const _AnalysisHeroCard({required this.analysis, required this.onTap});
-
-  final SquadAnalysis analysis;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).colorScheme;
-
-    return Material(
-      key: const ValueKey('next-gameweek-analysis'),
-      color: colors.surfaceContainerHigh,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          child: Row(
-            children: [
-              // Rating Badge
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      colors.primary.withValues(alpha: 0.25),
-                      colors.primary.withValues(alpha: 0.08),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: colors.primary.withValues(alpha: 0.4),
-                  ),
-                ),
-                alignment: Alignment.center,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '${analysis.rating}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        color: colors.primary,
-                        height: 1.1,
-                      ),
-                    ),
-                    Text(
-                      '/100',
-                      style: TextStyle(
-                        fontSize: 9,
-                        color: colors.onSurfaceVariant,
-                        fontWeight: FontWeight.w600,
-                        height: 1.0,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 2,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Text(
-                          l10n.nextGameweekAnalysis,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w900,
-                            fontSize: 14,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 1.5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: colors.primaryContainer,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            l10n.ratingBand(analysis.rating),
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: colors.primary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${l10n.expectedStartingPoints}: ${analysis.expectedStartingPoints.toStringAsFixed(1)} ${l10n.ptsCue}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colors.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 4),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 14,
-                color: colors.onSurfaceVariant,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// -----------------------------------------------------------------------------
 // TAB 1: Plan & Decisions
 // -----------------------------------------------------------------------------
 class _PlanTab extends StatelessWidget {
@@ -720,6 +579,7 @@ class _PlanTab extends StatelessWidget {
     required this.selectedChip,
     required this.submittingChip,
     required this.onChipTap,
+    this.onTransfer,
   });
 
   final RecommendationData data;
@@ -727,6 +587,7 @@ class _PlanTab extends StatelessWidget {
   final SuggestedChip? selectedChip;
   final SuggestedChip? submittingChip;
   final ValueChanged<SuggestedChip> onChipTap;
+  final Future<void> Function(TransferSuggestion transfer)? onTransfer;
 
   @override
   Widget build(BuildContext context) {
@@ -737,6 +598,13 @@ class _PlanTab extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
+        // Unified Gameweek Plan & Squad Rating Hero Card
+        _WeeklyPlanCard(
+          data: data,
+          onTransfer: onTransfer,
+        ),
+        const SizedBox(height: 14),
+
         // Quick Decisions Grid: Captain + Chip Advice
         if (isNarrow) ...[
           _CaptainCard(result: result, bootstrap: data.bootstrap),
@@ -770,13 +638,6 @@ class _PlanTab extends StatelessWidget {
             ],
           ),
         const SizedBox(height: 14),
-
-        // Weekly Lineup Plan Card
-        if (result.suggestedLineup.players.length == 15 &&
-            result.suggestedLineup.suggestedStartingIds.length == 11) ...[
-          _WeeklyPlanCard(data: data),
-          const SizedBox(height: 14),
-        ],
 
         // Disclaimer
         Padding(
@@ -1144,18 +1005,25 @@ class _TopPicksTab extends StatelessWidget {
 // Weekly Plan Card
 // -----------------------------------------------------------------------------
 class _WeeklyPlanCard extends StatelessWidget {
-  const _WeeklyPlanCard({required this.data});
+  const _WeeklyPlanCard({
+    required this.data,
+    this.onTransfer,
+  });
 
   final RecommendationData data;
+  final Future<void> Function(TransferSuggestion transfer)? onTransfer;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = Theme.of(context).colorScheme;
+    final analysis = data.result.squadAnalysis;
     final lineup = data.result.suggestedLineup;
     final gain =
         lineup.expectedStartingPoints -
-        data.result.squadAnalysis.expectedStartingPoints;
+        analysis.expectedStartingPoints;
+    final hasFullSquad =
+        lineup.players.length == 15 && lineup.suggestedStartingIds.length == 11;
     final formation = [
       for (var position = 2; position <= 4; position++)
         lineup.starters
@@ -1190,129 +1058,374 @@ class _WeeklyPlanCard extends StatelessWidget {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '${l10n.weeklyPlan} • $formation',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w900,
-                        ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: gain > 0.05
-                        ? colors.primary.withValues(alpha: 0.15)
-                        : colors.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '${lineup.expectedStartingPoints.toStringAsFixed(1)} ${l10n.ptsCue}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      color: gain > 0.05 ? colors.primary : colors.onSurface,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              gain > 0.05 ? l10n.lineupGain(gain) : l10n.lineupAlreadyBest,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colors.onSurfaceVariant,
-                  ),
-            ),
-            if (promoted.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: colors.surfaceContainerHighest.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.arrow_upward_rounded,
-                          size: 15,
-                          color: colors.primary,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            '${l10n.startThesePlayers}: ${names(promoted)}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.arrow_downward_rounded,
-                          size: 15,
-                          color: colors.error,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            '${l10n.benchThesePlayers}: ${names(benched)}',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 12,
-                              color: colors.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-            const SizedBox(height: 8),
-            Text(
-              '${l10n.benchOrder}: ${names(lineup.bench)}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colors.onSurfaceVariant,
-                    fontSize: 11,
-                  ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.tonalIcon(
-                key: const ValueKey('suggested-lineup-preview'),
-                onPressed: () => Navigator.of(context).push(
+            // Clickable Header with Rating, Plan title & Points badge
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                key: const ValueKey('next-gameweek-analysis'),
+                onTap: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
                     builder: (_) => NextGameweekAnalysisPage(
                       data: data,
-                      useSuggestedLineup: true,
+                      onTransfer: onTransfer,
                     ),
                   ),
                 ),
-                icon: const Icon(Icons.groups_outlined, size: 18),
-                label: Text(l10n.suggestedLineup),
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    children: [
+                      // Rating Badge (e.g. 94 / 100)
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              colors.primary.withValues(alpha: 0.22),
+                              colors.primary.withValues(alpha: 0.08),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: colors.primary.withValues(alpha: 0.35),
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '${analysis.rating}',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w900,
+                                color: colors.primary,
+                                height: 1.1,
+                              ),
+                            ),
+                            Text(
+                              '/100',
+                              style: TextStyle(
+                                fontSize: 8.5,
+                                color: colors.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                                height: 1.0,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      // Title, Band, and hint to open analysis
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    hasFullSquad && formation.isNotEmpty
+                                        ? '${l10n.weeklyPlan} • $formation'
+                                        : l10n.weeklyPlan,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 14.5,
+                                        ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.arrow_forward_ios_rounded,
+                                  size: 11,
+                                  color: colors.onSurfaceVariant.withValues(alpha: 0.7),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 3),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 2,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 1,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: colors.primaryContainer,
+                                    borderRadius: BorderRadius.circular(5),
+                                  ),
+                                  child: Text(
+                                    l10n.ratingBand(analysis.rating),
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                      color: colors.primary,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  l10n.nextGameweekAnalysis,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: colors.onSurfaceVariant,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Points badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: gain > 0.05
+                              ? colors.primary.withValues(alpha: 0.15)
+                              : colors.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: gain > 0.05
+                                ? colors.primary.withValues(alpha: 0.3)
+                                : Colors.transparent,
+                          ),
+                        ),
+                        child: Text(
+                          '${(hasFullSquad ? lineup.expectedStartingPoints : analysis.expectedStartingPoints).toStringAsFixed(1)} ${l10n.ptsCue}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w900,
+                            color: gain > 0.05 ? colors.primary : colors.onSurface,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
+
+            if (hasFullSquad) ...[
+              if (gain > 0.05) ...[
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Directionality.of(context) == TextDirection.rtl
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '${l10n.expectedStartingPoints}: ',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: colors.onSurfaceVariant,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                analysis.expectedStartingPoints.toStringAsFixed(1),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: colors.onSurface,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 6),
+                                child: Icon(
+                                  Icons.arrow_forward_rounded,
+                                  size: 13,
+                                  color: colors.primary,
+                                ),
+                              ),
+                              Text(
+                                '${lineup.expectedStartingPoints.toStringAsFixed(1)} ${l10n.ptsCue}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: colors.primary,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colors.primary.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '+${gain.toStringAsFixed(1)}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            color: colors.primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  l10n.lineupGain(gain),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colors.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                ),
+              ] else ...[
+                const SizedBox(height: 8),
+                Text(
+                  l10n.lineupAlreadyBest,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colors.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                ),
+              ],
+              if (promoted.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: colors.surfaceContainerHighest.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.arrow_upward_rounded,
+                            size: 15,
+                            color: colors.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              '${l10n.startThesePlayers}: ${names(promoted)}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.arrow_downward_rounded,
+                            size: 15,
+                            color: colors.error,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              '${l10n.benchThesePlayers}: ${names(benched)}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                                color: colors.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              if (lineup.bench.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  '${l10n.benchOrder}: ${names(lineup.bench)}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colors.onSurfaceVariant,
+                        fontSize: 11,
+                      ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.tonalIcon(
+                  key: const ValueKey('suggested-lineup-preview'),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => NextGameweekAnalysisPage(
+                        data: data,
+                        onTransfer: onTransfer,
+                        useSuggestedLineup: true,
+                      ),
+                    ),
+                  ),
+                  icon: const Icon(Icons.groups_outlined, size: 18),
+                  label: Text(l10n.suggestedLineup),
+                ),
+              ),
+            ] else ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.tonalIcon(
+                  key: const ValueKey('suggested-lineup-preview'),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => NextGameweekAnalysisPage(
+                        data: data,
+                        onTransfer: onTransfer,
+                      ),
+                    ),
+                  ),
+                  icon: const Icon(Icons.insights_rounded, size: 18),
+                  label: Text(l10n.nextGameweekAnalysis),
+                ),
+              ),
+            ],
           ],
         ),
       ),

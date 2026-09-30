@@ -324,15 +324,36 @@ class MyTeam {
     required this.summary,
     required this.transfers,
     required this.chips,
+    this.activeChip,
   });
 
   final List<TeamPick> picks;
   final TeamSummary summary;
   final TeamTransferState transfers;
   final List<FplChipState> chips;
+  final String? activeChip;
 
   factory MyTeam.fromJson(Map<String, dynamic> json) {
     final history = json['entry_history'];
+    var chip = json['active_chip'] as String?;
+    if (chip == null && history is Map<String, dynamic>) {
+      chip = history['active_chip'] as String?;
+    }
+    final parsedChips = (json['chips'] as List<dynamic>? ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .map(FplChipState.fromJson)
+        .toList(growable: false);
+
+    final currentEvent = history is Map ? _int(history['event']) : 0;
+    if (chip == null && currentEvent > 0) {
+      for (final c in parsedChips) {
+        if (c.playedEvents.contains(currentEvent)) {
+          chip = c.name;
+          break;
+        }
+      }
+    }
+
     return MyTeam(
       picks: (json['picks'] as List<dynamic>? ?? const [])
           .whereType<Map<String, dynamic>>()
@@ -346,10 +367,8 @@ class MyTeam {
             ? json['transfers'] as Map<String, dynamic>
             : const {},
       ),
-      chips: (json['chips'] as List<dynamic>? ?? const [])
-          .whereType<Map<String, dynamic>>()
-          .map(FplChipState.fromJson)
-          .toList(growable: false),
+      chips: parsedChips,
+      activeChip: chip,
     );
   }
 }

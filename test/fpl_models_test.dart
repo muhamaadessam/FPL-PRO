@@ -102,6 +102,7 @@ void main() {
 
   test('parses team picks and gameweek summary', () {
     final team = MyTeam.fromJson({
+      'active_chip': '3xc',
       'entry_history': {
         'event': 2,
         'points': 58,
@@ -135,6 +136,7 @@ void main() {
       ],
     });
 
+    expect(team.activeChip, '3xc');
     expect(team.summary.points, 58);
     expect(team.summary.totalPoints, 112);
     expect(team.picks.single.elementId, 10);

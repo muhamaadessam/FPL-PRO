@@ -145,6 +145,7 @@ void main() {
     expect(find.text('60'), findsOneWidget);
     expect(find.text('130'), findsOneWidget);
     expect(find.text('50'), findsOneWidget);
+    expect(find.text('Triple Captain'), findsNothing);
 
     // Verify prev button is disabled since GW4 is the first in bootstrap.
     final prevButton = tester.widget<IconButton>(
@@ -160,6 +161,7 @@ void main() {
     expect(api.pointsRequests.last, 5);
     expect(find.text('GW4 Player'), findsNothing);
     expect(find.text('GW5 Player'), findsOneWidget);
+    expect(find.text('Triple Captain'), findsOneWidget);
 
     // Verify next button is disabled since GW5 is the last in bootstrap.
     final nextButton = tester.widget<IconButton>(
@@ -246,6 +248,7 @@ class _FakeFplApiClient extends FplApiClient {
   }) async {
     teamRequests.add(gameweekId);
     return MyTeam.fromJson({
+      'active_chip': gameweekId == 5 ? '3xc' : null,
       'picks': [
         {
           'element': gameweekId == 4 ? 1 : 3,

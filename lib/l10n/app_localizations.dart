@@ -294,6 +294,25 @@ class AppLocalizations {
     return isArabic ? 'مخاطرة عالية' : 'High risk';
   }
 
+  String get tabPitch => isArabic ? 'الملعب والتشكيلة' : 'Lineup & Pitch';
+  String get tabPlayerBreakdown => isArabic ? 'تقييم اللاعبين' : 'Player Ratings';
+  String get dragToSwapHint => isArabic
+      ? 'اسحب للتبديل بين الأساسيين والدكة • اضغط للمقارنة'
+      : 'Drag to swap • Tap to compare';
+  String get resetLineup => isArabic ? 'إعادة التشكيلة' : 'Reset Lineup';
+  String get sortByForecast =>
+      isArabic ? 'الأعلى توقعًا' : 'Highest Forecast';
+  String get sortByRating => isArabic ? 'الأعلى تقييمًا' : 'Highest Rating';
+  String get sortByForm => isArabic ? 'أفضل مستوى' : 'Best Form';
+  String get starterBadge => isArabic ? 'أساسي' : 'Starter';
+  String get benchBadge => isArabic ? 'دكة' : 'Bench';
+  String get lineupInsights =>
+      isArabic ? 'تحليل التشكيلة والكابتن' : 'Lineup & Captain Insights';
+  String get benchBoostTotal =>
+      isArabic ? 'إجمالي البنش بوست' : 'Bench Boost Total';
+  String get tapToViewDetails =>
+      isArabic ? 'اضغط للتفاصيل' : 'Tap to view details';
+
   String get captainPick => isArabic ? 'اختيار الكابتن' : 'Captain pick';
   String get transferIdeas => isArabic ? 'اقتراحات التبديل' : 'Transfer ideas';
   String get compareTransfer =>
