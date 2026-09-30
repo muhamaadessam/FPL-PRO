@@ -5,6 +5,166 @@ import 'package:fantasy_pl/features/recommendations/domain/usecases/recommendati
 import 'package:fantasy_pl/features/team/data/models/team_models.dart';
 
 void main() {
+  test(
+    'weekly plan promotes the best bench player and preserves a legal squad',
+    () {
+      final positions = [1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 1, 2, 2, 3];
+      final bootstrap = _bootstrap([
+        for (var i = 0; i < positions.length; i++)
+          _player(
+            i + 1,
+            'Player ${i + 1}',
+            i + 1,
+            positions[i],
+            60,
+            i == 14 ? 10 : (i >= 11 ? 3 : 5),
+          ),
+      ]);
+      final team = MyTeam.fromJson({
+        'picks': [
+          for (var i = 0; i < positions.length; i++)
+            {
+              'element': i + 1,
+              'position': i + 1,
+              'element_type': positions[i],
+              'is_captain': i == 8,
+            },
+        ],
+      });
+      final result = const RecommendationEngine().build(
+        bootstrap: bootstrap,
+        fixtures: [for (var id = 1; id <= 15; id++) _fixture(5, id, 20)],
+        team: team,
+        gameweekId: 5,
+      );
+      final lineup = result.suggestedLineup;
+      expect(
+        const RecommendationEngine().isLegalStartingLineup(lineup.players),
+        isTrue,
+      );
+      expect(lineup.starters, hasLength(11));
+      expect(lineup.bench, hasLength(4));
+      expect(
+        lineup.players.map((p) => p.pick.elementId).toSet(),
+        hasLength(15),
+      );
+      expect(lineup.bench.first.projection.player.positionId, 1);
+      expect(result.captain?.player.id, 15);
+      expect(
+        lineup.starters.singleWhere((p) => p.pick.isCaptain).pick.elementId,
+        15,
+      );
+      expect(
+        lineup.bench.every((p) => !p.pick.isCaptain && !p.pick.isViceCaptain),
+        isTrue,
+      );
+      expect(
+        lineup.expectedStartingPoints,
+        closeTo(lineup.bestLegalLineupPoints, 0.0001),
+      );
+      expect(
+        lineup.expectedStartingPoints,
+        greaterThan(result.squadAnalysis.expectedStartingPoints),
+      );
+      expect(team.picks.last.position, 15);
+      expect(team.picks[8].isCaptain, isTrue);
+    },
+  );
+
+  test(
+    'injured player with strong history has zero forecast despite a fixture',
+    () {
+      final bootstrap = _bootstrap([
+        {..._player(1, 'Injured', 1, 3, 70, 10), 'status': 'i'},
+      ]);
+      final result = const RecommendationEngine().build(
+        bootstrap: bootstrap,
+        fixtures: [_fixture(5, 1, 2)],
+        team: MyTeam.fromJson({
+          'picks': [
+            {'element': 1, 'position': 1},
+          ],
+        }),
+        gameweekId: 5,
+        playerSummaries: {
+          1: FplPlayerSummary(
+            history: [
+              FplPlayerHistory(
+                round: 4,
+                minutes: 90,
+                starts: 1,
+                totalPoints: 15,
+                expectedGoalInvolvements: 1,
+              ),
+            ],
+          ),
+        },
+      );
+      expect(result.squadAnalysis.players.single.expectedPoints, 0);
+      expect(result.captain, isNull);
+    },
+  );
+
+  test(
+    'transfer advice needs current budget, selling price and free transfers',
+    () {
+      final bootstrap = _bootstrap([
+        _player(1, 'Outgoing', 1, 3, 70, 2),
+        _player(2, 'Incoming', 2, 3, 75, 8),
+      ]);
+      final projections = const RecommendationEngine().buildPlayerProjections(
+        bootstrap: bootstrap,
+        fixtures: [_fixture(5, 1, 2)],
+        gameweekId: 5,
+      );
+      for (final missing in ['bank', 'limit', 'made', 'selling_price']) {
+        final result = const RecommendationEngine().buildTransferSuggestion(
+          team: MyTeam.fromJson({
+            'picks': [
+              {
+                'element': 1,
+                'position': 1,
+                if (missing != 'selling_price') 'selling_price': 70,
+              },
+            ],
+            'entry_history': {'bank': 100},
+            'transfers': {
+              if (missing != 'bank') 'bank': 10,
+              if (missing != 'limit') 'limit': 1,
+              if (missing != 'made') 'made': 0,
+            },
+          }),
+          bootstrap: bootstrap,
+          outgoing: projections.singleWhere((p) => p.player.id == 1),
+          incoming: projections.singleWhere((p) => p.player.id == 2),
+        );
+        expect(result, isNull, reason: 'Missing $missing must not be guessed');
+      }
+    },
+  );
+
+  test(
+    'does not suggest a transfer whose forecast gain fails to cover a hit',
+    () {
+      final result = const RecommendationEngine().build(
+        bootstrap: _bootstrap([
+          _player(1, 'Outgoing', 1, 3, 70, 4),
+          _player(2, 'Incoming', 2, 3, 70, 5),
+        ]),
+        fixtures: [_fixture(5, 1, 2)],
+        team: MyTeam.fromJson({
+          'picks': [
+            {'element': 1, 'position': 1, 'selling_price': 70},
+          ],
+          'transfers': {'bank': 0, 'limit': 1, 'made': 1},
+        }),
+        gameweekId: 5,
+      );
+      expect(result.freeTransfers, 0);
+      expect(result.transfers, isEmpty);
+    },
+  );
+
   test('builds next-gameweek projections for every listed player', () {
     final bootstrap = _bootstrap([
       _player(1, 'Available', 1, 3, 70, 6),

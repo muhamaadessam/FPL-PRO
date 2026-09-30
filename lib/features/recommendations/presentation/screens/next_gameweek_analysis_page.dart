@@ -14,10 +14,12 @@ class NextGameweekAnalysisPage extends StatefulWidget {
     super.key,
     required this.data,
     this.onTransfer,
+    this.useSuggestedLineup = false,
   });
 
   final RecommendationData data;
   final Future<void> Function(TransferSuggestion transfer)? onTransfer;
+  final bool useSuggestedLineup;
 
   @override
   State<NextGameweekAnalysisPage> createState() =>
@@ -30,7 +32,9 @@ class _NextGameweekAnalysisPageState extends State<NextGameweekAnalysisPage> {
   @override
   void initState() {
     super.initState();
-    analysis = widget.data.result.squadAnalysis;
+    analysis = widget.useSuggestedLineup
+        ? widget.data.result.suggestedLineup
+        : widget.data.result.squadAnalysis;
   }
 
   void _onSwapPlayers(int draggedElementId, int targetElementId) {
@@ -296,35 +300,47 @@ class _NextGameweekAnalysisPageState extends State<NextGameweekAnalysisPage> {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.nextGameweekAnalysis)),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        padding: const EdgeInsets.only(top: 8, bottom: 32),
         children: [
-          Text(
-            data.gameweek.name,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.w800,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  data.gameweek.name,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (widget.useSuggestedLineup) ...[
+                  Text(l10n.lineupPreviewHint),
+                  const SizedBox(height: 8),
+                ],
+                if (nextGameweekAlerts.isNotEmpty) ...[
+                  _NextGameweekAlerts(
+                    key: const ValueKey('next-gameweek-alerts'),
+                    picks: nextGameweekAlerts,
+                    bootstrap: data.bootstrap,
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                _OverviewPanel(analysis: analysis),
+                const SizedBox(height: 8),
+                Text(
+                  l10n.analysisCoverage(
+                    analysis.currentSeasonCoverage,
+                    analysis.previousSeasonPlayers,
+                    analysis.players.length,
+                  ),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 24),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          if (nextGameweekAlerts.isNotEmpty) ...[
-            _NextGameweekAlerts(
-              key: const ValueKey('next-gameweek-alerts'),
-              picks: nextGameweekAlerts,
-              bootstrap: data.bootstrap,
-            ),
-            const SizedBox(height: 16),
-          ],
-          _OverviewPanel(analysis: analysis),
-          const SizedBox(height: 8),
-          Text(
-            l10n.analysisCoverage(
-              analysis.currentSeasonCoverage,
-              analysis.previousSeasonPlayers,
-              analysis.players.length,
-            ),
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          const SizedBox(height: 24),
           PitchView(
             starting: analysis.starters
                 .map((p) => p.pick)
@@ -338,19 +354,27 @@ class _NextGameweekAnalysisPageState extends State<NextGameweekAnalysisPage> {
             onSwap: _onSwapPlayers,
             onCompare: _onComparePlayer,
           ),
-          const SizedBox(height: 24),
-          _PlayerList(
-            players: [...analysis.starters, ...analysis.bench],
-            data: data,
-          ),
-          const SizedBox(height: 24),
-          const _MethodologyPanel(),
-          const SizedBox(height: 12),
-          Text(
-            l10n.analysisDisclaimer,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 24),
+                _PlayerList(
+                  players: [...analysis.starters, ...analysis.bench],
+                  data: data,
+                ),
+                const SizedBox(height: 24),
+                const _MethodologyPanel(),
+                const SizedBox(height: 12),
+                Text(
+                  l10n.analysisDisclaimer,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -429,7 +453,9 @@ class _NextGameweekAlerts extends StatelessWidget {
               Text(
                 '${picks.length}',
                 style: TextStyle(
-                  color: isDark ? AppColors.darkAlertWarningText : const Color(0xffb45309),
+                  color: isDark
+                      ? AppColors.darkAlertWarningText
+                      : const Color(0xffb45309),
                   fontSize: 18,
                   fontWeight: FontWeight.w900,
                 ),

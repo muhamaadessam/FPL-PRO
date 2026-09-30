@@ -105,6 +105,7 @@ class SquadAnalysis {
     required this.players,
     required this.currentSeasonCoverage,
     required this.previousSeasonPlayers,
+    this.suggestedStartingIds = const [],
   });
 
   final int rating;
@@ -116,6 +117,7 @@ class SquadAnalysis {
   final List<PlayerAnalysis> players;
   final int currentSeasonCoverage;
   final int previousSeasonPlayers;
+  final List<int> suggestedStartingIds;
 
   List<PlayerAnalysis> get starters =>
       players.where((player) => player.isStarter).toList(growable: false);
@@ -156,6 +158,7 @@ class RecommendationResult {
     required this.freeTransfers,
     required this.bank,
     required this.squadAnalysis,
+    required this.suggestedLineup,
   });
 
   final int gameweekId;
@@ -169,6 +172,7 @@ class RecommendationResult {
   final int? freeTransfers;
   final int? bank;
   final SquadAnalysis squadAnalysis;
+  final SquadAnalysis suggestedLineup;
 }
 
 class RecommendationEngine {
@@ -211,26 +215,6 @@ class RecommendationEngine {
             .toList()
           ..sort((a, b) => b.horizonPoints.compareTo(a.horizonPoints));
 
-    final starters =
-        team.picks
-            .where((pick) => pick.position <= 11)
-            .map((pick) => projections[pick.elementId])
-            .whereType<PlayerProjection>()
-            .toList()
-          ..sort((a, b) => b.nextPoints.compareTo(a.nextPoints));
-    final bench = team.picks
-        .where((pick) => pick.position > 11)
-        .map((pick) => projections[pick.elementId])
-        .whereType<PlayerProjection>()
-        .toList();
-    final transferIdeas = _transferIdeas(team, bootstrap, projections);
-    final chipDecision = _chipDecision(
-      team: team,
-      starters: starters,
-      bench: bench,
-      transferIdeas: transferIdeas,
-      gameweekId: gameweekId,
-    );
     final squadAnalysis = _analyzeSquad(
       team: team,
       projections: projections,
@@ -238,11 +222,28 @@ class RecommendationEngine {
       gameweekId: gameweekId,
       playerSummaries: playerSummaries,
     );
+    final suggestedLineup = buildSuggestedLineup(squadAnalysis);
+    final starters = suggestedLineup.starters
+      ..sort((a, b) => b.expectedPoints.compareTo(a.expectedPoints));
+    final captainCandidates = starters
+        .where((p) => p.expectedPoints > 0)
+        .toList();
+    final bench = suggestedLineup.bench.map((p) => p.projection).toList();
+    final transferIdeas = _transferIdeas(team, bootstrap, projections);
+    final chipDecision = _chipDecision(
+      team: team,
+      starters: starters.map((p) => p.projection).toList(),
+      bench: bench,
+      transferIdeas: transferIdeas,
+      gameweekId: gameweekId,
+    );
 
     return RecommendationResult(
       gameweekId: gameweekId,
-      captain: starters.firstOrNull,
-      viceCaptain: starters.length > 1 ? starters[1] : null,
+      captain: captainCandidates.firstOrNull?.projection,
+      viceCaptain: captainCandidates.length > 1
+          ? captainCandidates[1].projection
+          : null,
       transfers: transferIdeas,
       topByPosition: {
         for (var position = 1; position <= 4; position++)
@@ -260,6 +261,7 @@ class RecommendationEngine {
       freeTransfers: _freeTransfers(team.transfers),
       bank: team.transfers.bank ?? team.summary.bank,
       squadAnalysis: squadAnalysis,
+      suggestedLineup: suggestedLineup,
     );
   }
 
@@ -283,9 +285,12 @@ class RecommendationEngine {
       return null;
     }
 
-    final bank = team.transfers.bank ?? team.summary.bank ?? 0;
-    final sellingPrice =
-        outgoingPick.sellingPrice ?? outgoing.player.nowCost ?? 0;
+    final bank = team.transfers.bank;
+    final sellingPrice = outgoingPick.sellingPrice;
+    final freeTransfers = _freeTransfers(team.transfers);
+    if (bank == null || sellingPrice == null || freeTransfers == null) {
+      return null;
+    }
     if (incomingPlayer.nowCost! > sellingPrice + bank) return null;
 
     final clubCount = team.picks.where((pick) {
@@ -295,7 +300,6 @@ class RecommendationEngine {
     }).length;
     if (clubCount >= 3) return null;
 
-    final freeTransfers = _freeTransfers(team.transfers);
     return TransferSuggestion(
       outProjection: outgoing,
       inProjection: incoming,
@@ -375,7 +379,8 @@ class RecommendationEngine {
       (total, player) =>
           total + player.expectedPoints * (player.pick.isCaptain ? 2 : 1),
     );
-    final bestLegalLineupPoints = _bestLegalLineupPoints(orderedPlayers);
+    final bestLineup = _bestLegalLineup(orderedPlayers);
+    final bestLegalLineupPoints = bestLineup.$1;
     final selectionEfficiency = bestLegalLineupPoints <= 0
         ? 0
         : (expectedStartingPoints / bestLegalLineupPoints * 100)
@@ -401,6 +406,57 @@ class RecommendationEngine {
       players: orderedPlayers,
       currentSeasonCoverage: currentSeasonCoverage,
       previousSeasonPlayers: previousSeasonPlayers,
+      suggestedStartingIds: bestLineup.$2,
+    );
+  }
+
+  SquadAnalysis buildSuggestedLineup(SquadAnalysis analysis) {
+    if (analysis.players.length != 15 ||
+        analysis.suggestedStartingIds.length != 11) {
+      return analysis;
+    }
+    final startingIds = analysis.suggestedStartingIds.toSet();
+    final starters =
+        analysis.players
+            .where((p) => startingIds.contains(p.pick.elementId))
+            .toList()
+          ..sort(
+            (a, b) => a.projection.player.positionId.compareTo(
+              b.projection.player.positionId,
+            ),
+          );
+    final bench =
+        analysis.players
+            .where((p) => !startingIds.contains(p.pick.elementId))
+            .toList()
+          ..sort((a, b) {
+            final aKeeper = a.projection.player.positionId == 1;
+            final bKeeper = b.projection.player.positionId == 1;
+            return aKeeper != bKeeper
+                ? (aKeeper ? -1 : 1)
+                : b.expectedPoints.compareTo(a.expectedPoints);
+          });
+    final captains = starters.where((p) => p.expectedPoints > 0).toList()
+      ..sort((a, b) => b.expectedPoints.compareTo(a.expectedPoints));
+    final captainId = captains.firstOrNull?.pick.elementId;
+    final viceId = captains.length > 1 ? captains[1].pick.elementId : null;
+    final ordered = [...starters, ...bench];
+    return buildSquadAnalysisForPreview(
+      players: [
+        for (var i = 0; i < ordered.length; i++)
+          ordered[i].copyWith(
+            pick: ordered[i].pick.copyWith(
+              position: i + 1,
+              isCaptain: ordered[i].pick.elementId == captainId,
+              isViceCaptain: ordered[i].pick.elementId == viceId,
+              multiplier: i >= 11
+                  ? 0
+                  : (ordered[i].pick.elementId == captainId ? 2 : 1),
+            ),
+          ),
+      ],
+      currentSeasonCoverage: analysis.currentSeasonCoverage,
+      previousSeasonPlayers: analysis.previousSeasonPlayers,
     );
   }
 
@@ -529,7 +585,9 @@ class RecommendationEngine {
     required double? previousSeasonPoints,
     required double reliability,
   }) {
-    if (projection.nextFixtureCount == 0) return 0;
+    if (projection.nextFixtureCount == 0 || projection.availability == 0) {
+      return 0;
+    }
     var weighted = projection.nextPoints * 0.45;
     var weight = 0.45;
     if (recentPoints > 0) {
@@ -611,7 +669,7 @@ class RecommendationEngine {
         .round();
   }
 
-  double _bestLegalLineupPoints(List<PlayerAnalysis> players) {
+  (double, List<int>) _bestLegalLineup(List<PlayerAnalysis> players) {
     if (players.length < 11) {
       final total = players.fold<double>(
         0,
@@ -622,9 +680,20 @@ class RecommendationEngine {
         (best, player) =>
             player.expectedPoints > best ? player.expectedPoints : best,
       );
-      return total + captain;
+      return (total + captain, players.map((p) => p.pick.elementId).toList());
     }
-    var best = 0.0;
+    final current = players.where((p) => p.isStarter).toList();
+    var best = isLegalStartingLineup(players)
+        ? current.fold(0.0, (sum, p) => sum + p.expectedPoints) +
+              current.fold(
+                0.0,
+                (top, p) => p.expectedPoints > top ? p.expectedPoints : top,
+              )
+        : -1.0;
+    var bestIds = isLegalStartingLineup(players)
+        ? current.map((p) => p.pick.elementId).toList()
+        : <int>[];
+    // ponytail: exhaustive search over 15 players; use formation combinations for larger squads.
     for (var mask = 0; mask < 1 << players.length; mask++) {
       var selected = 0;
       final positionCounts = <int, int>{};
@@ -646,9 +715,15 @@ class RecommendationEngine {
         continue;
       }
       final total = points + captain;
-      if (total > best) best = total;
+      if (total > best + 0.000001) {
+        best = total;
+        bestIds = [
+          for (var i = 0; i < players.length; i++)
+            if ((mask & (1 << i)) != 0) players[i].pick.elementId,
+        ];
+      }
     }
-    return best;
+    return (best < 0 ? 0.0 : best, bestIds);
   }
 
   bool _hasLegalPositionCounts(Map<int, int> counts) {
@@ -764,7 +839,8 @@ class RecommendationEngine {
       ideas.add(bestTransfer);
     }
 
-    ideas.sort((a, b) => b.projectedGain.compareTo(a.projectedGain));
+    // ponytail: alternatives for one transfer, not a combined multi-transfer plan.
+    ideas.sort((a, b) => b.netProjectedGain.compareTo(a.netProjectedGain));
     final selected = <TransferSuggestion>[];
     final incomingIds = <int>{};
     for (final idea in ideas) {
@@ -847,7 +923,8 @@ class RecommendationEngine {
 
   int? _freeTransfers(TeamTransferState transfers) {
     final limit = transfers.limit;
-    if (limit == null) return null;
-    return (limit - (transfers.made ?? 0)).clamp(0, 5);
+    final made = transfers.made;
+    if (limit == null || made == null) return null;
+    return (limit - made).clamp(0, 5);
   }
 }

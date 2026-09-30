@@ -158,6 +158,7 @@ class AppLocalizations {
   String get teamOverview => isArabic ? 'ملخص الفريق' : 'Team overview';
   String get startingXi => isArabic ? 'التشكيلة الأساسية' : 'Starting XI';
   String get bench => isArabic ? 'البدلاء' : 'Bench';
+  String get substitutes => isArabic ? 'البدلاء' : 'Substitutes';
   String get captain => isArabic ? 'القائد' : 'Captain';
   String get viceCaptain => isArabic ? 'نائب القائد' : 'Vice captain';
   String get points => isArabic ? 'النقاط' : 'Points';
@@ -211,6 +212,34 @@ class AppLocalizations {
   String get listView => isArabic ? 'القائمة' : 'List view';
   String get recommendations => isArabic ? 'الترشيحات' : 'Recommendations';
   String get tips => isArabic ? 'نصائح' : 'Tips';
+  String get weeklyPlan => isArabic ? 'خطة الجولة' : 'Gameweek plan';
+  String get suggestedLineup =>
+      isArabic ? 'معاينة أفضل تشكيلة' : 'Preview the best XI';
+  String get lineupPreviewHint => isArabic
+      ? 'دي معاينة للتشكيلة المقترحة؛ نفّذ التغييرات في FPL بعد مراجعتها.'
+      : 'This is a suggested lineup preview. Review it before making changes in FPL.';
+  String get lineupAlreadyBest => isArabic
+      ? 'التشكيلة والكابتن الحاليان يحققان أفضل توقع متاح من لاعبيك.'
+      : 'Your current XI and captain already match the best available forecast.';
+  String lineupGain(double points) => isArabic
+      ? 'مكسب متوقع +${points.toStringAsFixed(1)} نقطة من ترتيب التشكيلة والكابتن، بدون تبديلات.'
+      : 'Forecast gain +${points.toStringAsFixed(1)} points from lineup and captain changes, without transfers.';
+  String get benchOrder =>
+      isArabic ? 'ترتيب الدكة المقترح' : 'Suggested bench order';
+  String get startThesePlayers => isArabic ? 'ابدأ بـ' : 'Start';
+  String get benchThesePlayers => isArabic ? 'انقل للدكة' : 'Move to the bench';
+  String get captainReason => isArabic
+      ? 'أعلى توقع نقاط بين الأساسيين في التشكيلة المقترحة.'
+      : 'Highest points forecast in the suggested XI.';
+  String get transferAlternativesHint => isArabic
+      ? 'دي بدائل لتبديل واحد، مش خطة لتنفيذهم كلهم. المكسب مرجّح عبر 3 جولات بعد خصم النقاط.'
+      : 'Alternatives for one transfer, not a combined plan. Gains are weighted over 3 gameweeks after hits.';
+  String get transferDataMissing => isArabic
+      ? 'بيانات الرصيد أو أسعار البيع أو التبديلات المجانية ناقصة؛ حدّث البيانات قبل ترشيح تبديل.'
+      : 'Bank, selling prices or free transfers are missing. Refresh before choosing a transfer.';
+  String recommendationsUpdated(DateTime date) => isArabic
+      ? 'آخر جلب للبيانات: ${kickoffLabel(date)} • تتحدث عند فتح النصائح أو العودة للتطبيق.'
+      : 'Data fetched: ${kickoffLabel(date)} • Refreshed when opening Tips or resuming the app.';
   String get recommendationSubtitle => isArabic
       ? 'تقديرات مبنية على الإحصائيات الرسمية والمباريات القادمة.'
       : 'Estimates based on official stats and upcoming fixtures.';

@@ -9,6 +9,7 @@ class RecommendationData {
     required this.bootstrap,
     required this.team,
     this.fixtures = const [],
+    this.updatedAt,
   });
 
   final RecommendationResult result;
@@ -16,4 +17,5 @@ class RecommendationData {
   final FplBootstrap bootstrap;
   final MyTeam team;
   final List<FplFixture> fixtures;
+  final DateTime? updatedAt;
 }

@@ -11,7 +11,6 @@ import '../../../team/domain/repositories/team_repository.dart';
 import '../../domain/entities/recommendation_data.dart';
 import '../../domain/usecases/recommendation_engine.dart';
 import '../cubit/recommendations_cubit.dart';
-import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
 import 'next_gameweek_analysis_page.dart';
 import 'player_directory_page.dart';
 
@@ -23,61 +22,43 @@ class RecommendationsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) {
-        HomePreloadState? preload;
-        try {
-          preload = context.read<HomePreloadCubit>().state;
-        } on ProviderNotFoundException catch (_) {}
-        final hasPreload = preload?.status == PreloadStatus.success;
-        RecommendationsState? initialState;
-        if (hasPreload &&
-            preload?.bootstrap != null &&
-            preload?.teamNext != null) {
-          final p = preload!;
-          final result = const RecommendationEngine().build(
-            bootstrap: p.bootstrap!,
-            fixtures: p.fixtures,
-            team: p.teamNext!,
-            gameweekId: p.bootstrap!.gameweeks
-                .firstWhere(
-                  (g) => g.isNext,
-                  orElse: () => p.bootstrap!.gameweeks.firstWhere(
-                    (g) => g.id > p.bootstrap!.currentGameweekId,
-                    orElse: () => p.bootstrap!.gameweeks.last,
-                  ),
-                )
-                .id,
-            playerSummaries: p.playerSummaries,
-          );
-          initialState = RecommendationsState(
-            status: RecommendationsStatus.success,
-            data: RecommendationData(
-              result: result,
-              gameweek: p.bootstrap!.gameweeks.firstWhere(
-                (g) => g.id == result.gameweekId,
-              ),
-              bootstrap: p.bootstrap!,
-              team: p.teamNext!,
-              fixtures: p.fixtures,
-            ),
-          );
-        }
-        final cubit = RecommendationsCubit(
-          fixturesRepository: context.read<FixturesRepository>(),
-          teamRepository: context.read<TeamRepository>(),
-          authCubit: context.read<AuthCubit>(),
-          initialState: initialState,
-        );
-        if (initialState == null) cubit.load();
-        return cubit;
-      },
+      create: (context) => RecommendationsCubit(
+        fixturesRepository: context.read<FixturesRepository>(),
+        teamRepository: context.read<TeamRepository>(),
+        authCubit: context.read<AuthCubit>(),
+      )..load(),
       child: const _RecommendationsBody(),
     );
   }
 }
 
-class _RecommendationsBody extends StatelessWidget {
+class _RecommendationsBody extends StatefulWidget {
   const _RecommendationsBody();
+
+  @override
+  State<_RecommendationsBody> createState() => _RecommendationsBodyState();
+}
+
+class _RecommendationsBodyState extends State<_RecommendationsBody>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      context.read<RecommendationsCubit>().refresh();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -129,6 +110,8 @@ String _errorMessage(BuildContext context, Object error) {
       l10n.networkError,
     FplApiException(:final kind) when kind == FplApiErrorKind.rateLimited =>
       l10n.rateLimited,
+    FplApiException(:final kind) when kind == FplApiErrorKind.authentication =>
+      l10n.authExpired,
     TeamAccessException() => l10n.entryIdInvalid,
     _ => l10n.genericError,
   };
@@ -321,6 +304,7 @@ class _RecommendationContentState extends State<_RecommendationContent> {
         builder: (context, constraints) {
           final isNarrow = constraints.maxWidth < 360;
           return ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
             children: [
               Row(
@@ -350,6 +334,11 @@ class _RecommendationContentState extends State<_RecommendationContent> {
                 l10n.recommendationSubtitle,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
+              if (data.updatedAt != null)
+                Text(
+                  l10n.recommendationsUpdated(data.updatedAt!),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               if (data.gameweek.deadlineTime != null) ...[
                 const SizedBox(height: 4),
                 Text(
@@ -364,6 +353,11 @@ class _RecommendationContentState extends State<_RecommendationContent> {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 16),
+              if (result.suggestedLineup.players.length == 15 &&
+                  result.suggestedLineup.suggestedStartingIds.length == 11) ...[
+                _WeeklyPlanCard(data: data),
+                const SizedBox(height: 12),
+              ],
               OutlinedButton.icon(
                 key: const ValueKey('player-directory'),
                 onPressed: () => Navigator.of(context).push(
@@ -488,8 +482,19 @@ class _RecommendationContentState extends State<_RecommendationContent> {
                   ],
                 ),
               const SizedBox(height: 12),
+              Text(
+                l10n.transferAlternativesHint,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 8),
               if (result.transfers.isEmpty)
-                Text(l10n.noTransferIdeas)
+                Text(
+                  result.freeTransfers == null ||
+                          data.team.transfers.bank == null ||
+                          data.team.picks.any((p) => p.sellingPrice == null)
+                      ? l10n.transferDataMissing
+                      : l10n.noTransferIdeas,
+                )
               else
                 ...result.transfers.map(
                   (transfer) => _TransferCard(
@@ -533,6 +538,90 @@ class _RecommendationContentState extends State<_RecommendationContent> {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _WeeklyPlanCard extends StatelessWidget {
+  const _WeeklyPlanCard({required this.data});
+
+  final RecommendationData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final lineup = data.result.suggestedLineup;
+    final gain =
+        lineup.expectedStartingPoints -
+        data.result.squadAnalysis.expectedStartingPoints;
+    final formation = [
+      for (var position = 2; position <= 4; position++)
+        lineup.starters
+            .where((p) => p.projection.player.positionId == position)
+            .length,
+    ].join('–');
+    final promoted = lineup.starters
+        .where(
+          (p) => data.team.picks.any(
+            (pick) => pick.elementId == p.pick.elementId && pick.position > 11,
+          ),
+        )
+        .toList();
+    final benched = lineup.bench
+        .where(
+          (p) => data.team.picks.any(
+            (pick) => pick.elementId == p.pick.elementId && pick.position <= 11,
+          ),
+        )
+        .toList();
+    String names(List<PlayerAnalysis> players) =>
+        players.map((p) => p.projection.player.webName).join('، ');
+    return Card(
+      key: const ValueKey('weekly-plan'),
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${l10n.weeklyPlan} • $formation',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${l10n.expectedStartingPoints}: ${lineup.expectedStartingPoints.toStringAsFixed(1)} ${l10n.ptsCue}',
+            ),
+            Text(gain > 0.05 ? l10n.lineupGain(gain) : l10n.lineupAlreadyBest),
+            if (promoted.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text('${l10n.startThesePlayers}: ${names(promoted)}'),
+              Text('${l10n.benchThesePlayers}: ${names(benched)}'),
+            ],
+            const SizedBox(height: 8),
+            Text(
+              '${l10n.benchOrder}: ${names(lineup.bench)}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              key: const ValueKey('suggested-lineup-preview'),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => NextGameweekAnalysisPage(
+                    data: data,
+                    useSuggestedLineup: true,
+                  ),
+                ),
+              ),
+              icon: const Icon(Icons.groups_outlined),
+              label: Text(l10n.suggestedLineup),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -658,12 +747,22 @@ class _CaptainCard extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
             ),
             Text(
-              '${captain.nextPoints.toStringAsFixed(1)} pts',
+              '${result.suggestedLineup.players.firstWhere((p) => p.pick.elementId == captain.player.id).expectedPoints.toStringAsFixed(1)} ${l10n.ptsCue}',
               style: TextStyle(
                 fontWeight: FontWeight.w800,
                 color: Theme.of(context).colorScheme.primary,
               ),
             ),
+            const SizedBox(height: 4),
+            Text(
+              l10n.captainReason,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            if (result.viceCaptain != null)
+              Text(
+                '${l10n.viceCaptain}: ${result.viceCaptain!.player.webName}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
           ],
         ],
       ),
@@ -735,8 +834,6 @@ class _ChipCard extends StatelessWidget {
                         Text(
                           l10n.chipReason(result.chipReason.name),
                           style: Theme.of(context).textTheme.bodySmall,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -1096,4 +1193,5 @@ class _PlayerRow extends StatelessWidget {
   }
 }
 
-String _price(int? value) => ((value ?? 0) / 10).toStringAsFixed(1);
+String _price(int? value) =>
+    value == null ? '—' : (value / 10).toStringAsFixed(1);

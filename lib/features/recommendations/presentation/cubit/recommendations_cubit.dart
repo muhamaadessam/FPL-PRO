@@ -48,6 +48,7 @@ class RecommendationsCubit extends Cubit<RecommendationsState> {
   final AuthCubit authCubit;
 
   Future<void> load() async {
+    if (isClosed || state.status == RecommendationsStatus.loading) return;
     emit(state.copyWith(status: RecommendationsStatus.loading, error: null));
     try {
       final bootstrap = await fixturesRepository.getBootstrap();
@@ -83,6 +84,7 @@ class RecommendationsCubit extends Cubit<RecommendationsState> {
         gameweekId: gameweek.id,
         playerSummaries: playerSummaries,
       );
+      if (isClosed) return;
       emit(
         RecommendationsState(
           status: RecommendationsStatus.success,
@@ -92,10 +94,12 @@ class RecommendationsCubit extends Cubit<RecommendationsState> {
             bootstrap: bootstrap,
             team: team,
             fixtures: fixtures,
+            updatedAt: DateTime.now(),
           ),
         ),
       );
     } on Object catch (error) {
+      if (isClosed) return;
       emit(state.copyWith(status: RecommendationsStatus.failure, error: error));
     }
   }

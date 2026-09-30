@@ -1,18 +1,24 @@
-import 'dart:ui';
+import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../fixtures/data/models/fpl_models.dart';
 import '../../data/models/team_models.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../l10n/app_localizations.dart';
 
-enum PlayerCardMetric {
-  points,
-  price,
-  form,
-  selectedPercent,
-  totalPoints,
-}
+enum PlayerCardMetric { points, price, form, selectedPercent, totalPoints }
+
+const _benchGradient = BoxDecoration(
+  gradient: LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0xff00A34F), Colors.white],
+  ),
+);
+
 class PitchView extends StatelessWidget {
   const PitchView({
     super.key,
@@ -43,56 +49,41 @@ class PitchView extends StatelessWidget {
     ];
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        // Realistic Stadium Pitch Card with Perspective Angle
-        ClipPath(
-          clipper: const _PerspectivePitchClipper(),
-          child: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xff0a6e35), Color(0xff12944b)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-            child: Stack(
+        Stack(
+          children: [
+            const Positioned.fill(child: _PitchSurface()),
+            Column(
               children: [
-                const Positioned.fill(
-                  child: CustomPaint(painter: _FplPerspectivePitchPainter()),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 16, 10, 18),
-                  child: Column(
-                    children: [
-                      for (var index = 0; index < rows.length; index++) ...[
-                        _PitchRow(
-                          picks: rows[index],
-                          bootstrap: bootstrap,
-                          gameweekPoints: gameweekPoints,
-                          onSwap: onSwap,
-                          onCompare: onCompare,
-                          metric: metric,
-                        ),
-                        if (index != rows.length - 1)
-                          const SizedBox(height: 14),
-                      ],
-                    ],
+                for (var index = 0; index < rows.length; index++) ...[
+                  _PitchRow(
+                    picks: rows[index],
+                    bootstrap: bootstrap,
+                    gameweekPoints: gameweekPoints,
+                    onSwap: onSwap,
+                    onCompare: onCompare,
+                    metric: metric,
                   ),
-                ),
+                  if (index != rows.length - 1) const SizedBox(height: 14),
+                ],
               ],
             ),
+          ],
+        ),
+        if (bench.isNotEmpty)
+          Container(
+            decoration: _benchGradient,
+            padding: const EdgeInsets.only(bottom: 20, top: 20),
+            child: _BenchSection(
+              bench: bench,
+              bootstrap: bootstrap,
+              gameweekPoints: gameweekPoints,
+              onSwap: onSwap,
+              onCompare: onCompare,
+              metric: metric,
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        // Bench (Substitutes) Section
-        _BenchSection(
-          bench: bench,
-          bootstrap: bootstrap,
-          gameweekPoints: gameweekPoints,
-          onSwap: onSwap,
-          onCompare: onCompare,
-          metric: metric,
-        ),
       ],
     );
   }
@@ -110,141 +101,66 @@ class PitchView extends StatelessWidget {
   }
 }
 
-class _PerspectivePitchClipper extends CustomClipper<Path> {
-  const _PerspectivePitchClipper();
+class _PitchSurface extends StatelessWidget {
+  const _PitchSurface();
 
   @override
-  Path getClip(Size size) {
-    final path = Path();
-    const topInset = 16.0;
-    const radius = 20.0;
+  Widget build(BuildContext context) {
+    return ExcludeSemantics(
+      child: IgnorePointer(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            const svgWidth = 1417.0;
+            const svgHeight = 788.0;
+            const cropWidth = 696.0;
+            final scale = math.min(
+              constraints.maxWidth / cropWidth,
+              constraints.maxHeight / svgHeight,
+            );
+            final cropLeft = (svgWidth * scale - constraints.maxWidth) / 2;
+            final logoSize = 23 * scale;
+            final pitchHeight = svgHeight * scale;
+            final verticalScale = constraints.maxHeight / pitchHeight;
 
-    // Top edge starts narrower for 3D stadium perspective
-    path.moveTo(topInset + radius, 0);
-    path.lineTo(size.width - topInset - radius, 0);
-    path.quadraticBezierTo(size.width - topInset, 0, size.width - topInset + 4, radius * 0.5);
-    // Right sideline slants outward to bottom-right
-    path.lineTo(size.width, size.height - radius);
-    path.quadraticBezierTo(size.width, size.height, size.width - radius, size.height);
-    // Bottom edge
-    path.lineTo(radius, size.height);
-    path.quadraticBezierTo(0, size.height, 0, size.height - radius);
-    // Left sideline slants inward to top-left
-    path.lineTo(topInset - 4, radius * 0.5);
-    path.quadraticBezierTo(topInset, 0, topInset + radius, 0);
-    path.close();
-    return path;
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: Transform.scale(
+                    alignment: Alignment.topCenter,
+                    scaleY: verticalScale,
+                    child: SizedBox(
+                      width: constraints.maxWidth,
+                      height: pitchHeight,
+                      child: SvgPicture.asset(
+                        'assets/pitch/pitch-graphic.svg',
+                        fit: BoxFit.cover,
+                        alignment: Alignment.topCenter,
+                      ),
+                    ),
+                  ),
+                ),
+                for (final logoX in const [465.3, 856.9])
+                  Positioned(
+                    left: logoX * scale - cropLeft - logoSize / 2,
+                    top: 22 * scale * verticalScale - logoSize / 2,
+                    width: logoSize,
+                    height: logoSize,
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/icon/app_icon.png',
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
   }
-
-  @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
-}
-
-class _FplPerspectivePitchPainter extends CustomPainter {
-  const _FplPerspectivePitchPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const topInset = 16.0;
-    const bottomInset = 0.0;
-    final bands = 12;
-
-    // 1. Perspective lawn grass stripes with subtle realistic contrast
-    for (var i = 0; i < bands; i++) {
-      final t0 = i / bands;
-      final t1 = (i + 1) / bands;
-      final y0 = size.height * t0;
-      final y1 = size.height * t1;
-
-      final left0 = lerpDouble(topInset, bottomInset, t0)!;
-      final right0 = lerpDouble(size.width - topInset, size.width - bottomInset, t0)!;
-      final left1 = lerpDouble(topInset, bottomInset, t1)!;
-      final right1 = lerpDouble(size.width - topInset, size.width - bottomInset, t1)!;
-
-      final stripePaint = Paint()
-        ..color = (i % 2 == 0) ? const Color(0xff128e48) : const Color(0xff0d7e3e);
-
-      final stripePath = Path()
-        ..moveTo(left0, y0)
-        ..lineTo(right0, y0)
-        ..lineTo(right1, y1)
-        ..lineTo(left1, y1)
-        ..close();
-
-      canvas.drawPath(stripePath, stripePaint);
-    }
-
-    // 2. Crisp white field markings with perspective
-    final linePaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.7)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-
-    // Pitch boundary
-    final outlinePath = Path()
-      ..moveTo(topInset + 6, 6)
-      ..lineTo(size.width - topInset - 6, 6)
-      ..lineTo(size.width - 6, size.height - 6)
-      ..lineTo(6, size.height - 6)
-      ..close();
-    canvas.drawPath(outlinePath, linePaint);
-
-    // Goal at top behind keeper (realistic posts and net depth)
-    final goalWidth = size.width * 0.32;
-    final goalLeft = (size.width - goalWidth) / 2;
-    final goalNetPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.3)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-    canvas.drawRect(Rect.fromLTWH(goalLeft, 6, goalWidth, 12), goalNetPaint);
-    canvas.drawLine(Offset(goalLeft, 6), Offset(goalLeft + goalWidth, 6), linePaint);
-
-    // 6-yard box
-    final sixYardWidth = size.width * 0.38;
-    final sixYardHeight = size.height * 0.085;
-    final sixYardLeft = (size.width - sixYardWidth) / 2;
-    canvas.drawRect(
-      Rect.fromLTWH(sixYardLeft, 6, sixYardWidth, sixYardHeight),
-      linePaint,
-    );
-
-    // 18-yard penalty box
-    final boxWidth = size.width * 0.66;
-    final boxHeight = size.height * 0.20;
-    final boxLeft = (size.width - boxWidth) / 2;
-    canvas.drawRect(
-      Rect.fromLTWH(boxLeft, 6, boxWidth, boxHeight),
-      linePaint,
-    );
-
-    // Penalty spot
-    final spotPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.8)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(size.width / 2, 6 + (boxHeight * 0.7)), 2.5, spotPaint);
-
-    // Penalty arc
-    final arcRect = Rect.fromCenter(
-      center: Offset(size.width / 2, 6 + (boxHeight * 0.7)),
-      width: size.width * 0.28,
-      height: size.width * 0.28,
-    );
-    canvas.drawArc(arcRect, 0.15 * 3.14159, 0.7 * 3.14159, false, linePaint);
-
-    // Halfway line across pitch (lower half)
-    final halfwayY = size.height * 0.58;
-    final halfLeft = lerpDouble(topInset, bottomInset, 0.58)! + 6;
-    final halfRight = lerpDouble(size.width - topInset, size.width - bottomInset, 0.58)! - 6;
-    canvas.drawLine(Offset(halfLeft, halfwayY), Offset(halfRight, halfwayY), linePaint);
-
-    // Center circle
-    final circleRadius = size.width * 0.16;
-    canvas.drawCircle(Offset(size.width / 2, halfwayY), circleRadius, linePaint);
-    canvas.drawCircle(Offset(size.width / 2, halfwayY), 2.5, spotPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _BenchSection extends StatelessWidget {
@@ -272,64 +188,68 @@ class _BenchSection extends StatelessWidget {
     final sortedBench = List<TeamPick>.from(bench)
       ..sort((a, b) => a.position.compareTo(b.position));
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final benchBg = isDark
-        ? AppColors.darkBenchBg
-        : const Color(0xffc5ece1);
-    final benchBorder = isDark
-        ? AppColors.darkBenchBorder
-        : Colors.white.withValues(alpha: 0.6);
-    final labelColor = isDark
-        ? AppColors.darkTextSecondary
-        : const Color(0xff1f1f2e);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(4, 10, 4, 12),
-      decoration: BoxDecoration(
-        color: benchBg,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: benchBorder, width: 1.2),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: sortedBench.map((pick) {
-              final player = bootstrap.players[pick.elementId];
-              final label = _positionLabel(player?.positionId);
-              return Expanded(
-                child: Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: labelColor,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              );
-            }).toList(growable: false),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(4, 10, 4, 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.28),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+            border: Border(
+              top: BorderSide(color: Colors.white.withValues(alpha: 0.55)),
+            ),
           ),
-          const SizedBox(height: 6),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: sortedBench.map((pick) {
-              return _PitchPlayer(
-                pick: pick,
-                player: bootstrap.players[pick.elementId],
-                team: _teamFor(pick),
-                points: _displayPoints(pick),
-                isBench: true,
-                onSwap: onSwap,
-                onCompare: onCompare,
-                metric: metric,
-              );
-            }).toList(growable: false),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: sortedBench.indexed
+                    .map((entry) {
+                      final index = entry.$1;
+                      final player = bootstrap.players[entry.$2.elementId];
+                      final label = index == 0
+                          ? 'GKP'
+                          : '$index. ${_positionLabel(player?.positionId)}';
+                      return Expanded(
+                        child: Text(
+                          label,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Color(0xff1f1f2e),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      );
+                    })
+                    .toList(growable: false),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: sortedBench
+                    .map((pick) {
+                      return _PitchPlayer(
+                        pick: pick,
+                        player: bootstrap.players[pick.elementId],
+                        team: _teamFor(pick),
+                        points: _displayPoints(pick),
+                        isBench: true,
+                        onSwap: onSwap,
+                        onCompare: onCompare,
+                        metric: metric,
+                      );
+                    })
+                    .toList(growable: false),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -455,7 +375,9 @@ class _PitchPlayer extends StatelessWidget {
         metricText = cost != null ? '£${(cost / 10).toStringAsFixed(1)}' : '-';
         break;
       case PlayerCardMetric.form:
-        metricText = player?.form != null ? player!.form.toStringAsFixed(1) : '-';
+        metricText = player?.form != null
+            ? player!.form.toStringAsFixed(1)
+            : '-';
         break;
       case PlayerCardMetric.selectedPercent:
         metricText = player?.selectedByPercent != null
@@ -477,11 +399,11 @@ class _PitchPlayer extends StatelessWidget {
       nameBgColor = const Color(0xffdc2626);
       nameTextColor = Colors.white;
     } else if (isDoubtful) {
-      nameBgColor = const Color(0xfff59e0b);
+      nameBgColor = const Color(0xfffcd34d);
       nameTextColor = const Color(0xff1f1f2e);
     } else {
-      nameBgColor = const Color(0xff1f1f2e);
-      nameTextColor = Colors.white;
+      nameBgColor = Colors.white;
+      nameTextColor = const Color(0xff1f1f2e);
     }
 
     Widget shirtWidget = Stack(
@@ -510,17 +432,16 @@ class _PitchPlayer extends StatelessWidget {
       ],
     );
 
-    // Bench chic soft glass container (removes harsh dark background)
+    // Bench chic soft glass container
     if (isBench) {
       shirtWidget = Container(
-        width: 54,
+        width: cardWidth,
         height: 58,
-        padding: const EdgeInsets.symmetric(vertical: 2),
+        alignment: Alignment.bottomCenter,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.35),
+          color: Colors.white.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(8),
         ),
-        alignment: Alignment.center,
         child: shirtWidget,
       );
     }
@@ -532,7 +453,6 @@ class _PitchPlayer extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           shirtWidget,
-          const SizedBox(height: 2),
           // Player Name Box - Clean full-width dedicated for player name
           Container(
             width: cardWidth,
@@ -646,10 +566,7 @@ class _PitchPlayer extends StatelessWidget {
                     color: Colors.transparent,
                     child: Opacity(opacity: 0.8, child: cardContent),
                   ),
-                  childWhenDragging: Opacity(
-                    opacity: 0.4,
-                    child: cardContent,
-                  ),
+                  childWhenDragging: Opacity(opacity: 0.4, child: cardContent),
                   child: cardContent,
                 ),
               );
@@ -691,11 +608,7 @@ class _PitchPlayer extends StatelessWidget {
 
   Widget _shirt(bool isGoalkeeper, String? localAsset) {
     final fallback = localAsset == null
-        ? const Icon(
-            Icons.sports_soccer,
-            size: 38,
-            color: Colors.white70,
-          )
+        ? const Icon(Icons.sports_soccer, size: 38, color: Colors.white70)
         : Image.asset(
             localAsset,
             fit: BoxFit.contain,
@@ -758,10 +671,7 @@ class _RoleBadge extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white, width: 1.5),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 2,
-          ),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 2),
         ],
       ),
       child: Text(
@@ -917,13 +827,21 @@ class _PlayerDetailBottomSheet extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: isUnavailable
-                    ? (isDark ? AppColors.darkAlertErrorBg : const Color(0xfffef2f2))
-                    : (isDark ? AppColors.darkAlertWarningBg : const Color(0xfffffbeb)),
+                    ? (isDark
+                          ? AppColors.darkAlertErrorBg
+                          : const Color(0xfffef2f2))
+                    : (isDark
+                          ? AppColors.darkAlertWarningBg
+                          : const Color(0xfffffbeb)),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: isUnavailable
-                      ? (isDark ? AppColors.darkAlertErrorBorder : const Color(0xfff87171))
-                      : (isDark ? AppColors.darkAlertWarningBorder : const Color(0xfffcd34d)),
+                      ? (isDark
+                            ? AppColors.darkAlertErrorBorder
+                            : const Color(0xfff87171))
+                      : (isDark
+                            ? AppColors.darkAlertWarningBorder
+                            : const Color(0xfffcd34d)),
                 ),
               ),
               child: Row(
@@ -934,8 +852,12 @@ class _PlayerDetailBottomSheet extends StatelessWidget {
                         ? Icons.error_outline_rounded
                         : Icons.warning_amber_rounded,
                     color: isUnavailable
-                        ? (isDark ? AppColors.darkAlertErrorText : const Color(0xffdc2626))
-                        : (isDark ? AppColors.darkAlertWarningText : const Color(0xffd97706)),
+                        ? (isDark
+                              ? AppColors.darkAlertErrorText
+                              : const Color(0xffdc2626))
+                        : (isDark
+                              ? AppColors.darkAlertWarningText
+                              : const Color(0xffd97706)),
                     size: 22,
                   ),
                   const SizedBox(width: 10),
@@ -951,8 +873,12 @@ class _PlayerDetailBottomSheet extends StatelessWidget {
                             fontSize: 13,
                             fontWeight: FontWeight.w800,
                             color: isUnavailable
-                                ? (isDark ? AppColors.darkAlertErrorText : const Color(0xff991b1b))
-                                : (isDark ? AppColors.darkAlertWarningText : const Color(0xff92400e)),
+                                ? (isDark
+                                      ? AppColors.darkAlertErrorText
+                                      : const Color(0xff991b1b))
+                                : (isDark
+                                      ? AppColors.darkAlertWarningText
+                                      : const Color(0xff92400e)),
                           ),
                         ),
                         if (player?.news.isNotEmpty == true) ...[
@@ -962,8 +888,14 @@ class _PlayerDetailBottomSheet extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 12,
                               color: isUnavailable
-                                  ? (isDark ? AppColors.darkAlertErrorText.withValues(alpha: 0.85) : const Color(0xffb91c1c))
-                                  : (isDark ? AppColors.darkAlertWarningText.withValues(alpha: 0.85) : const Color(0xffb45309)),
+                                  ? (isDark
+                                        ? AppColors.darkAlertErrorText
+                                              .withValues(alpha: 0.85)
+                                        : const Color(0xffb91c1c))
+                                  : (isDark
+                                        ? AppColors.darkAlertWarningText
+                                              .withValues(alpha: 0.85)
+                                        : const Color(0xffb45309)),
                             ),
                           ),
                         ],
@@ -980,7 +912,12 @@ class _PlayerDetailBottomSheet extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _statItem('Points', _formatStatPoints(points), titleColor, subtitleColor),
+              _statItem(
+                'Points',
+                _formatStatPoints(points),
+                titleColor,
+                subtitleColor,
+              ),
               _statItem(
                 'Price',
                 player?.nowCost != null
@@ -989,7 +926,12 @@ class _PlayerDetailBottomSheet extends StatelessWidget {
                 titleColor,
                 subtitleColor,
               ),
-              _statItem('Form', player?.form.toStringAsFixed(1) ?? '—', titleColor, subtitleColor),
+              _statItem(
+                'Form',
+                player?.form.toStringAsFixed(1) ?? '—',
+                titleColor,
+                subtitleColor,
+              ),
               _statItem(
                 'Selected',
                 player?.selectedByPercent != null
@@ -998,7 +940,12 @@ class _PlayerDetailBottomSheet extends StatelessWidget {
                 titleColor,
                 subtitleColor,
               ),
-              _statItem('Total Pts', player?.totalPoints.toString() ?? '—', titleColor, subtitleColor),
+              _statItem(
+                'Total Pts',
+                player?.totalPoints.toString() ?? '—',
+                titleColor,
+                subtitleColor,
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -1030,14 +977,19 @@ class _PlayerDetailBottomSheet extends StatelessWidget {
             child: FilledButton.tonal(
               onPressed: () => Navigator.of(context).pop(),
               style: FilledButton.styleFrom(
-                backgroundColor: isDark ? AppColors.darkActiveTab : const Color(0xfff0edf6),
+                backgroundColor: isDark
+                    ? AppColors.darkActiveTab
+                    : const Color(0xfff0edf6),
                 foregroundColor: AppColors.textPrimary(isDark),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text('Close', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              child: const Text(
+                'Close',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+              ),
             ),
           ),
         ],
@@ -1053,7 +1005,12 @@ class _PlayerDetailBottomSheet extends StatelessWidget {
     return pts.toStringAsFixed(1);
   }
 
-  Widget _statItem(String label, String value, Color valueColor, Color labelColor) {
+  Widget _statItem(
+    String label,
+    String value,
+    Color valueColor,
+    Color labelColor,
+  ) {
     return Expanded(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1109,49 +1066,69 @@ class PitchSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        ClipPath(
-          clipper: const _PerspectivePitchClipper(),
-          child: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xff0a6e35), Color(0xff12944b)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-            child: Stack(
+        Stack(
+          children: [
+            const Positioned.fill(child: _PitchSurface()),
+            Column(
               children: [
-                const Positioned.fill(
-                  child: CustomPaint(painter: _FplPerspectivePitchPainter()),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 16, 10, 18),
+                _PitchSkeletonRow(count: 1),
+                const SizedBox(height: 14),
+                _PitchSkeletonRow(count: 4),
+                const SizedBox(height: 14),
+                _PitchSkeletonRow(count: 4),
+                const SizedBox(height: 14),
+                _PitchSkeletonRow(count: 2),
+              ],
+            ),
+          ],
+        ),
+        Container(
+          decoration: _benchGradient,
+          padding: const EdgeInsets.only(bottom: 20),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(4, 10, 4, 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.28),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: Colors.white54),
+                  ),
                   child: Column(
-                    children: const [
-                      _PitchSkeletonRow(count: 1),
-                      SizedBox(height: 14),
-                      _PitchSkeletonRow(count: 4),
-                      SizedBox(height: 14),
-                      _PitchSkeletonRow(count: 4),
-                      SizedBox(height: 14),
-                      _PitchSkeletonRow(count: 2),
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: const ['GKP', '1. DEF', '2. FWD', '3. MID']
+                            .map(
+                              (label) => Expanded(
+                                child: Text(
+                                  label,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Color(0xff1f1f2e),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(growable: false),
+                      ),
+                      const SizedBox(height: 6),
+                      const _PitchSkeletonRow(count: 4, isBench: true),
                     ],
                   ),
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(4, 10, 4, 12),
-          decoration: BoxDecoration(
-            color: const Color(0xffc5ece1),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: const _PitchSkeletonRow(count: 4, isBench: true),
         ),
       ],
     );

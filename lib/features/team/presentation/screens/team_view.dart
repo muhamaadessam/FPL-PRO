@@ -54,6 +54,7 @@ class TeamView extends StatelessWidget {
     );
   }
 }
+
 class _TeamBody extends StatelessWidget {
   const _TeamBody({required this.entryId});
 
@@ -176,56 +177,67 @@ class _TeamContentState extends State<_TeamContent> {
     return RefreshIndicator(
       onRefresh: widget.onRefresh,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 6, 16, 24),
+        padding: const EdgeInsets.only(top: 6),
         children: [
-          // 1. Top Header: Dynamic Team name & Manager name, Avatar
-          Builder(
-            builder: (context) {
-              final teamName = widget.entry?.name.isNotEmpty == true
-                  ? widget.entry!.name
-                  : (widget.entryId != null
-                      ? 'Entry #${widget.entryId}'
-                      : 'My Team');
-              final managerName = widget.entry?.playerFullName ?? '';
-              final hasDistinctManager = managerName.isNotEmpty &&
-                  managerName.trim().toLowerCase() !=
-                      teamName.trim().toLowerCase();
-              final subtitle = hasDistinctManager ? managerName : null;
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // 1. Top Header: Dynamic Team name & Manager name, Avatar
+                Builder(
+                  builder: (context) {
+                    final teamName = widget.entry?.name.isNotEmpty == true
+                        ? widget.entry!.name
+                        : (widget.entryId != null
+                              ? 'Entry #${widget.entryId}'
+                              : 'My Team');
+                    final managerName = widget.entry?.playerFullName ?? '';
+                    final hasDistinctManager =
+                        managerName.isNotEmpty &&
+                        managerName.trim().toLowerCase() !=
+                            teamName.trim().toLowerCase();
+                    final subtitle = hasDistinctManager ? managerName : null;
 
-              return _TeamHeader(
-                title: teamName,
-                subtitle: subtitle,
-                showBackButton: widget.entryId != null,
-              );
-            },
-          ),
-          const SizedBox(height: 10),
+                    return _TeamHeader(
+                      title: teamName,
+                      subtitle: subtitle,
+                      showBackButton: widget.entryId != null,
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
 
-          // 2. Gameweek Switcher: < Gameweek 4 > (capped at current gameweek)
-          _GameweekSelector(
-            selectedGameweekId: widget.selectedGameweekId,
-            bootstrap: widget.bootstrap,
-            onGameweekChanged: widget.onGameweekChanged,
-          ),
-          const SizedBox(height: 16),
+                // 2. Gameweek Switcher: < Gameweek 4 > (capped at current gameweek)
+                _GameweekSelector(
+                  selectedGameweekId: widget.selectedGameweekId,
+                  bootstrap: widget.bootstrap,
+                  onGameweekChanged: widget.onGameweekChanged,
+                ),
+                const SizedBox(height: 16),
 
-          // 3. Stats Row: Average | Total Pts (Highlighted Card) | Highest (tappable)
-          _StatsSummaryCards(
-            averageScore: gameweek.averageEntryScore?.toString() ?? '—',
-            totalPoints: displayedPoints?.toString() ?? '—',
-            highestScore: gameweek.highestScore?.toString() ?? '—',
-            gameweek: gameweek,
-          ),
-          const SizedBox(height: 18),
+                // 3. Stats Row: Average | Total Pts (Highlighted Card) | Highest (tappable)
+                _StatsSummaryCards(
+                  averageScore: gameweek.averageEntryScore?.toString() ?? '—',
+                  totalPoints: displayedPoints?.toString() ?? '—',
+                  highestScore: gameweek.highestScore?.toString() ?? '—',
+                  gameweek: gameweek,
+                ),
+                const SizedBox(height: 18),
 
-          // 4. Sub-Navigation Bar: Segmented [Pitch | List] & Metric Selector Dropdown
-          _SubNavigationRow(
-            isPitchView: _isPitchView,
-            selectedMetric: _selectedMetric,
-            onTogglePitch: (isPitch) => setState(() => _isPitchView = isPitch),
-            onMetricChanged: (metric) => setState(() => _selectedMetric = metric),
+                // 4. Sub-Navigation Bar: Segmented [Pitch | List] & Metric Selector Dropdown
+                _SubNavigationRow(
+                  isPitchView: _isPitchView,
+                  selectedMetric: _selectedMetric,
+                  onTogglePitch: (isPitch) =>
+                      setState(() => _isPitchView = isPitch),
+                  onMetricChanged: (metric) =>
+                      setState(() => _selectedMetric = metric),
+                ),
+                const SizedBox(height: 14),
+              ],
+            ),
           ),
-          const SizedBox(height: 14),
 
           // 5. Main Content: Perspective Pitch or List View
           if (_isPitchView)
@@ -237,11 +249,14 @@ class _TeamContentState extends State<_TeamContent> {
               metric: _selectedMetric,
             )
           else
-            _TeamListView(
-              starting: starting,
-              bench: bench,
-              bootstrap: widget.bootstrap,
-              gameweekPoints: widget.gameweekPoints,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _TeamListView(
+                starting: starting,
+                bench: bench,
+                bootstrap: widget.bootstrap,
+                gameweekPoints: widget.gameweekPoints,
+              ),
             ),
         ],
       ),
@@ -297,20 +312,14 @@ class _TeamHeader extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isDark
                       ? AppColors.darkCard
-                      : Theme.of(context)
-                          .colorScheme
-                          .surfaceContainerHighest
-                          .withValues(alpha: 0.5),
+                      : Theme.of(context).colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.5),
                   shape: BoxShape.circle,
                   border: isDark
                       ? Border.all(color: AppColors.darkCardBorder)
                       : null,
                 ),
-                child: Icon(
-                  Icons.arrow_back,
-                  size: 20,
-                  color: titleColor,
-                ),
+                child: Icon(Icons.arrow_back, size: 20, color: titleColor),
               ),
             )
           else
@@ -417,8 +426,11 @@ class _GameweekSelector extends StatelessWidget {
       orElse: () => bootstrap.gameweeks.first,
     );
     final isFullSeason = bootstrap.gameweeks.length > 2;
-    final maxAllowedId = isFullSeason ? currentGw.id : bootstrap.gameweeks.last.id;
-    final canGoNext = selectedGameweekId < maxAllowedId &&
+    final maxAllowedId = isFullSeason
+        ? currentGw.id
+        : bootstrap.gameweeks.last.id;
+    final canGoNext =
+        selectedGameweekId < maxAllowedId &&
         currentIndex >= 0 &&
         currentIndex < bootstrap.gameweeks.length - 1;
 
@@ -436,8 +448,9 @@ class _GameweekSelector extends StatelessWidget {
             icon: const Icon(Icons.chevron_left_rounded, size: 28),
             color: canGoPrev ? textColor : disabledColor,
             onPressed: canGoPrev
-                ? () =>
-                    onGameweekChanged(bootstrap.gameweeks[currentIndex - 1].id)
+                ? () => onGameweekChanged(
+                    bootstrap.gameweeks[currentIndex - 1].id,
+                  )
                 : null,
           ),
           const SizedBox(width: 8),
@@ -455,8 +468,9 @@ class _GameweekSelector extends StatelessWidget {
             icon: const Icon(Icons.chevron_right_rounded, size: 28),
             color: canGoNext ? textColor : disabledColor,
             onPressed: canGoNext
-                ? () =>
-                    onGameweekChanged(bootstrap.gameweeks[currentIndex + 1].id)
+                ? () => onGameweekChanged(
+                    bootstrap.gameweeks[currentIndex + 1].id,
+                  )
                 : null,
           ),
         ],
@@ -479,7 +493,8 @@ class _StatsSummaryCards extends StatelessWidget {
   final Gameweek gameweek;
 
   void _openHighestTeam(BuildContext context) {
-    if (gameweek.highestScoringEntry != null && gameweek.highestScoringEntry! > 0) {
+    if (gameweek.highestScoringEntry != null &&
+        gameweek.highestScoringEntry! > 0) {
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => TeamLookupPage(entryId: gameweek.highestScoringEntry),
@@ -551,7 +566,9 @@ class _StatsSummaryCards extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xff00d4ff).withValues(alpha: isDark ? 0.45 : 0.35),
+                    color: const Color(
+                      0xff00d4ff,
+                    ).withValues(alpha: isDark ? 0.45 : 0.35),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -733,8 +750,12 @@ class _StatsSummaryCards extends StatelessWidget {
                     style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                   style: FilledButton.styleFrom(
-                    backgroundColor: isDark ? AppColors.plMint : const Color(0xff37003c),
-                    foregroundColor: isDark ? AppColors.darkBackground : Colors.white,
+                    backgroundColor: isDark
+                        ? AppColors.plMint
+                        : const Color(0xff37003c),
+                    foregroundColor: isDark
+                        ? AppColors.darkBackground
+                        : Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -749,13 +770,18 @@ class _StatsSummaryCards extends StatelessWidget {
               child: FilledButton.tonal(
                 onPressed: () => Navigator.of(context).pop(),
                 style: FilledButton.styleFrom(
-                  backgroundColor: isDark ? AppColors.darkActiveTab : const Color(0xfff0edf6),
+                  backgroundColor: isDark
+                      ? AppColors.darkActiveTab
+                      : const Color(0xfff0edf6),
                   foregroundColor: AppColors.textPrimary(isDark),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text('Close', style: TextStyle(fontWeight: FontWeight.w700)),
+                child: const Text(
+                  'Close',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
               ),
             ),
           ],
@@ -783,7 +809,9 @@ class _SubNavigationRow extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final segmentedBg = isDark ? AppColors.darkCard : const Color(0xfff0edf6);
     final dropdownBg = isDark ? AppColors.darkCard : Colors.white;
-    final dropdownBorder = isDark ? AppColors.darkCardBorder : const Color(0xffe2e0ea);
+    final dropdownBorder = isDark
+        ? AppColors.darkCardBorder
+        : const Color(0xffe2e0ea);
     final dropdownAccent = isDark ? AppColors.plMint : const Color(0xff37003c);
     final popupItemText = AppColors.textPrimary(isDark);
 
@@ -830,9 +858,19 @@ class _SubNavigationRow extends StatelessWidget {
                   value: PlayerCardMetric.points,
                   child: Row(
                     children: [
-                      Icon(Icons.sports_soccer, size: 16, color: dropdownAccent),
+                      Icon(
+                        Icons.sports_soccer,
+                        size: 16,
+                        color: dropdownAccent,
+                      ),
                       const SizedBox(width: 8),
-                      Text('Points', style: TextStyle(fontWeight: FontWeight.w700, color: popupItemText)),
+                      Text(
+                        'Points',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: popupItemText,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -840,9 +878,19 @@ class _SubNavigationRow extends StatelessWidget {
                   value: PlayerCardMetric.price,
                   child: Row(
                     children: [
-                      Icon(Icons.attach_money_rounded, size: 16, color: dropdownAccent),
+                      Icon(
+                        Icons.attach_money_rounded,
+                        size: 16,
+                        color: dropdownAccent,
+                      ),
                       const SizedBox(width: 8),
-                      Text('Current Price', style: TextStyle(fontWeight: FontWeight.w700, color: popupItemText)),
+                      Text(
+                        'Current Price',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: popupItemText,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -850,9 +898,19 @@ class _SubNavigationRow extends StatelessWidget {
                   value: PlayerCardMetric.form,
                   child: Row(
                     children: [
-                      Icon(Icons.trending_up_rounded, size: 16, color: dropdownAccent),
+                      Icon(
+                        Icons.trending_up_rounded,
+                        size: 16,
+                        color: dropdownAccent,
+                      ),
                       const SizedBox(width: 8),
-                      Text('Form', style: TextStyle(fontWeight: FontWeight.w700, color: popupItemText)),
+                      Text(
+                        'Form',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: popupItemText,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -860,9 +918,19 @@ class _SubNavigationRow extends StatelessWidget {
                   value: PlayerCardMetric.selectedPercent,
                   child: Row(
                     children: [
-                      Icon(Icons.people_outline_rounded, size: 16, color: dropdownAccent),
+                      Icon(
+                        Icons.people_outline_rounded,
+                        size: 16,
+                        color: dropdownAccent,
+                      ),
                       const SizedBox(width: 8),
-                      Text('Selected %', style: TextStyle(fontWeight: FontWeight.w700, color: popupItemText)),
+                      Text(
+                        'Selected %',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: popupItemText,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -870,9 +938,19 @@ class _SubNavigationRow extends StatelessWidget {
                   value: PlayerCardMetric.totalPoints,
                   child: Row(
                     children: [
-                      Icon(Icons.military_tech_rounded, size: 16, color: dropdownAccent),
+                      Icon(
+                        Icons.military_tech_rounded,
+                        size: 16,
+                        color: dropdownAccent,
+                      ),
                       const SizedBox(width: 8),
-                      Text('Total Points', style: TextStyle(fontWeight: FontWeight.w700, color: popupItemText)),
+                      Text(
+                        'Total Points',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: popupItemText,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -1055,7 +1133,9 @@ class _TeamListView extends StatelessWidget {
   Widget _buildPlayerTile(BuildContext context, TeamPick pick, bool isBench) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final tileBg = AppColors.card(isDark);
-    final tileBorder = isDark ? AppColors.darkCardBorder : const Color(0xfff0edf6);
+    final tileBorder = isDark
+        ? AppColors.darkCardBorder
+        : const Color(0xfff0edf6);
     final titleColor = AppColors.textPrimary(isDark);
     final subColor = AppColors.textSecondary(isDark);
 
@@ -1084,7 +1164,9 @@ class _TeamListView extends StatelessWidget {
             decoration: BoxDecoration(
               color: isBench
                   ? (isDark ? AppColors.darkActiveTab : const Color(0xffc5ece1))
-                  : const Color(0xff00d4ff).withValues(alpha: isDark ? 0.25 : 0.15),
+                  : const Color(
+                      0xff00d4ff,
+                    ).withValues(alpha: isDark ? 0.25 : 0.15),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -1136,9 +1218,7 @@ class _TeamListView extends StatelessWidget {
                   )
                 else if (isDoubtful)
                   Text(
-                    player?.news.isNotEmpty == true
-                        ? player!.news
-                        : 'Doubtful',
+                    player?.news.isNotEmpty == true ? player!.news : 'Doubtful',
                     style: const TextStyle(
                       fontSize: 11,
                       color: Color(0xfff59e0b),
@@ -1166,7 +1246,9 @@ class _TeamListView extends StatelessWidget {
             decoration: BoxDecoration(
               color: isDark ? AppColors.darkActiveTab : const Color(0xff37003c),
               borderRadius: BorderRadius.circular(8),
-              border: isDark ? Border.all(color: AppColors.darkCardBorder) : null,
+              border: isDark
+                  ? Border.all(color: AppColors.darkCardBorder)
+                  : null,
             ),
             child: Text(
               pointsText,
@@ -1190,7 +1272,9 @@ class _TeamListView extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkActiveTab : const Color(0xff1f1f2e),
         shape: BoxShape.circle,
-        border: isDark ? Border.all(color: AppColors.darkCardBorder, width: 0.8) : null,
+        border: isDark
+            ? Border.all(color: AppColors.darkCardBorder, width: 0.8)
+            : null,
       ),
       child: Text(
         label,
@@ -1248,22 +1332,15 @@ class TeamLookupPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _TeamHeader(
-                title: '',
-                showBackButton: true,
-              ),
-              Expanded(
-                child: Center(child: Text(l10n.entryIdInvalid)),
-              ),
+              const _TeamHeader(title: '', showBackButton: true),
+              Expanded(child: Center(child: Text(l10n.entryIdInvalid))),
             ],
           ),
         ),
       );
     }
     return Scaffold(
-      body: SafeArea(
-        child: TeamView(entryId: entryId),
-      ),
+      body: SafeArea(child: TeamView(entryId: entryId)),
     );
   }
 }
@@ -1316,80 +1393,87 @@ class _TeamSkeletonState extends State<_TeamSkeleton>
         );
       },
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        padding: const EdgeInsets.only(top: 8, bottom: 16),
         physics: const NeverScrollableScrollPhysics(),
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white54,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white54,
+                      ),
+                    ),
+                    Container(
+                      width: 140,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: Colors.white54,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white54,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              Container(
-                width: 140,
-                height: 20,
-                decoration: BoxDecoration(
-                  color: Colors.white54,
-                  borderRadius: BorderRadius.circular(6),
+                const SizedBox(height: 16),
+                Center(
+                  child: Container(
+                    width: 160,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: Colors.white54,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
                 ),
-              ),
-              Container(
-                width: 38,
-                height: 38,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white54,
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white54,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    Container(
+                      width: 110,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: Colors.white54,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    Container(
+                      width: 60,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white54,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Center(
-            child: Container(
-              width: 160,
-              height: 28,
-              decoration: BoxDecoration(
-                color: Colors.white54,
-                borderRadius: BorderRadius.circular(8),
-              ),
+                const SizedBox(height: 16),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              Container(
-                width: 60,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.white54,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              Container(
-                width: 110,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: Colors.white54,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              Container(
-                width: 60,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.white54,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
           const PitchSkeleton(),
         ],
       ),

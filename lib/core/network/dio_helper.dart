@@ -41,7 +41,7 @@ class DioHelper {
         PrettyDioLogger(
           requestHeader: true,
           requestBody: true,
-          responseBody: true,
+          responseBody: false,
           responseHeader: false,
           error: true,
           compact: true,
@@ -51,6 +51,7 @@ class DioHelper {
           filter: (options, args) {
             if (options.path.contains('/posts')) return false;
             if (_isSensitivePath(options.path)) return false;
+            
             if (args.isResponse && _isLargeEndpoint(options.path)) {
               return false;
             }
