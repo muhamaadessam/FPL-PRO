@@ -76,16 +76,17 @@ class _RecommendationsBodyState extends State<_RecommendationsBody>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.error_outline, size: 44),
+                  const Icon(Icons.error_outline_rounded, size: 48),
                   const SizedBox(height: 12),
                   Text(
                     _errorMessage(context, state.error!),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 12),
-                  FilledButton.tonal(
+                  const SizedBox(height: 16),
+                  FilledButton.tonalIcon(
                     onPressed: context.read<RecommendationsCubit>().refresh,
-                    child: Text(l10n.retry),
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: Text(l10n.retry),
                   ),
                 ],
               ),
@@ -134,12 +135,29 @@ class _RecommendationContent extends StatefulWidget {
   State<_RecommendationContent> createState() => _RecommendationContentState();
 }
 
-class _RecommendationContentState extends State<_RecommendationContent> {
+class _RecommendationContentState extends State<_RecommendationContent>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
   RecommendationData get data => widget.data;
+
   TransferSuggestion? _selectedTransfer;
   SuggestedChip? _selectedChip;
   TransferSuggestion? _submittingTransfer;
   SuggestedChip? _submittingChip;
+
+  int _selectedPositionFilter = 0; // 0: All, 1: GKP, 2: DEF, 3: MID, 4: FWD
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   Future<void> _showTransferComparison(TransferSuggestion transfer) async {
     final l10n = AppLocalizations.of(context);
@@ -149,10 +167,21 @@ class _RecommendationContentState extends State<_RecommendationContent> {
       builder: (sheetContext) {
         return SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
                 Text(
                   l10n.compareTransfer,
                   style: Theme.of(
@@ -169,9 +198,18 @@ class _RecommendationContentState extends State<_RecommendationContent> {
                         color: Theme.of(context).colorScheme.error,
                       ),
                     ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: Icon(Icons.swap_horiz),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.swap_horiz_rounded, size: 20),
+                      ),
                     ),
                     Expanded(
                       child: _ComparisonPlayer(
@@ -182,7 +220,7 @@ class _RecommendationContentState extends State<_RecommendationContent> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 _ComparisonMetric(
                   label: l10n.projectedPoints,
                   outValue: transfer.outProjection.horizonPoints,
@@ -201,13 +239,12 @@ class _RecommendationContentState extends State<_RecommendationContent> {
                   suffix: '%',
                   decimals: 0,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton.icon(
-                    // Temporarily disabled; keep the transfer callback for later.
                     onPressed: null,
-                    icon: const Icon(Icons.check),
+                    icon: const Icon(Icons.check_circle_outline),
                     label: Text(l10n.confirmTransfer),
                   ),
                 ),
@@ -245,11 +282,22 @@ class _RecommendationContentState extends State<_RecommendationContent> {
       builder: (sheetContext) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
                 Text(
                   l10n.chipSelection(l10n.chipName(chip.name)),
                   style: Theme.of(
@@ -257,13 +305,16 @@ class _RecommendationContentState extends State<_RecommendationContent> {
                   ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 8),
-                Text(l10n.chipReason(data.result.chipReason.name)),
-                const SizedBox(height: 16),
+                Text(
+                  l10n.chipReason(data.result.chipReason.name),
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton.icon(
                     onPressed: () => Navigator.of(sheetContext).pop(true),
-                    icon: const Icon(Icons.bolt),
+                    icon: const Icon(Icons.bolt_rounded),
                     label: Text(l10n.confirmChip),
                   ),
                 ),
@@ -297,243 +348,230 @@ class _RecommendationContentState extends State<_RecommendationContent> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final colors = Theme.of(context).colorScheme;
     final result = data.result;
+
     return RefreshIndicator(
       onRefresh: widget.onRefresh,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final isNarrow = constraints.maxWidth < 360;
-          return ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+
+          return Column(
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    l10n.recommendations,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      data.gameweek.name,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                l10n.recommendationSubtitle,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              if (data.updatedAt != null)
-                Text(
-                  l10n.recommendationsUpdated(data.updatedAt!),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              if (data.gameweek.deadlineTime != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  l10n.kickoffLabel(data.gameweek.deadlineTime!),
-                  style: Theme.of(
-                    context,
-                  ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
-                ),
-              ],
-              Text(
-                l10n.playerDirectorySubtitle,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 16),
-              if (result.suggestedLineup.players.length == 15 &&
-                  result.suggestedLineup.suggestedStartingIds.length == 11) ...[
-                _WeeklyPlanCard(data: data),
-                const SizedBox(height: 12),
-              ],
-              OutlinedButton.icon(
-                key: const ValueKey('player-directory'),
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => PlayerDirectoryPage(
-                      bootstrap: data.bootstrap,
-                      fixtures: data.fixtures,
-                      gameweekId: data.result.gameweekId,
-                    ),
-                  ),
-                ),
-                icon: const Icon(Icons.manage_search_rounded),
-                label: Text(l10n.playerDirectory),
-              ),
-              const SizedBox(height: 12),
-              _AnalysisEntryCard(
-                analysis: result.squadAnalysis,
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => NextGameweekAnalysisPage(
-                      data: data,
-                      onTransfer: widget.onTransfer,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              if (isNarrow) ...[
-                _CaptainCard(result: result, bootstrap: data.bootstrap),
-                const SizedBox(height: 8),
-                _ChipCard(
-                  result: result,
-                  isSelected: _selectedChip == result.chip,
-                  isSubmitting: _submittingChip == result.chip,
-                  onTap: result.chip == SuggestedChip.none
-                      ? null
-                      : () => _showChipSelection(result.chip),
-                ),
-              ] else
-                Row(
+              // Top Header Section: Gameweek & Hero Squad Rating
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: _CaptainCard(
-                        result: result,
-                        bootstrap: data.bootstrap,
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          l10n.recommendations,
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w900),
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colors.primary.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              data.gameweek.name,
+                              style: TextStyle(
+                                color: colors.primary,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 12,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _ChipCard(
-                        result: result,
-                        isSelected: _selectedChip == result.chip,
-                        isSubmitting: _submittingChip == result.chip,
-                        onTap: result.chip == SuggestedChip.none
-                            ? null
-                            : () => _showChipSelection(result.chip),
+                    if (data.gameweek.deadlineTime != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.access_time_rounded,
+                            size: 13,
+                            color: colors.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              l10n.kickoffLabel(data.gameweek.deadlineTime!),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-              const SizedBox(height: 24),
-              if (isNarrow) ...[
-                Text(
-                  l10n.transferIdeas,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '${l10n.freeTransfers}: ${result.freeTransfers ?? '—'} • ${l10n.bank}: £${_price(result.bank)}m',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ),
-              ] else
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        l10n.transferIdeas,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w900),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '${l10n.freeTransfers}: ${result.freeTransfers ?? '—'} • ${l10n.bank}: £${_price(result.bank)}m',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
+                    ],
+                    const SizedBox(height: 8),
+                    // Hero Squad Rating Card (Always accessible to jump into pitch analysis)
+                    _AnalysisHeroCard(
+                      analysis: result.squadAnalysis,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => NextGameweekAnalysisPage(
+                            data: data,
+                            onTransfer: widget.onTransfer,
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
-              const SizedBox(height: 12),
-              Text(
-                l10n.transferAlternativesHint,
-                style: Theme.of(context).textTheme.bodySmall,
               ),
-              const SizedBox(height: 8),
-              if (result.transfers.isEmpty)
-                Text(
-                  result.freeTransfers == null ||
-                          data.team.transfers.bank == null ||
-                          data.team.picks.any((p) => p.sellingPrice == null)
-                      ? l10n.transferDataMissing
-                      : l10n.noTransferIdeas,
-                )
-              else
-                ...result.transfers.map(
-                  (transfer) => _TransferCard(
-                    transfer: transfer,
-                    bootstrap: data.bootstrap,
-                    isSelected:
-                        _selectedTransfer?.outPlayer.id ==
-                            transfer.outPlayer.id &&
-                        _selectedTransfer?.inPlayer.id == transfer.inPlayer.id,
-                    isSubmitting:
-                        _submittingTransfer?.outPlayer.id ==
-                            transfer.outPlayer.id &&
-                        _submittingTransfer?.inPlayer.id ==
-                            transfer.inPlayer.id,
-                    onTap: () => _showTransferComparison(transfer),
+
+              // Segmented TabBar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Container(
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: TabBar(
+                    controller: _tabController,
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    dividerColor: Colors.transparent,
+                    indicator: BoxDecoration(
+                      color: colors.primaryContainer,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    labelColor: colors.onPrimaryContainer,
+                    unselectedLabelColor: colors.onSurfaceVariant,
+                    labelStyle: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                    ),
+                    unselectedLabelStyle: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                    tabs: [
+                      Tab(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.tune_rounded, size: 15),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                l10n.tabPlan,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Tab(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.swap_horiz_rounded, size: 16),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                l10n.tabTransfers,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (result.transfers.isNotEmpty) ...[
+                              const SizedBox(width: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 1,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colors.primary,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  '${result.transfers.length}',
+                                  style: TextStyle(
+                                    color: colors.onPrimary,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      Tab(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.star_outline_rounded, size: 15),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                l10n.tabTopPicks,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              const SizedBox(height: 24),
-              Text(
-                l10n.topPicks,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
               ),
-              const SizedBox(height: 12),
-              for (var position = 1; position <= 4; position++) ...[
-                _PositionPicks(
-                  position: position,
-                  players: result.topByPosition[position] ?? const [],
-                  bootstrap: data.bootstrap,
+
+              // TabBar Content Views
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    // Tab 1: Plan & Decisions
+                    _PlanTab(
+                      data: data,
+                      isNarrow: isNarrow,
+                      selectedChip: _selectedChip,
+                      submittingChip: _submittingChip,
+                      onChipTap: (chip) => _showChipSelection(chip),
+                    ),
+
+                    // Tab 2: Suggested Transfers
+                    _TransfersTab(
+                      data: data,
+                      isNarrow: isNarrow,
+                      selectedTransfer: _selectedTransfer,
+                      submittingTransfer: _submittingTransfer,
+                      onTransferTap: _showTransferComparison,
+                    ),
+
+                    // Tab 3: Top Picks
+                    _TopPicksTab(
+                      data: data,
+                      selectedPosition: _selectedPositionFilter,
+                      onSelectPosition: (pos) {
+                        setState(() => _selectedPositionFilter = pos);
+                      },
+                    ),
+                  ],
                 ),
-                if (position < 4) const SizedBox(height: 12),
-              ],
-              const SizedBox(height: 24),
-              Text(
-                l10n.recommendationDisclaimer,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
               ),
             ],
           );
@@ -543,6 +581,568 @@ class _RecommendationContentState extends State<_RecommendationContent> {
   }
 }
 
+// -----------------------------------------------------------------------------
+// Hero Squad Rating Card
+// -----------------------------------------------------------------------------
+class _AnalysisHeroCard extends StatelessWidget {
+  const _AnalysisHeroCard({required this.analysis, required this.onTap});
+
+  final SquadAnalysis analysis;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = Theme.of(context).colorScheme;
+
+    return Material(
+      key: const ValueKey('next-gameweek-analysis'),
+      color: colors.surfaceContainerHigh,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: Row(
+            children: [
+              // Rating Badge
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      colors.primary.withValues(alpha: 0.25),
+                      colors.primary.withValues(alpha: 0.08),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: colors.primary.withValues(alpha: 0.4),
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${analysis.rating}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: colors.primary,
+                        height: 1.1,
+                      ),
+                    ),
+                    Text(
+                      '/100',
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: colors.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                        height: 1.0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 2,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          l10n.nextGameweekAnalysis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 14,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 1.5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colors.primaryContainer,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            l10n.ratingBand(analysis.rating),
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: colors.primary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${l10n.expectedStartingPoints}: ${analysis.expectedStartingPoints.toStringAsFixed(1)} ${l10n.ptsCue}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 14,
+                color: colors.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// TAB 1: Plan & Decisions
+// -----------------------------------------------------------------------------
+class _PlanTab extends StatelessWidget {
+  const _PlanTab({
+    required this.data,
+    required this.isNarrow,
+    required this.selectedChip,
+    required this.submittingChip,
+    required this.onChipTap,
+  });
+
+  final RecommendationData data;
+  final bool isNarrow;
+  final SuggestedChip? selectedChip;
+  final SuggestedChip? submittingChip;
+  final ValueChanged<SuggestedChip> onChipTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final result = data.result;
+
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      children: [
+        // Quick Decisions Grid: Captain + Chip Advice
+        if (isNarrow) ...[
+          _CaptainCard(result: result, bootstrap: data.bootstrap),
+          const SizedBox(height: 10),
+          _ChipCard(
+            result: result,
+            isSelected: selectedChip == result.chip,
+            isSubmitting: submittingChip == result.chip,
+            onTap: result.chip == SuggestedChip.none
+                ? null
+                : () => onChipTap(result.chip),
+          ),
+        ] else
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _CaptainCard(result: result, bootstrap: data.bootstrap),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _ChipCard(
+                  result: result,
+                  isSelected: selectedChip == result.chip,
+                  isSubmitting: submittingChip == result.chip,
+                  onTap: result.chip == SuggestedChip.none
+                      ? null
+                      : () => onChipTap(result.chip),
+                ),
+              ),
+            ],
+          ),
+        const SizedBox(height: 14),
+
+        // Weekly Lineup Plan Card
+        if (result.suggestedLineup.players.length == 15 &&
+            result.suggestedLineup.suggestedStartingIds.length == 11) ...[
+          _WeeklyPlanCard(data: data),
+          const SizedBox(height: 14),
+        ],
+
+        // Disclaimer
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          child: Text(
+            l10n.recommendationDisclaimer,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              fontStyle: FontStyle.italic,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// TAB 2: Transfers
+// -----------------------------------------------------------------------------
+class _TransfersTab extends StatelessWidget {
+  const _TransfersTab({
+    required this.data,
+    required this.isNarrow,
+    required this.selectedTransfer,
+    required this.submittingTransfer,
+    required this.onTransferTap,
+  });
+
+  final RecommendationData data;
+  final bool isNarrow;
+  final TransferSuggestion? selectedTransfer;
+  final TransferSuggestion? submittingTransfer;
+  final ValueChanged<TransferSuggestion> onTransferTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = Theme.of(context).colorScheme;
+    final result = data.result;
+
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      children: [
+        // Budget & Free Transfers Bar
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: colors.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.confirmation_number_outlined,
+                      size: 18,
+                      color: colors.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.freeTransfers,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: colors.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          result.freeTransfers != null
+                              ? '${result.freeTransfers}'
+                              : '—',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                height: 24,
+                width: 1,
+                color: colors.outlineVariant.withValues(alpha: 0.5),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.account_balance_wallet_outlined,
+                      size: 18,
+                      color: colors.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.bank,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: colors.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          '£${_price(result.bank)}m',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Hint Card
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: colors.surfaceContainerHighest.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.info_outline_rounded,
+                size: 16,
+                color: colors.onSurfaceVariant,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  l10n.transferAlternativesHint,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colors.onSurfaceVariant,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Suggestions List or Empty State
+        if (result.transfers.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.check_circle_outline_rounded,
+                    size: 48,
+                    color: colors.primary.withValues(alpha: 0.7),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    result.freeTransfers == null ||
+                            data.team.transfers.bank == null ||
+                            data.team.picks.any((p) => p.sellingPrice == null)
+                        ? l10n.transferDataMissing
+                        : l10n.noTransferIdeas,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: colors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          ...result.transfers.map(
+            (transfer) => _TransferCard(
+              transfer: transfer,
+              bootstrap: data.bootstrap,
+              isSelected:
+                  selectedTransfer?.outPlayer.id == transfer.outPlayer.id &&
+                  selectedTransfer?.inPlayer.id == transfer.inPlayer.id,
+              isSubmitting:
+                  submittingTransfer?.outPlayer.id == transfer.outPlayer.id &&
+                  submittingTransfer?.inPlayer.id == transfer.inPlayer.id,
+              onTap: () => onTransferTap(transfer),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// TAB 3: Top Picks (Scout)
+// -----------------------------------------------------------------------------
+class _TopPicksTab extends StatelessWidget {
+  const _TopPicksTab({
+    required this.data,
+    required this.selectedPosition,
+    required this.onSelectPosition,
+  });
+
+  final RecommendationData data;
+  final int selectedPosition;
+  final ValueChanged<int> onSelectPosition;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = Theme.of(context).colorScheme;
+    final result = data.result;
+
+    final filterOptions = [
+      (0, l10n.allPositionsTab),
+      (1, l10n.goalkeeper),
+      (2, l10n.defender),
+      (3, l10n.midfielder),
+      (4, l10n.forward),
+    ];
+
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      children: [
+        // Player Directory Action Card
+        Material(
+          key: const ValueKey('player-directory'),
+          color: colors.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(14),
+          child: InkWell(
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => PlayerDirectoryPage(
+                  bootstrap: data.bootstrap,
+                  fixtures: data.fixtures,
+                  gameweekId: data.result.gameweekId,
+                ),
+              ),
+            ),
+            borderRadius: BorderRadius.circular(14),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: colors.primaryContainer,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(
+                      Icons.manage_search_rounded,
+                      color: colors.primary,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.playerDirectory,
+                          style: const TextStyle(fontWeight: FontWeight.w900),
+                        ),
+                        Text(
+                          l10n.playerDirectorySubtitle,
+                          style: Theme.of(context).textTheme.bodySmall,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 13,
+                    color: colors.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Position Filter Chips
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: filterOptions.map((opt) {
+              final isSelected = selectedPosition == opt.$1;
+              return Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: FilterChip(
+                  selected: isSelected,
+                  label: Text(opt.$2),
+                  labelStyle: TextStyle(
+                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                    fontSize: 12,
+                    color: isSelected ? colors.onPrimary : colors.onSurface,
+                  ),
+                  selectedColor: colors.primary,
+                  backgroundColor: colors.surfaceContainerHigh,
+                  checkmarkColor: colors.onPrimary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    side: BorderSide(
+                      color: isSelected
+                          ? colors.primary
+                          : colors.outlineVariant.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  onSelected: (_) => onSelectPosition(opt.$1),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Position Lists
+        if (selectedPosition == 0)
+          for (var pos = 1; pos <= 4; pos++) ...[
+            _PositionPicks(
+              position: pos,
+              players: result.topByPosition[pos] ?? const [],
+              bootstrap: data.bootstrap,
+            ),
+            if (pos < 4) const SizedBox(height: 14),
+          ]
+        else
+          _PositionPicks(
+            position: selectedPosition,
+            players: result.topByPosition[selectedPosition] ?? const [],
+            bootstrap: data.bootstrap,
+          ),
+      ],
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Weekly Plan Card
+// -----------------------------------------------------------------------------
 class _WeeklyPlanCard extends StatelessWidget {
   const _WeeklyPlanCard({required this.data});
 
@@ -551,6 +1151,7 @@ class _WeeklyPlanCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final colors = Theme.of(context).colorScheme;
     final lineup = data.result.suggestedLineup;
     final gain =
         lineup.expectedStartingPoints -
@@ -577,48 +1178,140 @@ class _WeeklyPlanCard extends StatelessWidget {
         .toList();
     String names(List<PlayerAnalysis> players) =>
         players.map((p) => p.projection.player.webName).join('، ');
+
     return Card(
       key: const ValueKey('weekly-plan'),
       margin: EdgeInsets.zero,
+      color: colors.surfaceContainerHigh,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: colors.outlineVariant.withValues(alpha: 0.4),
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              '${l10n.weeklyPlan} • $formation',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '${l10n.weeklyPlan} • $formation',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: gain > 0.05
+                        ? colors.primary.withValues(alpha: 0.15)
+                        : colors.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${lineup.expectedStartingPoints.toStringAsFixed(1)} ${l10n.ptsCue}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      color: gain > 0.05 ? colors.primary : colors.onSurface,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
-              '${l10n.expectedStartingPoints}: ${lineup.expectedStartingPoints.toStringAsFixed(1)} ${l10n.ptsCue}',
+              gain > 0.05 ? l10n.lineupGain(gain) : l10n.lineupAlreadyBest,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
             ),
-            Text(gain > 0.05 ? l10n.lineupGain(gain) : l10n.lineupAlreadyBest),
             if (promoted.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text('${l10n.startThesePlayers}: ${names(promoted)}'),
-              Text('${l10n.benchThesePlayers}: ${names(benched)}'),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: colors.surfaceContainerHighest.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.arrow_upward_rounded,
+                          size: 15,
+                          color: colors.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            '${l10n.startThesePlayers}: ${names(promoted)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.arrow_downward_rounded,
+                          size: 15,
+                          color: colors.error,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            '${l10n.benchThesePlayers}: ${names(benched)}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12,
+                              color: colors.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ],
             const SizedBox(height: 8),
             Text(
               '${l10n.benchOrder}: ${names(lineup.bench)}',
-              style: Theme.of(context).textTheme.bodySmall,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colors.onSurfaceVariant,
+                    fontSize: 11,
+                  ),
             ),
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              key: const ValueKey('suggested-lineup-preview'),
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => NextGameweekAnalysisPage(
-                    data: data,
-                    useSuggestedLineup: true,
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.tonalIcon(
+                key: const ValueKey('suggested-lineup-preview'),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => NextGameweekAnalysisPage(
+                      data: data,
+                      useSuggestedLineup: true,
+                    ),
                   ),
                 ),
+                icon: const Icon(Icons.groups_outlined, size: 18),
+                label: Text(l10n.suggestedLineup),
               ),
-              icon: const Icon(Icons.groups_outlined),
-              label: Text(l10n.suggestedLineup),
             ),
           ],
         ),
@@ -627,83 +1320,9 @@ class _WeeklyPlanCard extends StatelessWidget {
   }
 }
 
-class _AnalysisEntryCard extends StatelessWidget {
-  const _AnalysisEntryCard({required this.analysis, required this.onTap});
-
-  final SquadAnalysis analysis;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).colorScheme;
-    return Material(
-      key: const ValueKey('next-gameweek-analysis'),
-      color: colors.surfaceContainerHigh,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: colors.primaryContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Icons.analytics_outlined, color: colors.primary),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.nextGameweekAnalysis,
-                      style: const TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      l10n.nextGameweekAnalysisSubtitle,
-                      style: Theme.of(context).textTheme.bodySmall,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    l10n.ratingOutOf100(analysis.rating),
-                    style: TextStyle(
-                      color: colors.primary,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  Text(
-                    '${analysis.expectedStartingPoints.toStringAsFixed(1)} ${l10n.ptsCue}',
-                    style: Theme.of(context).textTheme.labelSmall,
-                  ),
-                ],
-              ),
-              const SizedBox(width: 4),
-              const Icon(Icons.chevron_right),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
+// -----------------------------------------------------------------------------
+// Captain Card
+// -----------------------------------------------------------------------------
 class _CaptainCard extends StatelessWidget {
   const _CaptainCard({required this.result, required this.bootstrap});
 
@@ -713,11 +1332,16 @@ class _CaptainCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final colors = Theme.of(context).colorScheme;
     final captain = result.captain;
+
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer,
+        color: colors.primaryContainer,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colors.primary.withValues(alpha: 0.3),
+        ),
       ),
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -725,8 +1349,22 @@ class _CaptainCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.star, size: 16),
-              const SizedBox(width: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                decoration: BoxDecoration(
+                  color: colors.primary,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'C',
+                  style: TextStyle(
+                    color: colors.onPrimary,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   l10n.captainPick,
@@ -740,29 +1378,83 @@ class _CaptainCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           if (captain != null) ...[
-            Text(
-              captain.player.webName,
-              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        captain.player.webName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 15,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        bootstrap.teams[captain.player.teamId]?.shortName ?? '—',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colors.surface.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${result.suggestedLineup.players.firstWhere((p) => p.pick.elementId == captain.player.id).expectedPoints.toStringAsFixed(1)} ${l10n.ptsCue}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      color: colors.primary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            Text(
-              '${result.suggestedLineup.players.firstWhere((p) => p.pick.elementId == captain.player.id).expectedPoints.toStringAsFixed(1)} ${l10n.ptsCue}',
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                color: Theme.of(context).colorScheme.primary,
+            if (result.viceCaptain != null) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: colors.surface.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      'VC: ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 11,
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        result.viceCaptain!.player.webName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              l10n.captainReason,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            if (result.viceCaptain != null)
-              Text(
-                '${l10n.viceCaptain}: ${result.viceCaptain!.player.webName}',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
+            ],
           ],
         ],
       ),
@@ -770,6 +1462,9 @@ class _CaptainCard extends StatelessWidget {
   }
 }
 
+// -----------------------------------------------------------------------------
+// Chip Card
+// -----------------------------------------------------------------------------
 class _ChipCard extends StatelessWidget {
   const _ChipCard({
     required this.result,
@@ -787,11 +1482,20 @@ class _ChipCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = Theme.of(context).colorScheme;
+    final isNone = result.chip == SuggestedChip.none;
+
     return Material(
       color: isSelected
           ? colors.primaryContainer
-          : colors.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(16),
+          : colors.surfaceContainerHigh,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: isSelected
+              ? colors.primary
+              : colors.outlineVariant.withValues(alpha: 0.4),
+        ),
+      ),
       child: InkWell(
         onTap: isSubmitting ? null : onTap,
         borderRadius: BorderRadius.circular(16),
@@ -802,7 +1506,11 @@ class _ChipCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.bolt, size: 16),
+                  Icon(
+                    isNone ? Icons.shield_outlined : Icons.bolt_rounded,
+                    size: 16,
+                    color: isNone ? colors.onSurfaceVariant : colors.primary,
+                  ),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
@@ -815,9 +1523,15 @@ class _ChipCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  if (!isNone)
+                    Icon(
+                      Icons.touch_app_rounded,
+                      size: 13,
+                      color: colors.primary,
+                    ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               Row(
                 children: [
                   Expanded(
@@ -825,15 +1539,22 @@ class _ChipCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          l10n.chipName(result.chip.name),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
+                          isNone ? l10n.holdChips : l10n.chipName(result.chip.name),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w900,
                             fontSize: 14,
+                            color: isNone ? colors.onSurface : colors.primary,
                           ),
                         ),
+                        const SizedBox(height: 2),
                         Text(
                           l10n.chipReason(result.chipReason.name),
-                          style: Theme.of(context).textTheme.bodySmall,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                fontSize: 11,
+                                color: colors.onSurfaceVariant,
+                              ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -863,6 +1584,9 @@ class _ChipCard extends StatelessWidget {
   }
 }
 
+// -----------------------------------------------------------------------------
+// Transfer Card
+// -----------------------------------------------------------------------------
 class _TransferCard extends StatelessWidget {
   const _TransferCard({
     required this.transfer,
@@ -885,8 +1609,9 @@ class _TransferCard extends StatelessWidget {
     final outTeam =
         bootstrap.teams[transfer.outPlayer.teamId]?.shortName ?? '—';
     final inTeam = bootstrap.teams[transfer.inPlayer.teamId]?.shortName ?? '—';
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Material(
         key: ValueKey(
           'transfer-${transfer.outPlayer.id}-${transfer.inPlayer.id}',
@@ -894,115 +1619,137 @@ class _TransferCard extends StatelessWidget {
         color: isSelected
             ? colors.primaryContainer
             : colors.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(
+            color: isSelected
+                ? colors.primary
+                : colors.outlineVariant.withValues(alpha: 0.3),
+          ),
+        ),
         child: InkWell(
           onTap: isSubmitting ? null : onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
+                // Out & In Players Info
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Out Player
                       Row(
                         children: [
-                          Icon(
-                            Icons.arrow_downward,
-                            color: colors.error,
-                            size: 16,
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 1.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colors.error.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Icon(
+                              Icons.arrow_downward_rounded,
+                              color: colors.error,
+                              size: 13,
+                            ),
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               transfer.outPlayer.webName,
                               style: const TextStyle(
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          Text(
+                            '$outTeam • £${_price(transfer.outPlayer.nowCost)}m',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  fontSize: 11,
+                                ),
+                          ),
                         ],
                       ),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 20),
-                        child: Text(
-                          '$outTeam • £${_price(transfer.outPlayer.nowCost)}m',
-                          style: const TextStyle(fontSize: 11),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
+                      // In Player
                       Row(
                         children: [
-                          Icon(
-                            Icons.arrow_upward,
-                            color: colors.primary,
-                            size: 16,
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 1.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colors.primary.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Icon(
+                              Icons.arrow_upward_rounded,
+                              color: colors.primary,
+                              size: 13,
+                            ),
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               transfer.inPlayer.webName,
                               style: const TextStyle(
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          Text(
+                            '$inTeam • £${_price(transfer.inPlayer.nowCost)}m',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  fontSize: 11,
+                                ),
+                          ),
                         ],
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 20),
-                        child: Text(
-                          '$inTeam • £${_price(transfer.inPlayer.nowCost)}m',
-                          style: const TextStyle(fontSize: 11),
-                        ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '+${transfer.netProjectedGain.toStringAsFixed(1)}',
-                      style: TextStyle(
-                        color: colors.primary,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 18,
-                      ),
-                    ),
-                    Text(
-                      transfer.hitCost > 0 ? l10n.afterHit : l10n.projectedGain,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      textAlign: TextAlign.end,
-                    ),
-                    const SizedBox(height: 4),
-                    if (isSubmitting)
-                      const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    else if (isSelected)
+                const SizedBox(width: 12),
+                // Projected Gain & CTA
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colors.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
                       Text(
-                        l10n.selected,
+                        '+${transfer.netProjectedGain.toStringAsFixed(1)}',
                         style: TextStyle(
                           color: colors.primary,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 17,
                         ),
-                      )
-                    else
-                      Icon(Icons.trending_up, size: 20, color: colors.primary),
-                  ],
+                      ),
+                      Text(
+                        transfer.hitCost > 0 ? l10n.afterHit : l10n.ptsCue,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: colors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -1013,6 +1760,9 @@ class _TransferCard extends StatelessWidget {
   }
 }
 
+// -----------------------------------------------------------------------------
+// Comparison Sheet Widgets
+// -----------------------------------------------------------------------------
 class _ComparisonPlayer extends StatelessWidget {
   const _ComparisonPlayer({
     required this.label,
@@ -1027,10 +1777,11 @@ class _ComparisonPlayer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-        borderRadius: BorderRadius.circular(12),
+        color: color.withValues(alpha: 0.08),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1040,19 +1791,23 @@ class _ComparisonPlayer extends StatelessWidget {
             style: TextStyle(
               color: color,
               fontSize: 11,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             projection.player.webName,
-            style: const TextStyle(fontWeight: FontWeight.w900),
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
           Text(
             '${projection.nextPoints.toStringAsFixed(1)} pts',
-            style: const TextStyle(fontSize: 12),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
           ),
         ],
       ),
@@ -1082,15 +1837,39 @@ class _ComparisonMetric extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          Expanded(child: Text(format(outValue))),
-          Expanded(flex: 2, child: Text(label, textAlign: TextAlign.center)),
-          Expanded(child: Text(format(inValue), textAlign: TextAlign.end)),
+          Expanded(
+            child: Text(
+              format(outValue),
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              format(inValue),
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
+// -----------------------------------------------------------------------------
+// Position Picks
+// -----------------------------------------------------------------------------
 class _PositionPicks extends StatelessWidget {
   const _PositionPicks({
     required this.position,
@@ -1105,37 +1884,55 @@ class _PositionPicks extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final colors = Theme.of(context).colorScheme;
     if (players.isEmpty) return const SizedBox.shrink();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          l10n.positionName(position).toUpperCase(),
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-            fontSize: 11,
-            letterSpacing: 0.5,
-            color: Theme.of(context).colorScheme.primary,
-          ),
+        Row(
+          children: [
+            Container(
+              width: 4,
+              height: 14,
+              decoration: BoxDecoration(
+                color: colors.primary,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              l10n.positionName(position).toUpperCase(),
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 12,
+                letterSpacing: 0.5,
+                color: colors.primary,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: Theme.of(
-              context,
-            ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-            borderRadius: BorderRadius.circular(12),
+            color: colors.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: colors.outlineVariant.withValues(alpha: 0.3),
+            ),
           ),
           child: Column(
             children: [
               for (var i = 0; i < players.length; i++) ...[
-                _PlayerRow(projection: players[i], bootstrap: bootstrap),
+                _PlayerRow(
+                  projection: players[i],
+                  bootstrap: bootstrap,
+                  rank: i + 1,
+                ),
                 if (i < players.length - 1)
                   Divider(
                     height: 1,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.outlineVariant.withValues(alpha: 0.5),
+                    color: colors.outlineVariant.withValues(alpha: 0.3),
                   ),
               ],
             ],
@@ -1147,24 +1944,51 @@ class _PositionPicks extends StatelessWidget {
 }
 
 class _PlayerRow extends StatelessWidget {
-  const _PlayerRow({required this.projection, required this.bootstrap});
+  const _PlayerRow({
+    required this.projection,
+    required this.bootstrap,
+    required this.rank,
+  });
 
   final PlayerProjection projection;
   final FplBootstrap bootstrap;
+  final int rank;
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final team = bootstrap.teams[projection.player.teamId]?.shortName ?? '—';
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: Row(
         children: [
+          Container(
+            width: 22,
+            height: 22,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: rank <= 3
+                  ? colors.primary.withValues(alpha: 0.15)
+                  : colors.surfaceContainerHighest,
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              '$rank',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: rank <= 3 ? colors.primary : colors.onSurfaceVariant,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Row(
               children: [
                 Text(
                   projection.player.webName,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(width: 8),
                 Text(team, style: Theme.of(context).textTheme.bodySmall),
@@ -1175,15 +1999,16 @@ class _PlayerRow extends StatelessWidget {
             '£${_price(projection.player.nowCost)}m',
             style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           SizedBox(
-            width: 32,
+            width: 36,
             child: Text(
               projection.nextPoints.toStringAsFixed(1),
               textAlign: TextAlign.right,
               style: TextStyle(
                 fontWeight: FontWeight.w900,
-                color: Theme.of(context).colorScheme.primary,
+                color: colors.primary,
+                fontSize: 13,
               ),
             ),
           ),

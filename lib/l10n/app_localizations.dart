@@ -240,6 +240,11 @@ class AppLocalizations {
   String recommendationsUpdated(DateTime date) => isArabic
       ? 'آخر جلب للبيانات: ${kickoffLabel(date)} • تتحدث عند فتح النصائح أو العودة للتطبيق.'
       : 'Data fetched: ${kickoffLabel(date)} • Refreshed when opening Tips or resuming the app.';
+  String get tabPlan => isArabic ? 'الخطة والقرارات' : 'Plan & Lineup';
+  String get tabTransfers => isArabic ? 'التبديلات' : 'Transfers';
+  String get tabTopPicks => isArabic ? 'كشاف اللاعبين' : 'Top Picks';
+  String get holdChips => isArabic ? 'احتفظ بالـ Chip' : 'Save chips';
+  String get allPositionsTab => isArabic ? 'الكل' : 'All';
   String get recommendationSubtitle => isArabic
       ? 'تقديرات مبنية على الإحصائيات الرسمية والمباريات القادمة.'
       : 'Estimates based on official stats and upcoming fixtures.';

@@ -120,6 +120,12 @@ class _PitchSurface extends StatelessWidget {
             final cropLeft = (svgWidth * scale - constraints.maxWidth) / 2;
             final logoSize = 23 * scale;
             final pitchHeight = svgHeight * scale;
+            if (constraints.maxWidth <= 0 ||
+                constraints.maxHeight <= 0 ||
+                scale <= 0 ||
+                pitchHeight <= 0) {
+              return const SizedBox.shrink();
+            }
             final verticalScale = constraints.maxHeight / pitchHeight;
 
             return Stack(
