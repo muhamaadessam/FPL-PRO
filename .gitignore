@@ -43,3 +43,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Temporary Google credentials created by GitHub Actions
+gha-creds-*.json
