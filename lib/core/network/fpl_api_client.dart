@@ -88,6 +88,12 @@ class FplApiClient {
     return MyTeam.fromJson(json);
   }
 
+  /// Minutes in the player's most recent [matches] fixtures, oldest first.
+  Future<List<int>> getRecentMinutes(int elementId, {int matches = 5}) async {
+    final json = await _getMap('/element-summary/$elementId/');
+    return parseRecentMinutes(json, matches: matches);
+  }
+
   Future<Map<int, int>> getGameweekPoints(int gameweekId) async {
     final json = await _getMap('/event/$gameweekId/live/');
     return parseGameweekPoints(json);
@@ -220,4 +226,16 @@ class FplApiException implements Exception {
 
   @override
   String toString() => 'FplApiException($statusCode, $kind): $message';
+}
+
+List<int> parseRecentMinutes(Map<String, dynamic> json, {int matches = 5}) {
+  final history = json['history'];
+  if (history is! List) return const [];
+  final minutes = [
+    for (final match in history.whereType<Map>())
+      if (_intValue(match['minutes']) != null) _intValue(match['minutes'])!,
+  ];
+  return minutes.length <= matches
+      ? minutes
+      : minutes.sublist(minutes.length - matches);
 }

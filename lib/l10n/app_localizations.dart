@@ -112,6 +112,16 @@ class AppLocalizations {
   String get transferIdeas => isArabic ? 'اقتراحات التبديل' : 'Transfer ideas';
   String get topPicks => isArabic ? 'أفضل الاختيارات' : 'Top picks';
   String get chipAdvice => isArabic ? 'قرار الـChip' : 'Chip decision';
+  String get lineupAdvice =>
+      isArabic ? 'التشكيلة المقترحة' : 'Suggested line-up';
+  String get lineupOptimal => isArabic
+      ? 'تشكيلتك الحالية هي الأفضل حسب التوقعات.'
+      : 'Your current XI is already the best on projections.';
+  String get startPlayer => isArabic ? 'أساسي' : 'Start';
+  String get benchPlayer => isArabic ? 'دكة' : 'Bench';
+  String get benchOrder => isArabic ? 'ترتيب الدكة' : 'Bench order';
+  String likelyRange(String low, String high) =>
+      isArabic ? 'المدى المرجّح $low–$high' : 'Likely $low–$high';
   String get noChip => isArabic ? 'بدون Chip' : 'No chip';
   String get projected => isArabic ? 'متوقع' : 'Projected';
   String get projectedGain =>
@@ -123,8 +133,8 @@ class AppLocalizations {
       ? 'لا يوجد تبديل واضح يستحق المخاطرة حاليًا.'
       : 'No clear transfer is worth the risk right now.';
   String get recommendationDisclaimer => isArabic
-      ? 'دي تقديرات وليست ضمانًا؛ راجع أخبار الإصابات والتشكيل قبل الـdeadline.'
-      : 'These are estimates, not guarantees. Recheck injuries and line-ups before the deadline.';
+      ? 'دي تقديرات وليست ضمانًا، والمدى المرجّح بيغطي حوالي 8 من كل 10 نتايج؛ راجع أخبار الإصابات والتشكيل قبل الـdeadline.'
+      : 'These are estimates, not guarantees; the likely range covers about 8 in 10 outcomes. Recheck injuries and line-ups before the deadline.';
   String get goalkeeper => isArabic ? 'حراس المرمى' : 'Goalkeepers';
   String get defender => isArabic ? 'المدافعون' : 'Defenders';
   String get midfielder => isArabic ? 'لاعبو الوسط' : 'Midfielders';
@@ -158,6 +168,14 @@ class AppLocalizations {
       isArabic
           ? 'الفريق محتاج تغييرات متعددة لعدة جولات، وليس تبديلًا واحدًا.'
           : 'The squad needs several multi-week changes, not one transfer.',
+    'chipExpiring' =>
+      isArabic
+          ? 'الـChip ستنتهي قبل توفر جولات كافية لاستخدامها؛ استخدمها الآن بدل أن تضيع.'
+          : 'This chip expires before there are enough Gameweeks left to play it; use it now rather than lose it.',
+    'chipActive' =>
+      isArabic
+          ? 'الـChip دي مفعّلة بالفعل في الجولة دي.'
+          : 'This chip is already active for this Gameweek.',
     'strongBench' =>
       isArabic
           ? 'الدكة كلها متاحة وتوقع نقاطها مرتفع.'
