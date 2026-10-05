@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dio/dio.dart';
 
@@ -34,9 +35,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Open your team'), findsOneWidget);
+    expect(find.text('Master Your Fantasy Team'), findsOneWidget);
     expect(find.text('Sign in officially'), findsOneWidget);
-    expect(find.text('Open my team'), findsOneWidget);
+    expect(find.text('Open my team'), findsNothing);
+    expect(find.byType(TextField), findsNothing);
     expect(find.text('Browse public matches'), findsOneWidget);
   });
 }

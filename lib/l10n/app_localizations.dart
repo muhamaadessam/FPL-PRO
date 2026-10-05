@@ -23,10 +23,35 @@ class AppLocalizations {
   bool get isArabic => locale.languageCode == 'ar';
 
   String get appName => isArabic ? 'FPL Pro' : 'FPL Pro';
-  String get loginTitle => isArabic ? 'ادخل على فريقك' : 'Open your team';
+  String get loginTitle =>
+      isArabic ? 'تحكم بفريقك كالمحترفين' : 'Master Your Fantasy Team';
   String get loginSubtitle => isArabic
-      ? 'افتح فريقك برقم الفريق وشاهد التشكيلة والنقاط والمباريات الرسمية.'
-      : 'Open your team by its entry ID and view official picks, points, and fixtures.';
+      ? 'سجّل دخولك بحسابك الرسمي في الفانتازي لمتابعة التشكيلة، النقاط المباشرة، الترتيب اللحظي، والترشيحات الذكية.'
+      : 'Sign in with your official FPL account for live gameweek ranks, squad management, and smart transfer insights.';
+  String get loginSecureBadge =>
+      isArabic ? 'دخول رسمي ومشفر 100%' : '100% Official & Secure Login';
+  String get loginSecureDetails => isArabic
+      ? 'يتم تسجيل الدخول مباشرة عبر بوابة Premier League الرسمية وبأمان تام، دون تخزين كلمات المرور.'
+      : 'Authentication happens directly on the official Premier League portal with zero password storage.';
+  String get livePointsFeature =>
+      isArabic ? 'نقاط وترتيب لايف' : 'Live Points & Rank';
+  String get livePointsFeatureDesc => isArabic
+      ? 'متابعة لحظية للنقاط والترتيب أثناء سير المباريات'
+      : 'Real-time points & provisional rank tracking';
+  String get smartTransfersFeature =>
+      isArabic ? 'ترشيحات انتقالات ذكية' : 'AI Transfer Insights';
+  String get smartTransfersFeatureDesc => isArabic
+      ? 'تحليل الصعوبة والفورمة لاختيار أفضل تشكيلة وكابتن'
+      : 'Difficulty & form analytics for optimal transfers';
+  String get miniLeaguesFeature =>
+      isArabic ? 'الدوريات والمنافسين' : 'Mini-Leagues & Rivalries';
+  String get miniLeaguesFeatureDesc => isArabic
+      ? 'متابعة حية لجميع دورياتك الكلاسيك والمواجهات'
+      : 'Live standings & score gaps across all your leagues';
+  String get seasonBadge =>
+      isArabic ? 'موسم 2024/2025' : '2024/25 Season';
+  String get guestBrowseAction =>
+      isArabic ? 'تصفح كزائر بدون تسجيل' : 'Explore as Guest';
   String get officialSignIn =>
       isArabic ? 'تسجيل الدخول الرسمي' : 'Sign in officially';
   String get officialWebViewHint => isArabic
