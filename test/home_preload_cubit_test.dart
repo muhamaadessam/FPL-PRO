@@ -1,13 +1,18 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fantasy_pl/features/auth/domain/entities/official_session.dart';
 import 'package:fantasy_pl/features/auth/domain/repositories/auth_repository.dart';
 import 'package:fantasy_pl/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:fantasy_pl/features/dashboard/presentation/cubit/home_preload_cubit.dart';
+import 'package:fantasy_pl/features/fixtures/data/datasources/fpl_api_client.dart';
 import 'package:fantasy_pl/features/fixtures/data/models/fpl_models.dart';
 import 'package:fantasy_pl/features/fixtures/domain/repositories/fixtures_repository.dart';
 import 'package:fantasy_pl/features/team/data/models/team_models.dart';
 import 'package:fantasy_pl/features/team/domain/repositories/team_repository.dart';
+import 'package:fantasy_pl/core/widgets/splash_page.dart';
+import 'package:fantasy_pl/l10n/app_localizations.dart';
 
 void main() {
   test(
@@ -64,6 +69,55 @@ void main() {
 
     expect(cubit.state.status, PreloadStatus.success);
     expect(teamRepository.entryRequests, [42, 42]);
+  });
+
+  testWidgets('treats missing picks as an FPL team setup state', (
+    tester,
+  ) async {
+    final session = const OfficialSession(accessToken: 'token', entryId: 42);
+    final authCubit = AuthCubit(
+      _FakeAuthRepository(session),
+      initialState: AuthAuthenticated(session),
+    );
+    final teamRepository = _FakeTeamRepository()
+      ..currentError = const FplApiException(
+        kind: FplApiErrorKind.unknown,
+        statusCode: 404,
+        message: 'Not found.',
+      );
+    final cubit = HomePreloadCubit(
+      fixturesRepository: _FakeFixturesRepository(),
+      teamRepository: teamRepository,
+      authCubit: authCubit,
+    );
+
+    await cubit.load();
+
+    expect(cubit.state.status.name, 'teamSetupRequired');
+    expect(cubit.state.entryId, 42);
+
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider<AuthCubit>.value(value: authCubit),
+          BlocProvider<HomePreloadCubit>.value(value: cubit),
+        ],
+        child: const MaterialApp(
+          locale: Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SplashPage(),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    final l10n = AppLocalizations(const Locale('en'));
+    expect(find.text(l10n.fplTeamSetupRequired), findsOneWidget);
+    expect(find.text(l10n.errorLoadingData), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 }
 
@@ -142,6 +196,7 @@ class _FakeFixturesRepository implements FixturesRepository {
 }
 
 class _FakeTeamRepository implements TeamRepository {
+  Object? currentError;
   final currentRequests = <int>[];
   final nextRequests = <int>[];
   final entryRequests = <int>[];
@@ -197,6 +252,7 @@ class _FakeTeamRepository implements TeamRepository {
     required int currentGameweekId,
   }) async {
     currentRequests.add(gameweekId);
+    if (currentError != null) throw currentError!;
     return currentTeam;
   }
 

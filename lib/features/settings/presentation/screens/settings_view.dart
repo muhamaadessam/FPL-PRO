@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../../../core/localization/cubit/locale_cubit.dart';
 import '../../../../core/themes/app_colors.dart';
@@ -7,6 +8,8 @@ import '../../../../core/themes/cubit/theme_cubit.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
+
+const _privacyPolicyUrl = 'https://fpl-pro-privacy.vercel.app';
 
 class SettingsView extends StatelessWidget {
   const SettingsView({super.key});
@@ -194,6 +197,29 @@ class SettingsView extends StatelessWidget {
         ),
         const SizedBox(height: 28),
 
+        // Privacy Policy
+        Container(
+          decoration: BoxDecoration(
+            color: cardBg,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: cardBorder),
+          ),
+          child: ListTile(
+            leading: Icon(Icons.privacy_tip_outlined, color: primaryIconColor),
+            title: Text(
+              l10n.isArabic ? 'سياسة الخصوصية' : 'Privacy Policy',
+              style: TextStyle(fontWeight: FontWeight.w700, color: titleColor),
+            ),
+            trailing: Icon(Icons.chevron_right, color: subColor),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const _PrivacyPolicyPage(),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
         // Sign Out Button
         FilledButton.tonalIcon(
           onPressed: () => context.read<AuthCubit>().logout(),
@@ -218,6 +244,31 @@ class SettingsView extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _PrivacyPolicyPage extends StatefulWidget {
+  const _PrivacyPolicyPage();
+
+  @override
+  State<_PrivacyPolicyPage> createState() => _PrivacyPolicyPageState();
+}
+
+class _PrivacyPolicyPageState extends State<_PrivacyPolicyPage> {
+  late final WebViewController _controller = WebViewController()
+    ..setJavaScriptMode(JavaScriptMode.disabled)
+    ..loadRequest(Uri.parse(_privacyPolicyUrl));
+
+  @override
+  Widget build(BuildContext context) {
+    final title = AppLocalizations.of(context).isArabic
+        ? 'سياسة الخصوصية'
+        : 'Privacy Policy';
+
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: WebViewWidget(controller: _controller),
     );
   }
 }

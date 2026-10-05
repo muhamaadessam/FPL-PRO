@@ -203,6 +203,11 @@ class AppLocalizations {
       isArabic ? 'جاري تحميل البيانات...' : 'Loading data...';
   String get errorLoadingData =>
       isArabic ? 'فشل تحميل البيانات' : 'Failed to load data';
+  String get fplTeamSetupRequired => isArabic
+      ? 'حسابك جاهز، لكن لسه ما حفظتش فريق FPL. كمّل إنشاء الفريق على موقع Premier League، وبعدها أعد المحاولة.'
+      : 'Your FPL account is ready, but no team has been saved yet. Finish creating your team on the Premier League site, then retry.';
+  String get teamSetupRetry =>
+      isArabic ? 'أكملت الفريق، أعد المحاولة' : 'Team ready — retry';
   String get authenticating =>
       isArabic ? 'جاري التحقق من الهوية...' : 'Authenticating...';
   String get themeSystem => isArabic ? 'تلقائي' : 'System';

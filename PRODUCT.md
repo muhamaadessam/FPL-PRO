@@ -8,15 +8,15 @@ adaptive
 
 ## Users
 
-The primary user is an individual Fantasy Premier League manager checking their own squad on a phone before and between gameweeks.
+The primary user is an individual Fantasy Premier League manager checking their squad on a phone before and between gameweeks and choosing whether to submit suggested account changes.
 
 ## Product Purpose
 
-Fantasy PL is a read-only Flutter client for official FPL data. It lets the user sign in through the official flow or open a public entry, review the exact squad and points for each gameweek, inspect fixtures, and receive explainable statistical recommendations for the next gameweek.
+Fantasy PL is a Flutter client for official FPL data. It lets the user sign in through the official flow or open a public entry, review the squad and points for each gameweek, inspect fixtures, and receive explainable statistical recommendations. After an explicit confirmation, the user can submit a suggested transfer or activate a chip in FPL.
 
 ## Positioning
 
-The app combines the user's historical squad, official fixture and player data, and transparent deterministic recommendations in one compact matchday view. It does not modify the user's FPL account.
+The app combines the user's squad, official fixture and player data, and transparent deterministic recommendations in one compact matchday view. Transfer and chip suggestions are not submitted until the user confirms them.
 
 ## Operating Context
 
@@ -25,7 +25,7 @@ The user checks the app frequently around gameweek deadlines, compares captain a
 ## Capabilities and Constraints
 
 - Official OIDC/WebView authentication plus public entry lookup.
-- Read-only team, fixtures, gameweek points, captain, transfer, and chip recommendations.
+- Read-only team, fixtures, gameweek points, captain, transfer, and chip analysis, with user-confirmed transfer and chip submissions.
 - English and Arabic with RTL support.
 - Official data can be unavailable, rate-limited, or incomplete; recovery states must remain clear.
 - Preserve current API, authentication, repository, and recommendation behavior during visual work.
