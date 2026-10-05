@@ -87,7 +87,7 @@ class FplPlayer {
     this.expectedPointsNext = 0,
     this.selectedByPercent = 0,
     this.minutes = 0,
-    this.starts = 0,
+    this.starts,
     this.expectedGoals,
     this.expectedAssists,
     this.expectedGoalInvolvements,
@@ -114,7 +114,7 @@ class FplPlayer {
   final double expectedPointsNext;
   final double selectedByPercent;
   final int minutes;
-  final int starts;
+  final int? starts;
 
   // Season totals; null when the field is missing, so unknown is not zero.
   final double? expectedGoals;
@@ -148,7 +148,7 @@ class FplPlayer {
       expectedPointsNext: _double(json['ep_next']),
       selectedByPercent: _double(json['selected_by_percent']),
       minutes: _int(json['minutes']),
-      starts: _int(json['starts']),
+      starts: _nullableInt(json['starts']),
       expectedGoals: _nullableDouble(json['expected_goals']),
       expectedAssists: _nullableDouble(json['expected_assists']),
       expectedGoalInvolvements: _nullableDouble(

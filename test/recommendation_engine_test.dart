@@ -406,7 +406,7 @@ void main() {
       expect(nextPoints(const {}), closeTo(5.0, 0.001));
       // 180 minutes is too few: form with 0.5 reliability on PPG only.
       expect(
-        nextPoints(_underlyingStats(minutes: 180)),
+        nextPoints({..._underlyingStats(minutes: 180), 'starts': 2}),
         closeTo(5 * 0.6 + 5 * 0.5 * 0.4, 0.001),
       );
     });
@@ -430,6 +430,33 @@ void main() {
           1: [0, 0, 0, 0, 0],
         }),
         closeTo(5 * 0.6 + 5 * 0.3 * 0.4, 0.001),
+      );
+    });
+
+    test('counts starts as well as minutes for reliability', () {
+      double nextPoints(Map<String, dynamic> stats) {
+        return _build(
+          players: [_player(1, 'Mid', 1, 3, 50, 5, epNext: 0, stats: stats)],
+          picks: [_pick(1, 1, 3)],
+          fixtures: [_fixture(5, 1, 2)],
+        ).captain!.nextPoints;
+      }
+
+      const minutesShare = 330 / 360;
+      // Started all four matches but was subbed late on.
+      expect(
+        nextPoints({'minutes': 330, 'starts': 4}),
+        closeTo(3 + 5 * (minutesShare / 2 + 0.5) * 0.4, 0.001),
+      );
+      // Same minutes from the bench: a lower start rate.
+      expect(
+        nextPoints({'minutes': 330, 'starts': 0}),
+        closeTo(3 + 5 * (minutesShare / 2) * 0.4, 0.001),
+      );
+      // Unknown starts fall back to minutes alone.
+      expect(
+        nextPoints({'minutes': 330, 'starts': null}),
+        closeTo(3 + 5 * minutesShare * 0.4, 0.001),
       );
     });
 

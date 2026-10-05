@@ -147,6 +147,9 @@ class RecommendationEngine {
   /// Recent matches weigh more than the season when estimating minutes.
   static const _recentMinutesWeight = 0.7;
 
+  /// Weight of the season start rate against the season minutes share.
+  static const _startRateWeight = 0.5;
+
   // Legal squad and XI shape by position id: (squad size, XI min, XI max).
   static const _squadShape = {
     1: (2, 1, 1),
@@ -706,12 +709,17 @@ class RecommendationEngine {
     int gameweekId,
     List<int>? recentMinutes,
   ) {
-    final season = player.minutes == 0
-        ? 0.55
-        : (player.minutes / (90 * (gameweekId - 1).clamp(1, 38))).clamp(
-            0.45,
-            1.0,
-          );
+    final matches = (gameweekId - 1).clamp(1, 38);
+    final minutesShare = player.minutes / (90 * matches);
+    final starts = player.starts;
+    // Starting earns the full appearance points and keeps a clean sheet even
+    // when subbed after 60 minutes, so the start rate counts as much as
+    // minutes. Unknown starts fall back to minutes alone.
+    final played = starts == null
+        ? minutesShare
+        : minutesShare * (1 - _startRateWeight) +
+              (starts / matches).clamp(0.0, 1.0) * _startRateWeight;
+    final season = player.minutes == 0 ? 0.55 : played.clamp(0.45, 1.0);
     if (recentMinutes == null || recentMinutes.isEmpty) return season;
     final recent =
         recentMinutes.fold(0, (total, minutes) => total + minutes) /
