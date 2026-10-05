@@ -13,6 +13,7 @@ import '../../domain/repositories/team_repository.dart';
 import '../cubit/team_cubit.dart';
 import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
 import '../widgets/pitch_view.dart';
+import 'manage_team_page.dart';
 
 class TeamView extends StatelessWidget {
   const TeamView({super.key, this.entryId});
@@ -218,6 +219,9 @@ class _TeamContentState extends State<_TeamContent> {
                               selectedGameweekId: widget.selectedGameweekId,
                               bootstrap: widget.bootstrap,
                               onGameweekChanged: widget.onGameweekChanged,
+                              onManage: widget.entryId == null
+                                  ? () => _openManageTeam(context)
+                                  : null,
                             );
                           },
                         ),
@@ -287,6 +291,14 @@ class _TeamContentState extends State<_TeamContent> {
     );
   }
 
+  Future<void> _openManageTeam(BuildContext context) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const ManageTeamPage()),
+    );
+    // Lineup and transfer changes made there show up here after a refresh.
+    await widget.onRefresh();
+  }
+
   int? _liveTeamPoints(List<TeamPick> picks, Map<int, int> gameweekPoints) {
     if (gameweekPoints.isEmpty) return null;
     final starting = picks.where((pick) => pick.position <= 11);
@@ -321,6 +333,7 @@ class _TeamHeader extends StatelessWidget {
     this.selectedGameweekId,
     this.bootstrap,
     this.onGameweekChanged,
+    this.onManage,
   });
 
   final String title;
@@ -329,6 +342,9 @@ class _TeamHeader extends StatelessWidget {
   final int? selectedGameweekId;
   final FplBootstrap? bootstrap;
   final ValueChanged<int?>? onGameweekChanged;
+
+  /// Opens the pick-team and transfers editor for the signed-in manager.
+  final VoidCallback? onManage;
 
   @override
   Widget build(BuildContext context) {
@@ -402,6 +418,12 @@ class _TeamHeader extends StatelessWidget {
               ],
             ),
           ),
+          if (onManage != null)
+            IconButton(
+              onPressed: onManage,
+              tooltip: AppLocalizations.of(context).manageTeam,
+              icon: Icon(Icons.edit_note_rounded, color: titleColor),
+            ),
           // Gameweek Selector with arrows on the right (replacing the avatar)
           if (selectedGameweekId != null &&
               bootstrap != null &&

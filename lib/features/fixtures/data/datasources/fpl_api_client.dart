@@ -119,34 +119,35 @@ class FplApiClient {
     return FplPlayerSummary.fromJson(json);
   }
 
-  Future<void> makeTransfer({
+  /// Confirms one or more transfers for [gameweekId]. Pass
+  /// [FplChipName.wildcard] or [FplChipName.freeHit] as [chip] to play that
+  /// chip with the transfers.
+  Future<void> makeTransfers({
     required OfficialSession session,
     required int entryId,
     required int gameweekId,
-    required int elementIn,
-    required int elementOut,
-    required int purchasePrice,
-    required int sellingPrice,
+    required List<TransferRequest> transfers,
+    String? chip,
   }) async {
+    if (transfers.isEmpty) {
+      throw ArgumentError.value(transfers, 'transfers', 'Must not be empty.');
+    }
     await _post(
       '/transfers/',
       session: session,
       data: {
-        'chip': null,
+        'chip': chip,
         'entry': entryId,
         'event': gameweekId,
-        'transfers': [
-          {
-            'element_in': elementIn,
-            'element_out': elementOut,
-            'purchase_price': purchasePrice,
-            'selling_price': sellingPrice,
-          },
-        ],
+        'transfers': [for (final transfer in transfers) transfer.toJson()],
       },
     );
   }
 
+  /// Saves the starting XI, bench order and armbands. Pass
+  /// [FplChipName.benchBoost] or [FplChipName.tripleCaptain] as [chip] to play
+  /// that chip, or null to save without one (which also cancels a pending
+  /// Bench Boost or Triple Captain before the deadline).
   Future<void> saveMyTeam({
     required OfficialSession session,
     required int entryId,

@@ -122,14 +122,18 @@ class RecommendationsCubit extends Cubit<RecommendationsState> {
     if (session == null || session.entryId == null || data == null) {
       throw const TeamAccessException(TeamAccessError.entryIdMissing);
     }
-    await teamRepository.makeTransfer(
+    await teamRepository.makeTransfers(
       session: session,
       entryId: session.entryId!,
       gameweekId: data.gameweek.id,
-      elementIn: transfer.inPlayer.id,
-      elementOut: transfer.outPlayer.id,
-      purchasePrice: transfer.inPlayer.nowCost ?? 0,
-      sellingPrice: _sellingPrice(data.team, transfer.outPlayer.id),
+      transfers: [
+        TransferRequest(
+          elementIn: transfer.inPlayer.id,
+          elementOut: transfer.outPlayer.id,
+          purchasePrice: transfer.inPlayer.nowCost ?? 0,
+          sellingPrice: _sellingPrice(data.team, transfer.outPlayer.id),
+        ),
+      ],
     );
     await load();
   }
@@ -169,10 +173,10 @@ class RecommendationsCubit extends Cubit<RecommendationsState> {
   String? _chipName(SuggestedChip chip) {
     return switch (chip) {
       SuggestedChip.none => null,
-      SuggestedChip.wildcard => 'wildcard',
-      SuggestedChip.freeHit => 'freehit',
-      SuggestedChip.benchBoost => 'bboost',
-      SuggestedChip.tripleCaptain => '3xc',
+      SuggestedChip.wildcard => FplChipName.wildcard,
+      SuggestedChip.freeHit => FplChipName.freeHit,
+      SuggestedChip.benchBoost => FplChipName.benchBoost,
+      SuggestedChip.tripleCaptain => FplChipName.tripleCaptain,
     };
   }
 }

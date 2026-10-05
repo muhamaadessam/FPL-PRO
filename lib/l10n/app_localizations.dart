@@ -491,6 +491,87 @@ class AppLocalizations {
           : 'There is no strong chip edge this week; holding is preferred.',
   };
 
+  String get manageTeam => isArabic ? 'إدارة الفريق' : 'Manage team';
+  String get pickTeam => isArabic ? 'اختيار التشكيلة' : 'Pick team';
+  String get transfersTab => isArabic ? 'الانتقالات' : 'Transfers';
+  String deadlineFor(String gameweek) =>
+      isArabic ? 'التعديلات لـ $gameweek' : 'Changes apply to $gameweek';
+  String get manageLineupHint => isArabic
+      ? 'اضغط على لاعب للكابتن أو التبديل • اسحب مطولًا للتبديل'
+      : 'Tap a player for armband or sub • Long-press and drag to swap';
+  String get saveLineup => isArabic ? 'حفظ التشكيلة' : 'Save lineup';
+  String get lineupSaved =>
+      isArabic ? 'تم حفظ التشكيلة على FPL.' : 'Lineup saved to FPL.';
+  String get makeCaptain => isArabic ? 'اجعله القائد' : 'Make captain';
+  String get makeViceCaptain =>
+      isArabic ? 'اجعله نائب القائد' : 'Make vice-captain';
+  String get substitutePlayer => isArabic ? 'تبديل' : 'Substitute';
+  String get transferPlayerOut => isArabic ? 'بيع اللاعب' : 'Transfer out';
+  String chooseSubstituteFor(String name) => isArabic
+      ? 'اختار اللاعب اللي هيتبدل مع $name'
+      : 'Choose a player to swap with $name';
+  String get chipsTitle => isArabic ? 'الـChips' : 'Chips';
+  String get chipPlayed => isArabic ? 'مُفعّلة' : 'Active';
+  String get chipNotAvailable => isArabic ? 'غير متاحة' : 'Unavailable';
+  String get lineupChipHint => isArabic
+      ? 'Bench Boost وTriple Captain تتفعّل مع حفظ التشكيلة. إلغاء التحديد ثم الحفظ يلغيها قبل الـdeadline.'
+      : 'Bench Boost and Triple Captain are played when you save the lineup. Deselect and save to cancel before the deadline.';
+  String get transferChipHint => isArabic
+      ? 'Wildcard وFree Hit تتفعّل مع تأكيد الانتقالات ولا يمكن إلغاؤها بعد التأكيد.'
+      : 'Wildcard and Free Hit are played when you confirm transfers and cannot be cancelled afterwards.';
+  String get remainingBank => isArabic ? 'المتبقي في البنك' : 'Bank after';
+  String get unlimited => isArabic ? 'غير محدود' : 'Unlimited';
+  String get pointsHit => isArabic ? 'خصم النقاط' : 'Points cost';
+  String pointsHitValue(int cost) => cost == 0 ? '0' : '-$cost';
+  String get pendingTransfers =>
+      isArabic ? 'الانتقالات المختارة' : 'Pending transfers';
+  String get noPendingTransfers => isArabic
+      ? 'اختار لاعب من فريقك عشان تبيعه وتجيب بديله.'
+      : 'Pick a player from your squad to replace.';
+  String get yourSquad => isArabic ? 'فريقك' : 'Your squad';
+  String get sellingPrice => isArabic ? 'سعر البيع' : 'Selling price';
+  String replaceFor(String name) =>
+      isArabic ? 'بديل لـ $name' : 'Replace $name';
+  String get confirmTransfers =>
+      isArabic ? 'تأكيد الانتقالات' : 'Confirm transfers';
+  String confirmTransfersBody(int count, int cost, String? chip) {
+    final chipText = chip == null ? '' : ' • ${chipName(chip)}';
+    return isArabic
+        ? '$count انتقال • خصم $cost نقطة$chipText. العملية دي نهائية على موقع FPL.'
+        : '$count transfer(s) • $cost point cost$chipText. This is final on the FPL site.';
+  }
+  String get transfersConfirmed =>
+      isArabic ? 'تم تأكيد الانتقالات على FPL.' : 'Transfers confirmed on FPL.';
+  String get resetChanges => isArabic ? 'تراجع' : 'Reset';
+  String get cancelAction => isArabic ? 'إلغاء' : 'Cancel';
+  String get confirmAction => isArabic ? 'تأكيد' : 'Confirm';
+  String get writeFailed => isArabic
+      ? 'FPL رفض التعديل. حدّث الصفحة وحاول تاني.'
+      : 'FPL rejected the change. Refresh and try again.';
+  String squadEditError(String error) => switch (error) {
+    'benchedRole' => isArabic
+        ? 'القائد ونائبه لازم يكونوا من الأساسيين.'
+        : 'The captain and vice-captain must both start.',
+    'goalkeeperSwap' => isArabic
+        ? 'الحارس يتبدل مع حارس بس.'
+        : 'A goalkeeper can only swap with a goalkeeper.',
+    'invalidFormation' => invalidFormation,
+    'differentPosition' => isArabic
+        ? 'البديل لازم يكون في نفس المركز.'
+        : 'The replacement must play in the same position.',
+    'alreadyInSquad' =>
+      isArabic ? 'اللاعب موجود في فريقك بالفعل.' : 'Already in your squad.',
+    'clubLimit' => isArabic
+        ? 'مسموح بـ3 لاعبين بحد أقصى من نفس النادي.'
+        : 'Maximum of 3 players per club.',
+    'insufficientFunds' =>
+      isArabic ? 'الميزانية مش كفاية.' : 'Not enough money in the bank.',
+    'unavailable' => isArabic
+        ? 'اللاعب ده غير متاح للاختيار.'
+        : 'This player cannot be selected.',
+    _ => genericError,
+  };
+
   String gameweekLabel(int id) => '${isArabic ? 'الأسبوع' : 'Gameweek'} $id';
 
   String pointsLabel(int value) => '$value $points';
