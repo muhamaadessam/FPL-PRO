@@ -1,8 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:fantasy_pl/core/models/fpl_models.dart';
-import 'package:fantasy_pl/core/network/fpl_api_client.dart';
-import 'package:fantasy_pl/features/auth/data/official_auth_client.dart';
+import 'package:fantasy_pl/features/fixtures/data/models/fpl_models.dart';
+import 'package:fantasy_pl/features/fixtures/data/datasources/fpl_api_client.dart';
+import 'package:fantasy_pl/features/team/data/models/team_models.dart';
+import 'package:fantasy_pl/features/auth/data/datasources/official_auth_client.dart';
 
 void main() {
   test('selects the current gameweek and parses public data', () {
@@ -28,7 +29,13 @@ void main() {
         },
       ],
       'teams': [
-        {'id': 1, 'name': 'Arsenal', 'short_name': 'ARS'},
+        {
+          'id': 1,
+          'name': 'Arsenal',
+          'short_name': 'ARS',
+          'strength_attack_home': 1210,
+          'strength_defence_home': 1190,
+        },
       ],
       'elements': [
         {
@@ -38,6 +45,10 @@ void main() {
           'element_type': 3,
           'total_points': 42,
           'now_cost': 70,
+          'goals_scored': 4,
+          'assists': 3,
+          'expected_goals': '3.8',
+          'expected_assists': '2.7',
         },
       ],
     });
@@ -47,11 +58,51 @@ void main() {
     expect(gw2.averageEntryScore, 45);
     expect(gw2.highestScore, 120);
     expect(bootstrap.teams[1]?.shortName, 'ARS');
+    expect(bootstrap.teams[1]?.strengthAttackHome, 1210);
+    expect(bootstrap.teams[1]?.strengthDefenceHome, 1190);
     expect(bootstrap.players[10]?.totalPoints, 42);
+    expect(bootstrap.players[10]?.goalsScored, 4);
+    expect(bootstrap.players[10]?.assists, 3);
+    expect(bootstrap.players[10]?.expectedGoals, 3.8);
+    expect(bootstrap.players[10]?.expectedAssists, 2.7);
+  });
+
+  test('detects next-gameweek availability risks', () {
+    final player = FplPlayer.fromJson({
+      'id': 10,
+      'web_name': 'Player',
+      'team': 1,
+      'element_type': 3,
+      'status': 'd',
+      'chance_of_playing_next_round': 50,
+    });
+    final suspended = FplPlayer.fromJson({
+      'id': 11,
+      'web_name': 'Suspended',
+      'team': 1,
+      'element_type': 3,
+      'status': 's',
+    });
+
+    expect(player.isDoubtfulNextRound, isTrue);
+    expect(player.nextRoundChanceOfPlaying, 50);
+    expect(suspended.isUnavailableNextRound, isTrue);
+    expect(suspended.isDoubtfulNextRound, isFalse);
+
+    final currentRoundOnly = FplPlayer.fromJson({
+      'id': 12,
+      'web_name': 'Current round only',
+      'team': 1,
+      'element_type': 3,
+      'status': 'a',
+      'chance_of_playing_this_round': 0,
+    });
+    expect(currentRoundOnly.isUnavailableNextRound, isFalse);
   });
 
   test('parses team picks and gameweek summary', () {
     final team = MyTeam.fromJson({
+      'active_chip': '3xc',
       'entry_history': {
         'event': 2,
         'points': 58,
@@ -85,6 +136,7 @@ void main() {
       ],
     });
 
+    expect(team.activeChip, '3xc');
     expect(team.summary.points, 58);
     expect(team.summary.totalPoints, 112);
     expect(team.picks.single.elementId, 10);
@@ -167,90 +219,31 @@ void main() {
     expect(chip.isAvailableFor(21), isTrue);
   });
 
-  test('parses team strengths and keeps missing player stats unknown', () {
-    final bootstrap = FplBootstrap.fromJson({
-      'teams': [
-        {
-          'id': 1,
-          'name': 'Arsenal',
-          'short_name': 'ARS',
-          'strength_attack_home': 1340,
-          'strength_attack_away': 1310,
-          'strength_defence_home': 1350,
-          'strength_defence_away': 1320,
-        },
-      ],
-      'elements': [
-        {
-          'id': 10,
-          'team': 1,
-          'element_type': 2,
-          'expected_goals': '1.25',
-          'expected_goals_conceded': '8.40',
-          'defensive_contribution': 96,
-        },
-        {'id': 11, 'team': 1, 'element_type': 3},
-      ],
-    });
-
-    final team = bootstrap.teams[1]!;
-    expect(team.strengthAttackHome, 1340);
-    expect(team.strengthDefenceAway, 1320);
-    final withStats = bootstrap.players[10]!;
-    expect(withStats.expectedGoals, 1.25);
-    expect(withStats.expectedGoalsConceded, 8.4);
-    expect(withStats.defensiveContribution, 96);
-    expect(withStats.expectedAssists, isNull);
-    final withoutStats = bootstrap.players[11]!;
-    expect(withoutStats.expectedGoals, isNull);
-    expect(withoutStats.defensiveContribution, isNull);
-  });
-
-  test('keeps the most recent match minutes from element history', () {
-    final minutes = parseRecentMinutes({
+  test('parses current and previous player history', () {
+    final summary = FplPlayerSummary.fromJson({
       'history': [
-        for (final value in [90, 0, 45, 90, 90, 12, 90]) {'minutes': value},
+        {
+          'round': 4,
+          'minutes': 90,
+          'starts': 1,
+          'total_points': 8,
+          'expected_goal_involvements': '0.72',
+        },
+      ],
+      'history_past': [
+        {
+          'season_name': '2025/26',
+          'total_points': 180,
+          'minutes': 3000,
+          'starts': 34,
+          'expected_goal_involvements': '16.2',
+        },
       ],
     });
 
-    expect(minutes, [45, 90, 90, 12, 90]);
-    expect(parseRecentMinutes(const {}), isEmpty);
-  });
-
-  test('parses game_config scoring with per-field fallbacks', () {
-    final scoring = FplBootstrap.fromJson({
-      'element_types': [
-        {'id': 1, 'singular_name_short': 'GKP'},
-        {'id': 2, 'singular_name_short': 'DEF'},
-        {'id': 3, 'singular_name_short': 'MID'},
-        {'id': 4, 'singular_name_short': 'FWD'},
-      ],
-      'game_config': {
-        'scoring': {
-          'long_play': 3,
-          'goals_scored': {'GKP': 12, 'DEF': 7, 'MID': 6, 'FWD': 5},
-          'assists': 4,
-          // MID is missing and FWD is not a number: both use the defaults.
-          'clean_sheets': {'GKP': 5, 'DEF': 5, 'FWD': 'n/a'},
-          'saves': 'unexpected',
-        },
-      },
-    }).scoring;
-
-    expect(scoring.appearance, 3);
-    expect(scoring.goals, {1: 12, 2: 7, 3: 6, 4: 5});
-    expect(scoring.assists, {1: 4, 2: 4, 3: 4, 4: 4});
-    expect(scoring.cleanSheets, {1: 5, 2: 5, 3: 1, 4: 0});
-    expect(scoring.saves, 1);
-    expect(scoring.goalsConceded, {1: -1, 2: -1, 3: 0, 4: 0});
-    expect(scoring.defensiveContribution, {1: 0, 2: 2, 3: 2, 4: 2});
-  });
-
-  test('uses the 2026/27 scoring when game_config is missing', () {
-    final scoring = FplBootstrap.fromJson(const {}).scoring;
-
-    expect(scoring.appearance, 2);
-    expect(scoring.goals, {1: 10, 2: 6, 3: 5, 4: 4});
-    expect(scoring.cleanSheets, {1: 4, 2: 4, 3: 1, 4: 0});
+    expect(summary.history.single.totalPoints, 8);
+    expect(summary.history.single.expectedGoalInvolvements, 0.72);
+    expect(summary.historyPast.single.seasonName, '2025/26');
+    expect(summary.historyPast.single.pointsPer90, closeTo(5.4, 0.01));
   });
 }

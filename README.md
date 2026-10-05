@@ -12,6 +12,11 @@ Flutter client for read-only official Fantasy Premier League data.
 - Private team lookup through `/api/me/` and `/api/my-team/{entryId}/`.
 - English/Arabic UI with RTL support.
 - Read-only Team and Matches screens.
+- Weekly Tips use your current authenticated squad to suggest a legal starting
+  XI, captain, vice-captain and bench order, with a preview on the pitch.
+- Tips refresh when opened, when the app resumes, or with pull-to-refresh.
+  Transfer suggestions are alternatives for one move and require current bank,
+  selling prices and free-transfer data; projected gains account for hits.
 
 ## Official auth setup
 
