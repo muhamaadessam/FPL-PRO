@@ -8,6 +8,7 @@ enum ChipReason {
   squadOverhaul,
   strongBench,
   captainCeiling,
+  chipExpiring,
   hold,
 }
 
@@ -74,6 +75,28 @@ class RecommendationResult {
 class RecommendationEngine {
   const RecommendationEngine();
 
+  static const _hitCost = 4;
+  static const _maxFreeTransfers = 5;
+  static const _maxSuggestedTransfers = 3;
+
+  /// Option value of rolling a free transfer instead of using it.
+  static const _rollTransferValue = 2.0;
+
+  /// Minimum gain when the free transfer would otherwise be wasted at the cap.
+  static const _cappedFreeTransferGain = 0.5;
+
+  /// Margin a paid transfer must clear on top of the four-point hit.
+  static const _hitMargin = 1.0;
+
+  /// Share of a bench player's projection that is expected to count.
+  static const _benchWeight = 0.3;
+
+  static const _weakStarterHorizon = 4.0;
+  static const _wildcardMinWeakStarters = 3;
+
+  /// Extra horizon points a wildcard must add over the normal transfer route.
+  static const _wildcardMinExtraGain = 12.0;
+
   RecommendationResult build({
     required FplBootstrap bootstrap,
     required List<FplFixture> fixtures,
@@ -108,6 +131,8 @@ class RecommendationEngine {
     final transferIdeas = _transferIdeas(team, bootstrap, projections);
     final chipDecision = _chipDecision(
       team: team,
+      bootstrap: bootstrap,
+      projections: projections,
       starters: starters,
       bench: bench,
       transferIdeas: transferIdeas,
@@ -149,10 +174,9 @@ class RecommendationEngine {
             0.45,
             1.0,
           );
-    final recent = player.form * 0.6 + player.pointsPerGame * 0.4;
-    final nextBase = player.expectedPointsNext > 0
-        ? player.expectedPointsNext * 0.6 + recent * 0.4
-        : recent;
+    // `form` averages over all of the club's recent matches, so absences are
+    // already priced in; `points_per_game` only counts appearances.
+    final recent = player.form * 0.6 + player.pointsPerGame * reliability * 0.4;
     var horizon = 0.0;
     var next = 0.0;
     var nextCount = 0;
@@ -174,13 +198,13 @@ class RecommendationEngine {
       final difficulty =
           difficulties.reduce((a, b) => a + b) / difficulties.length;
       final difficultyFactor = 1.24 - (difficulty * 0.08);
-      final base = offset == 0 ? nextBase : recent;
-      final eventScore =
-          base *
-          availability *
-          reliability *
-          difficultyFactor *
-          eventFixtures.length;
+      final recentScore =
+          recent * availability * difficultyFactor * eventFixtures.length;
+      // `ep_next` already accounts for availability, fixture difficulty and
+      // Double Gameweeks, so it must not be scaled by them again.
+      final eventScore = offset == 0 && player.expectedPointsNext > 0
+          ? player.expectedPointsNext * 0.6 + recentScore * 0.4
+          : recentScore;
       horizon += eventScore * const [1.0, 0.65, 0.4][offset];
       if (offset == 0) {
         next = eventScore;
@@ -204,67 +228,136 @@ class RecommendationEngine {
     FplBootstrap bootstrap,
     Map<int, PlayerProjection> projections,
   ) {
-    final squadIds = team.picks.map((pick) => pick.elementId).toSet();
-    final squad = squadIds
-        .map((id) => bootstrap.players[id])
-        .whereType<FplPlayer>()
-        .toList();
-    final bank = team.transfers.bank ?? team.summary.bank ?? 0;
-    final freeTransfers = _freeTransfers(team.transfers);
-    final hitCost = freeTransfers == 0 ? 4 : 0;
-    final ideas = <TransferSuggestion>[];
-
-    for (final pick in team.picks) {
-      final outgoing = bootstrap.players[pick.elementId];
-      final outgoingProjection = projections[pick.elementId];
-      if (outgoing == null || outgoingProjection == null) continue;
-      final sellingPrice = pick.sellingPrice ?? outgoing.nowCost ?? 0;
-
-      PlayerProjection? best;
-      for (final candidate in projections.values) {
-        final cost = candidate.player.nowCost;
-        if (squadIds.contains(candidate.player.id) ||
-            candidate.player.positionId != outgoing.positionId ||
-            !candidate.player.canSelect ||
-            candidate.availability < 0.5 ||
-            cost == null ||
-            cost > sellingPrice + bank) {
-          continue;
+    // Unknown free transfers are treated as none so a hit is never hidden.
+    final freeTransfers = _freeTransfers(team.transfers) ?? 0;
+    return _planTransfers(
+      team: team,
+      bootstrap: bootstrap,
+      projections: projections,
+      maxTransfers: _maxSuggestedTransfers,
+      hitCostFor: (index) => index < freeTransfers ? 0 : _hitCost,
+      minGainFor: (index, hitCost) {
+        if (hitCost > 0) return hitCost + _hitMargin;
+        if (index == 0 && freeTransfers >= _maxFreeTransfers) {
+          return _cappedFreeTransferGain;
         }
-        final clubCount = squad.where((player) {
-          return player.teamId == candidate.player.teamId &&
-              player.id != outgoing.id;
-        }).length;
-        if (clubCount >= 3) continue;
-        if (best == null || candidate.horizonPoints > best.horizonPoints) {
-          best = candidate;
+        return _rollTransferValue;
+      },
+    );
+  }
+
+  /// Greedily builds a transfer plan whose moves are valid together: they
+  /// share one bank, respect the club limit and never reuse a player.
+  List<TransferSuggestion> _planTransfers({
+    required MyTeam team,
+    required FplBootstrap bootstrap,
+    required Map<int, PlayerProjection> projections,
+    required int maxTransfers,
+    required int Function(int index) hitCostFor,
+    required double Function(int index, int hitCost) minGainFor,
+  }) {
+    final squadIds = team.picks.map((pick) => pick.elementId).toSet();
+    final clubCounts = <int, int>{};
+    for (final id in squadIds) {
+      final player = bootstrap.players[id];
+      if (player == null) continue;
+      clubCounts[player.teamId] = (clubCounts[player.teamId] ?? 0) + 1;
+    }
+    var bank = team.transfers.bank ?? team.summary.bank ?? 0;
+    final outgoingIds = <int>{};
+    final incomingIds = <int>{};
+    final plan = <TransferSuggestion>[];
+
+    while (plan.length < maxTransfers) {
+      final hitCost = hitCostFor(plan.length);
+      _Upgrade? best;
+      for (final pick in team.picks) {
+        if (outgoingIds.contains(pick.elementId)) continue;
+        final upgrade = _bestUpgrade(
+          pick: pick,
+          bootstrap: bootstrap,
+          projections: projections,
+          excludedIds: {...squadIds, ...incomingIds},
+          bank: bank,
+          clubCounts: clubCounts,
+        );
+        if (upgrade != null && (best == null || upgrade.gain > best.gain)) {
+          best = upgrade;
         }
       }
-      if (best == null) continue;
-      final gain = best.horizonPoints - outgoingProjection.horizonPoints;
-      if (gain - hitCost < 0.75) continue;
-      ideas.add(
+      if (best == null || best.gain < minGainFor(plan.length, hitCost)) break;
+
+      plan.add(
         TransferSuggestion(
-          outPlayer: outgoing,
-          inPlayer: best.player,
-          projectedGain: gain,
+          outPlayer: best.outPlayer,
+          inPlayer: best.inPlayer,
+          projectedGain: best.gain,
           hitCost: hitCost,
         ),
       );
+      bank += best.sellingPrice - best.cost;
+      outgoingIds.add(best.outPlayer.id);
+      incomingIds.add(best.inPlayer.id);
+      clubCounts[best.outPlayer.teamId] =
+          (clubCounts[best.outPlayer.teamId] ?? 1) - 1;
+      clubCounts[best.inPlayer.teamId] =
+          (clubCounts[best.inPlayer.teamId] ?? 0) + 1;
     }
+    return plan;
+  }
 
-    ideas.sort((a, b) => b.projectedGain.compareTo(a.projectedGain));
-    final selected = <TransferSuggestion>[];
-    final incomingIds = <int>{};
-    for (final idea in ideas) {
-      if (incomingIds.add(idea.inPlayer.id)) selected.add(idea);
-      if (selected.length == 3) break;
+  _Upgrade? _bestUpgrade({
+    required TeamPick pick,
+    required FplBootstrap bootstrap,
+    required Map<int, PlayerProjection> projections,
+    required Set<int> excludedIds,
+    required int bank,
+    required Map<int, int> clubCounts,
+  }) {
+    final outgoing = bootstrap.players[pick.elementId];
+    final outgoingProjection = projections[pick.elementId];
+    if (outgoing == null || outgoingProjection == null) return null;
+    final sellingPrice = pick.sellingPrice ?? outgoing.nowCost ?? 0;
+
+    PlayerProjection? best;
+    for (final candidate in projections.values) {
+      final cost = candidate.player.nowCost;
+      if (excludedIds.contains(candidate.player.id) ||
+          candidate.player.positionId != outgoing.positionId ||
+          !candidate.player.canSelect ||
+          candidate.availability < 0.5 ||
+          cost == null ||
+          cost > sellingPrice + bank) {
+        continue;
+      }
+      final clubCount =
+          (clubCounts[candidate.player.teamId] ?? 0) -
+          (candidate.player.teamId == outgoing.teamId ? 1 : 0);
+      if (clubCount >= 3) continue;
+      if (best == null || candidate.horizonPoints > best.horizonPoints) {
+        best = candidate;
+      }
     }
-    return selected;
+    if (best == null) return null;
+
+    // Only part of a bench player's projection is expected to count.
+    final weight = pick.position > 11 ? _benchWeight : 1.0;
+    final gain =
+        (best.horizonPoints - outgoingProjection.horizonPoints) * weight;
+    if (gain <= 0) return null;
+    return _Upgrade(
+      outPlayer: outgoing,
+      inPlayer: best.player,
+      gain: gain,
+      cost: best.player.nowCost!,
+      sellingPrice: sellingPrice,
+    );
   }
 
   (SuggestedChip, ChipReason) _chipDecision({
     required MyTeam team,
+    required FplBootstrap bootstrap,
+    required Map<int, PlayerProjection> projections,
     required List<PlayerProjection> starters,
     required List<PlayerProjection> bench,
     required List<TransferSuggestion> transferIdeas,
@@ -287,15 +380,14 @@ class RecommendationEngine {
       return (SuggestedChip.freeHit, ChipReason.missingStarters);
     }
 
-    final weakSquad = [...starters, ...bench]
-        .where(
-          (player) =>
-              player.nextFixtureCount == 0 ||
-              player.availability < 0.5 ||
-              player.horizonPoints < 3,
-        )
-        .length;
-    if (weakSquad >= 5 && transferIdeas.length >= 3 && available('wildcard')) {
+    if (available('wildcard') &&
+        _wildcardWorthIt(
+          team: team,
+          bootstrap: bootstrap,
+          projections: projections,
+          starters: starters,
+          transferIdeas: transferIdeas,
+        )) {
       return (SuggestedChip.wildcard, ChipReason.squadOverhaul);
     }
 
@@ -318,7 +410,86 @@ class RecommendationEngine {
       return (SuggestedChip.tripleCaptain, ChipReason.captainCeiling);
     }
 
+    final expiring = _forcedExpiringChip(
+      team: team,
+      gameweekId: gameweekId,
+      benchPoints: bench.length == 4 ? benchPoints : 0,
+      captainPoints: captain?.nextPoints ?? 0,
+    );
+    if (expiring != null) return (expiring, ChipReason.chipExpiring);
+
     return (SuggestedChip.none, ChipReason.hold);
+  }
+
+  /// A wildcard is worth it only when several starters are weak and an
+  /// unlimited rebuild beats the normal free-transfer/hit route by a margin.
+  bool _wildcardWorthIt({
+    required MyTeam team,
+    required FplBootstrap bootstrap,
+    required Map<int, PlayerProjection> projections,
+    required List<PlayerProjection> starters,
+    required List<TransferSuggestion> transferIdeas,
+  }) {
+    // Bench fodder is weak by design, so only starters are counted.
+    final weakStarters = starters
+        .where(
+          (player) =>
+              player.nextFixtureCount == 0 ||
+              player.availability < 0.5 ||
+              player.horizonPoints < _weakStarterHorizon,
+        )
+        .length;
+    if (weakStarters < _wildcardMinWeakStarters) return false;
+
+    final rebuild = _planTransfers(
+      team: team,
+      bootstrap: bootstrap,
+      projections: projections,
+      maxTransfers: team.picks.length,
+      hitCostFor: (_) => 0,
+      minGainFor: (_, _) => _cappedFreeTransferGain,
+    );
+    double netGain(List<TransferSuggestion> plan) =>
+        plan.fold(0.0, (total, item) => total + item.netProjectedGain);
+    return netGain(rebuild) - netGain(transferIdeas) >= _wildcardMinExtraGain;
+  }
+
+  /// Returns a chip that must be played now because the remaining Gameweeks
+  /// in its window are no more than the chips still unused in that window.
+  SuggestedChip? _forcedExpiringChip({
+    required MyTeam team,
+    required int gameweekId,
+    required double benchPoints,
+    required double captainPoints,
+  }) {
+    final expiring = <String>{};
+    final windows = team.chips
+        .where((chip) => chip.isAvailableFor(gameweekId))
+        .map((chip) => chip.stopEvent)
+        .whereType<int>()
+        .toSet();
+    for (final stop in windows) {
+      final unused = team.chips
+          .where(
+            (chip) => chip.stopEvent == stop && chip.isAvailableFor(gameweekId),
+          )
+          .map((chip) => chip.name)
+          .toSet();
+      if (unused.length >= stop - gameweekId + 1) expiring.addAll(unused);
+    }
+    if (expiring.isEmpty) return null;
+
+    // Prefer the cheap one-week chips by their expected extra points.
+    final oneWeek = <SuggestedChip, double>{
+      if (expiring.contains('bboost')) SuggestedChip.benchBoost: benchPoints,
+      if (expiring.contains('3xc')) SuggestedChip.tripleCaptain: captainPoints,
+    };
+    if (oneWeek.isNotEmpty) {
+      return oneWeek.entries.reduce((a, b) => b.value > a.value ? b : a).key;
+    }
+    if (expiring.contains('wildcard')) return SuggestedChip.wildcard;
+    if (expiring.contains('freehit')) return SuggestedChip.freeHit;
+    return null;
   }
 
   int _difficultyFor(int teamId, FplFixture fixture) {
@@ -343,4 +514,20 @@ class RecommendationEngine {
     if (limit == null) return null;
     return (limit - (transfers.made ?? 0)).clamp(0, 5);
   }
+}
+
+class _Upgrade {
+  const _Upgrade({
+    required this.outPlayer,
+    required this.inPlayer,
+    required this.gain,
+    required this.cost,
+    required this.sellingPrice,
+  });
+
+  final FplPlayer outPlayer;
+  final FplPlayer inPlayer;
+  final double gain;
+  final int cost;
+  final int sellingPrice;
 }

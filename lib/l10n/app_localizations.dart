@@ -158,6 +158,10 @@ class AppLocalizations {
       isArabic
           ? 'الفريق محتاج تغييرات متعددة لعدة جولات، وليس تبديلًا واحدًا.'
           : 'The squad needs several multi-week changes, not one transfer.',
+    'chipExpiring' =>
+      isArabic
+          ? 'الـChip ستنتهي قبل توفر جولات كافية لاستخدامها؛ استخدمها الآن بدل أن تضيع.'
+          : 'This chip expires before there are enough Gameweeks left to play it; use it now rather than lose it.',
     'strongBench' =>
       isArabic
           ? 'الدكة كلها متاحة وتوقع نقاطها مرتفع.'
