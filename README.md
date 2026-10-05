@@ -67,8 +67,10 @@ before the service owner approves the client and redirect URI.
 Push app changes to `closed-test` to build a signed Android App Bundle and
 upload it as a draft to the Google Play `alpha` track. GitHub Actions requires
 the repository secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_PASSWORD`,
-`KEY_ALIAS`, and `PLAY_CONSOLE_JSON_BASE64`. Keep releases in draft until the
-FPL sign-in integration is approved.
+and `KEY_ALIAS`, plus the Actions variables `GCP_WORKLOAD_IDENTITY_PROVIDER`
+and `GCP_SERVICE_ACCOUNT`. Google Cloud access uses branch-restricted
+Workload Identity Federation; no service-account key is stored in GitHub.
+Keep releases in draft until the FPL sign-in integration is approved.
 
 ## Run and verify
 

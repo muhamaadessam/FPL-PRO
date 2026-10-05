@@ -46,3 +46,6 @@ app.*.map.json
 /android/key.properties
 /android/app/upload-keystore.jks
 /fpl-pro-privacy/.vercel/
+
+# Temporary Google credentials created by GitHub Actions
+gha-creds-*.json
