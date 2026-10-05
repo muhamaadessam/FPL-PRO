@@ -1512,6 +1512,26 @@ class _CaptainCard extends StatelessWidget {
                         bootstrap.teams[captain.player.teamId]?.shortName ?? '—',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
+                      Builder(
+                        builder: (context) {
+                          final (low, high) = likelyPointsRange(
+                            result.suggestedLineup.players
+                                .firstWhere(
+                                  (p) => p.pick.elementId == captain.player.id,
+                                )
+                                .expectedPoints,
+                          );
+                          return Text(
+                            l10n.likelyRange(
+                              low.toStringAsFixed(0),
+                              high.toStringAsFixed(0),
+                            ),
+                            style: Theme.of(context).textTheme.bodySmall,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          );
+                        },
+                      ),
                     ],
                   ),
                 ),

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../../../fixtures/data/models/fpl_models.dart';
 import '../../../team/data/models/team_models.dart';
 
@@ -9,6 +11,8 @@ enum ChipReason {
   squadOverhaul,
   strongBench,
   captainCeiling,
+  chipExpiring,
+  chipActive,
   hold,
 }
 
@@ -28,6 +32,16 @@ class PlayerProjection {
   final double availability;
   final int nextFixtureCount;
   final List<int> nextDifficulties;
+
+  /// Rough 80% band for the next Gameweek; see [likelyPointsRange].
+  (double, double) get nextRange => likelyPointsRange(nextPoints);
+}
+
+/// Rough 80% band around a single-Gameweek projection. FPL scores are
+/// high-variance, so this heuristic uses a standard deviation of 1.6 × √points.
+(double, double) likelyPointsRange(double points) {
+  final spread = 1.28 * 1.6 * math.sqrt(math.max(points, 0));
+  return (math.max(0, points - spread), points + spread);
 }
 
 enum PlayerTrend { rising, steady, falling }
@@ -178,17 +192,85 @@ class RecommendationResult {
 class RecommendationEngine {
   const RecommendationEngine();
 
+  static const _hitCost = 4;
+  static const _maxFreeTransfers = 5;
+  static const _maxSuggestedTransfers = 3;
+
+  /// Option value of rolling a free transfer instead of using it.
+  static const _rollTransferValue = 2.0;
+
+  /// Minimum gain when the free transfer would otherwise be wasted at the cap.
+  static const _cappedFreeTransferGain = 0.5;
+
+  /// Margin a paid transfer must clear on top of the four-point hit.
+  static const _hitMargin = 1.0;
+
+  /// Share of a bench player's projection that is expected to count.
+  static const _benchWeight = 0.3;
+
+  static const _weakStarterHorizon = 4.0;
+  static const _wildcardMinWeakStarters = 3;
+
+  /// Extra horizon points a wildcard must add over the normal transfer route.
+  static const _wildcardMinExtraGain = 12.0;
+
+  /// 2026/27 defensive actions needed for defensive contribution points, by
+  /// position id. The points themselves come from `game_config.scoring`.
+  static const _defensiveContributionThreshold = {2: 10, 3: 12, 4: 12};
+
+  /// Minutes before underlying per-90 stats are trusted at all, and the
+  /// minutes at which they reach their full blend weight.
+  static const _minUnderlyingMinutes = 270;
+  static const _fullUnderlyingMinutes = 900;
+  static const _maxUnderlyingWeight = 0.4;
+
+  /// Share of points driven by the opponent's defence (attack) and attack
+  /// (defence) when a player has no underlying stats; the rest is neutral.
+  static const _defaultAttackShare = {1: 0.0, 2: 0.25, 3: 0.6, 4: 0.75};
+  static const _defaultDefenceShare = {1: 0.6, 2: 0.45, 3: 0.1, 4: 0.0};
+
+  /// Recent matches weigh more than the season when estimating minutes.
+  static const _recentMinutesWeight = 0.7;
+  static const _recentMatches = 5;
+
+  /// Weight of the season start rate against the season minutes share.
+  static const _startRateWeight = 0.5;
+
+  /// [playerSummaries] supplies recent match minutes where available, which
+  /// outweigh season-long minutes for those players.
   List<PlayerProjection> buildPlayerProjections({
     required FplBootstrap bootstrap,
     required List<FplFixture> fixtures,
     required int gameweekId,
+    Map<int, FplPlayerSummary> playerSummaries = const {},
   }) {
+    final strengths = _TeamStrengths.from(bootstrap.teams);
     final projections =
         bootstrap.players.values
-            .map((player) => _project(player, fixtures, gameweekId))
+            .map(
+              (player) => _project(
+                player,
+                fixtures,
+                gameweekId,
+                strengths,
+                _recentMinutes(playerSummaries[player.id]),
+                bootstrap.scoring,
+              ),
+            )
             .toList()
           ..sort((a, b) => b.nextPoints.compareTo(a.nextPoints));
     return List.unmodifiable(projections);
+  }
+
+  /// Minutes in the player's most recent matches, oldest first.
+  List<int>? _recentMinutes(FplPlayerSummary? summary) {
+    if (summary == null || summary.history.isEmpty) return null;
+    final history = [...summary.history]
+      ..sort((a, b) => a.round.compareTo(b.round));
+    return history
+        .skip(math.max(0, history.length - _recentMatches))
+        .map((match) => match.minutes)
+        .toList(growable: false);
   }
 
   RecommendationResult build({
@@ -202,6 +284,7 @@ class RecommendationEngine {
       bootstrap: bootstrap,
       fixtures: fixtures,
       gameweekId: gameweekId,
+      playerSummaries: playerSummaries,
     );
     final projections = {
       for (final projection in allProjections) projection.player.id: projection,
@@ -221,6 +304,7 @@ class RecommendationEngine {
       fixtures: fixtures,
       gameweekId: gameweekId,
       playerSummaries: playerSummaries,
+      scoring: bootstrap.scoring,
     );
     final suggestedLineup = buildSuggestedLineup(squadAnalysis);
     final starters = suggestedLineup.starters
@@ -229,13 +313,25 @@ class RecommendationEngine {
         .where((p) => p.expectedPoints > 0)
         .toList();
     final bench = suggestedLineup.bench.map((p) => p.projection).toList();
-    final transferIdeas = _transferIdeas(team, bootstrap, projections);
+    final activeChip = team.chips
+        .where((chip) => chip.statusForEntry == 'active')
+        .map((chip) => chip.name)
+        .firstOrNull;
+    final transferIdeas = _transferIdeas(
+      team,
+      bootstrap,
+      projections,
+      activeChip,
+    );
     final chipDecision = _chipDecision(
       team: team,
+      bootstrap: bootstrap,
+      projections: projections,
       starters: starters.map((p) => p.projection).toList(),
       bench: bench,
       transferIdeas: transferIdeas,
       gameweekId: gameweekId,
+      activeChip: activeChip,
     );
 
     return RecommendationResult(
@@ -314,6 +410,7 @@ class RecommendationEngine {
     required List<FplFixture> fixtures,
     required int gameweekId,
     required Map<int, FplPlayerSummary> playerSummaries,
+    required FplScoring scoring,
   }) {
     final players = <PlayerAnalysis>[];
     for (final pick in team.picks) {
@@ -327,6 +424,7 @@ class RecommendationEngine {
           summary: playerSummaries[pick.elementId],
           fixtures: fixtures,
           gameweekId: gameweekId,
+          scoring: scoring,
         ),
       );
     }
@@ -489,6 +587,7 @@ class RecommendationEngine {
     required FplPlayerSummary? summary,
     required List<FplFixture> fixtures,
     required int gameweekId,
+    required FplScoring scoring,
   }) {
     final player = projection.player;
     final history = [...?summary?.history]
@@ -512,6 +611,7 @@ class RecommendationEngine {
       recentPoints: recentPoints,
       previousSeasonPoints: previousSeasonPoints,
       reliability: reliability,
+      scoring: scoring,
     );
     final rating = _percentileRating(
       projection.nextPoints * 0.75 + expectedPoints * 0.25,
@@ -584,6 +684,7 @@ class RecommendationEngine {
     required double recentPoints,
     required double? previousSeasonPoints,
     required double reliability,
+    required FplScoring scoring,
   }) {
     if (projection.nextFixtureCount == 0 || projection.availability == 0) {
       return 0;
@@ -598,7 +699,7 @@ class RecommendationEngine {
       weighted += projection.player.pointsPerGame * 0.2;
       weight += 0.2;
     }
-    final underlyingPoints = _underlyingPoints(projection.player);
+    final underlyingPoints = _underlyingPoints(projection.player, scoring);
     if (underlyingPoints > 0) {
       weighted += underlyingPoints * 0.1;
       weight += 0.1;
@@ -623,25 +724,21 @@ class RecommendationEngine {
     return (base + doubleBonus).round().clamp(0, 100);
   }
 
-  double _underlyingPoints(FplPlayer player) {
+  double _underlyingPoints(FplPlayer player, FplScoring scoring) {
     if (player.minutes <= 0) return 0;
+    final position = player.positionId;
     final matches = player.minutes / 90;
     final expectedInvolvementsPer90 = player.expectedGoalInvolvements / matches;
-    final goalPoints = switch (player.positionId) {
-      1 => 10,
-      2 => 6,
-      3 => 5,
-      _ => 4,
-    };
-    final attacking = expectedInvolvementsPer90 * (goalPoints + 3) / 2;
-    final cleanSheetPoints = switch (player.positionId) {
-      1 || 2 => 4,
-      3 => 1,
-      _ => 0,
-    };
-    final cleanSheets = player.cleanSheets / matches * cleanSheetPoints;
-    final saves = player.positionId == 1 ? player.saves / matches / 3 : 0;
-    return 2 + attacking + cleanSheets + saves;
+    final attacking =
+        expectedInvolvementsPer90 *
+        ((scoring.goals[position] ?? 0) + (scoring.assists[position] ?? 0)) /
+        2;
+    final cleanSheets =
+        player.cleanSheets / matches * (scoring.cleanSheets[position] ?? 0);
+    final saves = position == 1
+        ? player.saves / matches / 3 * scoring.saves
+        : 0;
+    return scoring.appearance + attacking + cleanSheets + saves;
   }
 
   PlayerTrend _trend(List<FplPlayerHistory> history) {
@@ -750,18 +847,30 @@ class RecommendationEngine {
     FplPlayer player,
     List<FplFixture> fixtures,
     int gameweekId,
+    _TeamStrengths? strengths,
+    List<int>? recentMinutes,
+    FplScoring scoring,
   ) {
     final availability = _availability(player);
-    final reliability = player.minutes == 0
-        ? 0.55
-        : (player.minutes / (90 * (gameweekId - 1).clamp(1, 38))).clamp(
-            0.45,
-            1.0,
-          );
-    final recent = player.form * 0.6 + player.pointsPerGame * 0.4;
-    final nextBase = player.expectedPointsNext > 0
-        ? player.expectedPointsNext * 0.6 + recent * 0.4
-        : recent;
+    final reliability = _minutesShare(player, gameweekId, recentMinutes);
+    // `form` averages over all of the club's recent matches, so absences are
+    // already priced in; `points_per_game` only counts appearances.
+    final formScore =
+        player.form * 0.6 + player.pointsPerGame * reliability * 0.4;
+    final underlying = _underlying(player, reliability, scoring);
+    final underlyingWeight = underlying == null
+        ? 0.0
+        : _maxUnderlyingWeight *
+              (player.minutes / _fullUnderlyingMinutes).clamp(0.0, 1.0);
+    final recent =
+        formScore * (1 - underlyingWeight) +
+        (underlying?.points ?? 0) * underlyingWeight;
+    final attackShare =
+        underlying?.attackShare ?? _defaultAttackShare[player.positionId] ?? 0;
+    final defenceShare =
+        underlying?.defenceShare ??
+        _defaultDefenceShare[player.positionId] ??
+        0;
     var horizon = 0.0;
     var next = 0.0;
     var nextCount = 0;
@@ -780,16 +889,26 @@ class RecommendationEngine {
       final difficulties = eventFixtures
           .map((fixture) => _difficultyFor(player.teamId, fixture))
           .toList(growable: false);
-      final difficulty =
-          difficulties.reduce((a, b) => a + b) / difficulties.length;
-      final difficultyFactor = 1.24 - (difficulty * 0.08);
-      final base = offset == 0 ? nextBase : recent;
+      final fixtureFactor = eventFixtures.fold(
+        0.0,
+        (total, fixture) =>
+            total +
+            _fixtureFactor(
+              player.teamId,
+              fixture,
+              strengths,
+              attackShare: attackShare,
+              defenceShare: defenceShare,
+            ),
+      );
+      final recentScore = recent * availability * fixtureFactor;
+      // `ep_next` already accounts for availability, fixture difficulty and
+      // Double Gameweeks, so it must not be scaled by them again.
+      // An unavailable player scores nothing, even if ep_next is stale.
       final eventScore =
-          base *
-          availability *
-          reliability *
-          difficultyFactor *
-          eventFixtures.length;
+          offset == 0 && player.expectedPointsNext > 0 && availability > 0
+          ? player.expectedPointsNext * 0.6 + recentScore * 0.4
+          : recentScore;
       horizon += eventScore * const [1.0, 0.65, 0.4][offset];
       if (offset == 0) {
         next = eventScore;
@@ -812,54 +931,179 @@ class RecommendationEngine {
     MyTeam team,
     FplBootstrap bootstrap,
     Map<int, PlayerProjection> projections,
+    String? activeChip,
   ) {
-    final ideas = <TransferSuggestion>[];
+    // Like buildTransferSuggestion, suggest nothing without the real bank.
+    if (team.transfers.bank == null) return const [];
+    final benchWeight = activeChip == 'bboost' ? 1.0 : _benchWeight;
+    if (activeChip == 'wildcard' || activeChip == 'freehit') {
+      // Transfers are free this Gameweek, so there is no hit or roll value.
+      return _planTransfers(
+        team: team,
+        bootstrap: bootstrap,
+        projections: projections,
+        maxTransfers: _maxSuggestedTransfers,
+        benchWeight: benchWeight,
+        hitCostFor: (_) => 0,
+        minGainFor: (_, _) => _cappedFreeTransferGain,
+      );
+    }
+    final freeTransfers = _freeTransfers(team.transfers);
+    if (freeTransfers == null) return const [];
+    return _planTransfers(
+      team: team,
+      bootstrap: bootstrap,
+      projections: projections,
+      maxTransfers: _maxSuggestedTransfers,
+      benchWeight: benchWeight,
+      hitCostFor: (index) => index < freeTransfers ? 0 : _hitCost,
+      minGainFor: (index, hitCost) {
+        if (hitCost > 0) return hitCost + _hitMargin;
+        if (index == 0 && freeTransfers >= _maxFreeTransfers) {
+          return _cappedFreeTransferGain;
+        }
+        return _rollTransferValue;
+      },
+    );
+  }
 
-    for (final pick in team.picks) {
-      final outgoing = bootstrap.players[pick.elementId];
-      final outgoingProjection = projections[pick.elementId];
-      if (outgoing == null || outgoingProjection == null) continue;
-      PlayerProjection? best;
-      TransferSuggestion? bestTransfer;
-      for (final candidate in projections.values) {
-        final transfer = buildTransferSuggestion(
-          team: team,
+  /// Greedily builds a transfer plan whose moves are valid together: they
+  /// share one bank, respect the club limit and never reuse a player.
+  List<TransferSuggestion> _planTransfers({
+    required MyTeam team,
+    required FplBootstrap bootstrap,
+    required Map<int, PlayerProjection> projections,
+    required int maxTransfers,
+    required double benchWeight,
+    required int Function(int index) hitCostFor,
+    required double Function(int index, int hitCost) minGainFor,
+  }) {
+    final squadIds = team.picks.map((pick) => pick.elementId).toSet();
+    final clubCounts = <int, int>{};
+    for (final id in squadIds) {
+      final player = bootstrap.players[id];
+      if (player == null) continue;
+      clubCounts[player.teamId] = (clubCounts[player.teamId] ?? 0) + 1;
+    }
+    var bank = team.transfers.bank ?? 0;
+    final outgoingIds = <int>{};
+    final incomingIds = <int>{};
+    final plan = <TransferSuggestion>[];
+
+    while (plan.length < maxTransfers) {
+      final hitCost = hitCostFor(plan.length);
+      _Upgrade? best;
+      for (final pick in team.picks) {
+        if (outgoingIds.contains(pick.elementId)) continue;
+        final upgrade = _bestUpgrade(
+          pick: pick,
           bootstrap: bootstrap,
-          outgoing: outgoingProjection,
-          incoming: candidate,
+          projections: projections,
+          excludedIds: {...squadIds, ...incomingIds},
+          bank: bank,
+          clubCounts: clubCounts,
+          benchWeight: benchWeight,
         );
-        if (transfer == null) continue;
-        if (best == null || candidate.horizonPoints > best.horizonPoints) {
-          best = candidate;
-          bestTransfer = transfer;
+        if (upgrade != null && (best == null || upgrade.gain > best.gain)) {
+          best = upgrade;
         }
       }
-      if (best == null || bestTransfer == null) continue;
-      if (bestTransfer.netProjectedGain < 0.75) continue;
-      ideas.add(bestTransfer);
+      if (best == null || best.gain < minGainFor(plan.length, hitCost)) break;
+
+      plan.add(
+        TransferSuggestion(
+          outProjection: best.outProjection,
+          inProjection: best.inProjection,
+          projectedGain: best.gain,
+          hitCost: hitCost,
+        ),
+      );
+      final outPlayer = best.outProjection.player;
+      final inPlayer = best.inProjection.player;
+      bank += best.sellingPrice - best.cost;
+      outgoingIds.add(outPlayer.id);
+      incomingIds.add(inPlayer.id);
+      clubCounts[outPlayer.teamId] = (clubCounts[outPlayer.teamId] ?? 1) - 1;
+      clubCounts[inPlayer.teamId] = (clubCounts[inPlayer.teamId] ?? 0) + 1;
+    }
+    return plan;
+  }
+
+  _Upgrade? _bestUpgrade({
+    required TeamPick pick,
+    required FplBootstrap bootstrap,
+    required Map<int, PlayerProjection> projections,
+    required Set<int> excludedIds,
+    required int bank,
+    required Map<int, int> clubCounts,
+    required double benchWeight,
+  }) {
+    final outgoing = bootstrap.players[pick.elementId];
+    final outgoingProjection = projections[pick.elementId];
+    final sellingPrice = pick.sellingPrice;
+    if (outgoing == null ||
+        outgoingProjection == null ||
+        sellingPrice == null) {
+      return null;
     }
 
-    // ponytail: alternatives for one transfer, not a combined multi-transfer plan.
-    ideas.sort((a, b) => b.netProjectedGain.compareTo(a.netProjectedGain));
-    final selected = <TransferSuggestion>[];
-    final incomingIds = <int>{};
-    for (final idea in ideas) {
-      if (incomingIds.add(idea.inPlayer.id)) selected.add(idea);
-      if (selected.length == 3) break;
+    PlayerProjection? best;
+    for (final candidate in projections.values) {
+      final cost = candidate.player.nowCost;
+      if (excludedIds.contains(candidate.player.id) ||
+          candidate.player.positionId != outgoing.positionId ||
+          !candidate.player.canSelect ||
+          candidate.availability < 0.5 ||
+          cost == null ||
+          cost > sellingPrice + bank) {
+        continue;
+      }
+      final clubCount =
+          (clubCounts[candidate.player.teamId] ?? 0) -
+          (candidate.player.teamId == outgoing.teamId ? 1 : 0);
+      if (clubCount >= 3) continue;
+      if (best == null || candidate.horizonPoints > best.horizonPoints) {
+        best = candidate;
+      }
     }
-    return selected;
+    if (best == null) return null;
+
+    // Only part of a bench player's projection is expected to count.
+    final weight = pick.position > 11 ? benchWeight : 1.0;
+    final gain =
+        (best.horizonPoints - outgoingProjection.horizonPoints) * weight;
+    if (gain <= 0) return null;
+    return _Upgrade(
+      outProjection: outgoingProjection,
+      inProjection: best,
+      gain: gain,
+      cost: best.player.nowCost!,
+      sellingPrice: sellingPrice,
+    );
   }
 
   (SuggestedChip, ChipReason) _chipDecision({
     required MyTeam team,
+    required FplBootstrap bootstrap,
+    required Map<int, PlayerProjection> projections,
     required List<PlayerProjection> starters,
     required List<PlayerProjection> bench,
     required List<TransferSuggestion> transferIdeas,
     required int gameweekId,
+    required String? activeChip,
   }) {
     if (team.chips.isEmpty) {
       return (SuggestedChip.none, ChipReason.availabilityUnknown);
     }
+    // Only one chip can be played per Gameweek.
+    final active = switch (activeChip) {
+      'wildcard' => SuggestedChip.wildcard,
+      'freehit' => SuggestedChip.freeHit,
+      'bboost' => SuggestedChip.benchBoost,
+      '3xc' => SuggestedChip.tripleCaptain,
+      _ => null,
+    };
+    if (active != null) return (active, ChipReason.chipActive);
     bool available(String name) => team.chips.any(
       (chip) => chip.name == name && chip.isAvailableFor(gameweekId),
     );
@@ -874,15 +1118,14 @@ class RecommendationEngine {
       return (SuggestedChip.freeHit, ChipReason.missingStarters);
     }
 
-    final weakSquad = [...starters, ...bench]
-        .where(
-          (player) =>
-              player.nextFixtureCount == 0 ||
-              player.availability < 0.5 ||
-              player.horizonPoints < 3,
-        )
-        .length;
-    if (weakSquad >= 5 && transferIdeas.length >= 3 && available('wildcard')) {
+    if (available('wildcard') &&
+        _wildcardWorthIt(
+          team: team,
+          bootstrap: bootstrap,
+          projections: projections,
+          starters: starters,
+          transferIdeas: transferIdeas,
+        )) {
       return (SuggestedChip.wildcard, ChipReason.squadOverhaul);
     }
 
@@ -905,7 +1148,200 @@ class RecommendationEngine {
       return (SuggestedChip.tripleCaptain, ChipReason.captainCeiling);
     }
 
+    final expiring = _forcedExpiringChip(
+      team: team,
+      gameweekId: gameweekId,
+      benchPoints: bench.length == 4 ? benchPoints : 0,
+      captainPoints: captain?.nextPoints ?? 0,
+    );
+    if (expiring != null) return (expiring, ChipReason.chipExpiring);
+
     return (SuggestedChip.none, ChipReason.hold);
+  }
+
+  /// A wildcard is worth it only when several starters are weak and an
+  /// unlimited rebuild beats the normal free-transfer/hit route by a margin.
+  bool _wildcardWorthIt({
+    required MyTeam team,
+    required FplBootstrap bootstrap,
+    required Map<int, PlayerProjection> projections,
+    required List<PlayerProjection> starters,
+    required List<TransferSuggestion> transferIdeas,
+  }) {
+    // Bench fodder is weak by design, so only starters are counted.
+    final weakStarters = starters
+        .where(
+          (player) =>
+              player.nextFixtureCount == 0 ||
+              player.availability < 0.5 ||
+              player.horizonPoints < _weakStarterHorizon,
+        )
+        .length;
+    if (weakStarters < _wildcardMinWeakStarters) return false;
+
+    final rebuild = _planTransfers(
+      team: team,
+      bootstrap: bootstrap,
+      projections: projections,
+      maxTransfers: team.picks.length,
+      benchWeight: _benchWeight,
+      hitCostFor: (_) => 0,
+      minGainFor: (_, _) => _cappedFreeTransferGain,
+    );
+    double netGain(List<TransferSuggestion> plan) =>
+        plan.fold(0.0, (total, item) => total + item.netProjectedGain);
+    return netGain(rebuild) - netGain(transferIdeas) >= _wildcardMinExtraGain;
+  }
+
+  /// Returns a chip that must be played now because the remaining Gameweeks
+  /// in its window are no more than the chips still unused in that window.
+  SuggestedChip? _forcedExpiringChip({
+    required MyTeam team,
+    required int gameweekId,
+    required double benchPoints,
+    required double captainPoints,
+  }) {
+    final expiring = <String>{};
+    final windows = team.chips
+        .where((chip) => chip.isAvailableFor(gameweekId))
+        .map((chip) => chip.stopEvent)
+        .whereType<int>()
+        .toSet();
+    for (final stop in windows) {
+      final unused = team.chips
+          .where(
+            (chip) => chip.stopEvent == stop && chip.isAvailableFor(gameweekId),
+          )
+          .map((chip) => chip.name)
+          .toSet();
+      if (unused.length >= stop - gameweekId + 1) expiring.addAll(unused);
+    }
+    if (expiring.isEmpty) return null;
+
+    // Prefer the cheap one-week chips by their expected extra points.
+    final oneWeek = <SuggestedChip, double>{
+      if (expiring.contains('bboost')) SuggestedChip.benchBoost: benchPoints,
+      if (expiring.contains('3xc')) SuggestedChip.tripleCaptain: captainPoints,
+    };
+    if (oneWeek.isNotEmpty) {
+      return oneWeek.entries.reduce((a, b) => b.value > a.value ? b : a).key;
+    }
+    if (expiring.contains('wildcard')) return SuggestedChip.wildcard;
+    if (expiring.contains('freehit')) return SuggestedChip.freeHit;
+    return null;
+  }
+
+  /// Expected share of the available minutes. Recent matches, when known,
+  /// dominate so a new starter or a dropped player is picked up quickly.
+  double _minutesShare(
+    FplPlayer player,
+    int gameweekId,
+    List<int>? recentMinutes,
+  ) {
+    final matches = (gameweekId - 1).clamp(1, 38);
+    final minutesShare = player.minutes / (90 * matches);
+    // Starting earns the full appearance points and keeps a clean sheet even
+    // when subbed after 60 minutes, so the start rate counts as much as
+    // minutes.
+    final played =
+        minutesShare * (1 - _startRateWeight) +
+        (player.starts / matches).clamp(0.0, 1.0) * _startRateWeight;
+    final season = player.minutes == 0 ? 0.55 : played.clamp(0.45, 1.0);
+    if (recentMinutes == null || recentMinutes.isEmpty) return season;
+    final recent =
+        recentMinutes.fold(0, (total, minutes) => total + minutes) /
+        (90 * recentMinutes.length);
+    return (recent * _recentMinutesWeight + season * (1 - _recentMinutesWeight))
+        .clamp(0.2, 1.0);
+  }
+
+  /// Fixture multiplier around 1.0. With team strengths, attacking returns
+  /// scale with the opponent's defence and clean-sheet returns with its
+  /// attack; otherwise the official FDR is used for the whole projection.
+  double _fixtureFactor(
+    int teamId,
+    FplFixture fixture,
+    _TeamStrengths? strengths, {
+    required double attackShare,
+    required double defenceShare,
+  }) {
+    final factors = strengths?.factors(teamId, fixture);
+    if (factors == null) {
+      return 1.24 - (_difficultyFor(teamId, fixture) * 0.08);
+    }
+    final (attack, defence) = factors;
+    return attackShare * attack +
+        defenceShare * defence +
+        (1 - attackShare - defenceShare);
+  }
+
+  /// Per-match points implied by season xG, xA, xGC, defensive actions,
+  /// bonus and saves, plus the share of them that depends on the opponent.
+  _Underlying? _underlying(
+    FplPlayer player,
+    double reliability,
+    FplScoring scoring,
+  ) {
+    final minutes = player.minutes;
+    final expectedConceded = player.expectedGoalsConceded;
+    final involvements = player.expectedGoalInvolvements;
+    // Missing expected stats parse as zero; after 270 minutes a genuine zero
+    // for both is not realistic, so treat that as no data.
+    if (minutes < _minUnderlyingMinutes ||
+        (expectedConceded <= 0 && involvements <= 0)) {
+      return null;
+    }
+    var expectedGoals = player.expectedGoals;
+    var expectedAssists = player.expectedAssists;
+    if (expectedGoals + expectedAssists <= 0 && involvements > 0) {
+      // Without the split, assume involvements are half goals, half assists.
+      expectedGoals = involvements / 2;
+      expectedAssists = involvements / 2;
+    }
+
+    final position = player.positionId;
+    final per90 = 90 / minutes;
+    final attack =
+        expectedGoals * per90 * (scoring.goals[position] ?? 0) +
+        expectedAssists * per90 * (scoring.assists[position] ?? 0);
+
+    final concededPer90 = expectedConceded * per90;
+    final cleanSheet =
+        math.exp(-concededPer90) * (scoring.cleanSheets[position] ?? 0);
+    // Conceded points are scored per two goals and are zero or negative.
+    final concededPenalty =
+        -(scoring.goalsConceded[position] ?? 0) * concededPer90 / 2;
+    // Floored at zero so the opponent-dependent share stays meaningful.
+    final defence = math.max(0.0, cleanSheet - concededPenalty);
+
+    final threshold = _defensiveContributionThreshold[position];
+    final defensiveContribution = threshold == null
+        ? 0.0
+        : (scoring.defensiveContribution[position] ?? 0) *
+              _poissonAtLeast(player.defensiveContribution * per90, threshold);
+    final neutral =
+        scoring.appearance +
+        defensiveContribution +
+        player.bonus * per90 +
+        (position == 1 ? player.saves * per90 / 3 * scoring.saves : 0);
+
+    final total = attack + defence + neutral;
+    return _Underlying(
+      points: total * reliability,
+      attackShare: attack / total,
+      defenceShare: defence / total,
+    );
+  }
+
+  /// P(X >= threshold) for X ~ Poisson(mean).
+  double _poissonAtLeast(double mean, int threshold) {
+    var term = math.exp(-mean);
+    var below = 0.0;
+    for (var k = 0; k < threshold; k++) {
+      below += term;
+      term *= mean / (k + 1);
+    }
+    return (1 - below).clamp(0.0, 1.0);
   }
 
   int _difficultyFor(int teamId, FplFixture fixture) {
@@ -926,5 +1362,98 @@ class RecommendationEngine {
     final made = transfers.made;
     if (limit == null || made == null) return null;
     return (limit - made).clamp(0, 5);
+  }
+}
+
+class _Upgrade {
+  const _Upgrade({
+    required this.outProjection,
+    required this.inProjection,
+    required this.gain,
+    required this.cost,
+    required this.sellingPrice,
+  });
+
+  final PlayerProjection outProjection;
+  final PlayerProjection inProjection;
+  final double gain;
+  final int cost;
+  final int sellingPrice;
+}
+
+class _Underlying {
+  const _Underlying({
+    required this.points,
+    required this.attackShare,
+    required this.defenceShare,
+  });
+
+  final double points;
+  final double attackShare;
+  final double defenceShare;
+}
+
+/// Opponent strength relative to the league average, from the official
+/// team `strength_attack_*` and `strength_defence_*` ratings.
+class _TeamStrengths {
+  const _TeamStrengths(this._teams, this._averageAttack, this._averageDefence);
+
+  /// Exponent that widens the ratings' narrow spread into a fixture swing.
+  static const _sensitivity = 2.0;
+  static const _missingRating = 1000;
+  static const _minFactor = 0.6;
+  static const _maxFactor = 1.5;
+
+  final Map<int, FplTeam> _teams;
+  final double _averageAttack;
+  final double _averageDefence;
+
+  static _TeamStrengths? from(Map<int, FplTeam> teams) {
+    // Missing ratings parse as 1000 for all four fields.
+    final rated = {
+      for (final team in teams.values)
+        if ({
+          team.strengthAttackHome,
+          team.strengthAttackAway,
+          team.strengthDefenceHome,
+          team.strengthDefenceAway,
+        }.any((rating) => rating != _missingRating))
+          team.id: team,
+    };
+    final attack = rated.values.expand(
+      (team) => [team.strengthAttackHome, team.strengthAttackAway],
+    );
+    final defence = rated.values.expand(
+      (team) => [team.strengthDefenceHome, team.strengthDefenceAway],
+    );
+    if (rated.length < 2 ||
+        (attack.toSet().length < 2 && defence.toSet().length < 2)) {
+      return null;
+    }
+    double average(Iterable<int> values) =>
+        values.fold(0, (total, value) => total + value) / values.length;
+    // Pooled over both venues so home advantage is kept in the factors.
+    return _TeamStrengths(rated, average(attack), average(defence));
+  }
+
+  /// (attack, defence) multipliers for [teamId] in [fixture], or null when
+  /// either side has no rating.
+  (double, double)? factors(int teamId, FplFixture fixture) {
+    final isHome = teamId == fixture.homeTeamId;
+    if (!_teams.containsKey(teamId)) return null;
+    final opponent = _teams[isHome ? fixture.awayTeamId : fixture.homeTeamId];
+    if (opponent == null) return null;
+    final opponentAttack = isHome
+        ? opponent.strengthAttackAway
+        : opponent.strengthAttackHome;
+    final opponentDefence = isHome
+        ? opponent.strengthDefenceAway
+        : opponent.strengthDefenceHome;
+    double scale(double ratio) =>
+        math.pow(ratio, _sensitivity).toDouble().clamp(_minFactor, _maxFactor);
+    return (
+      scale(_averageDefence / opponentDefence),
+      scale(_averageAttack / opponentAttack),
+    );
   }
 }
