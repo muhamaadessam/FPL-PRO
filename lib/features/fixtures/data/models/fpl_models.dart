@@ -101,6 +101,7 @@ class FplPlayer {
     this.defensiveContribution = 0,
     this.cleanSheets = 0,
     this.saves = 0,
+    this.bonus = 0,
   });
 
   final int id;
@@ -131,6 +132,7 @@ class FplPlayer {
   final int defensiveContribution;
   final int cleanSheets;
   final int saves;
+  final int bonus;
 
   int? get effectiveChanceOfPlaying {
     final thisRound = chanceOfPlayingThisRound;
@@ -209,6 +211,83 @@ class FplPlayer {
       defensiveContribution: _int(json['defensive_contribution']),
       cleanSheets: _int(json['clean_sheets']),
       saves: _int(json['saves']),
+      bonus: _int(json['bonus']),
+    );
+  }
+}
+
+/// Points per scoring event from `game_config.scoring`, by position id
+/// (1 GKP, 2 DEF, 3 MID, 4 FWD). Each value falls back to the 2026/27
+/// rules when the live config omits it or has an unexpected shape.
+class FplScoring {
+  const FplScoring({
+    this.appearance = 2,
+    this.goals = const {1: 10, 2: 6, 3: 5, 4: 4},
+    this.assists = const {1: 3, 2: 3, 3: 3, 4: 3},
+    this.cleanSheets = const {1: 4, 2: 4, 3: 1, 4: 0},
+    this.goalsConceded = const {1: -1, 2: -1, 3: 0, 4: 0},
+    this.saves = 1,
+    this.defensiveContribution = const {1: 0, 2: 2, 3: 2, 4: 2},
+  });
+
+  /// Points for playing 60 minutes or more (`long_play`).
+  final int appearance;
+  final Map<int, int> goals;
+  final Map<int, int> assists;
+  final Map<int, int> cleanSheets;
+
+  /// Points for every two goals conceded.
+  final Map<int, int> goalsConceded;
+
+  /// Points for every three saves.
+  final int saves;
+
+  /// Points for reaching the defensive contribution threshold.
+  final Map<int, int> defensiveContribution;
+
+  /// [json] is `game_config.scoring`; [positionCodes] maps position ids to
+  /// the short names (`GKP`, `DEF`, ...) used as keys in per-position values.
+  factory FplScoring.fromJson(
+    Map<String, dynamic> json, {
+    Map<int, String> positionCodes = const {
+      1: 'GKP',
+      2: 'DEF',
+      3: 'MID',
+      4: 'FWD',
+    },
+  }) {
+    const defaults = FplScoring();
+    Map<int, int> byPosition(String key, Map<int, int> fallback) {
+      final value = json[key];
+      return {
+        for (final MapEntry(key: position, value: points) in fallback.entries)
+          position: switch (value) {
+            num() => value.toInt(),
+            Map() =>
+              _nullableInt(value[positionCodes[position]]) ??
+                  _nullableInt(value['$position']) ??
+                  points,
+            _ => points,
+          },
+      };
+    }
+
+    int single(String key, int fallback) {
+      final value = json[key];
+      return value is num ? value.toInt() : fallback;
+    }
+
+    return FplScoring(
+      appearance: single('long_play', defaults.appearance),
+      goals: byPosition('goals_scored', defaults.goals),
+      assists: byPosition('assists', defaults.assists),
+      cleanSheets: byPosition('clean_sheets', defaults.cleanSheets),
+      goalsConceded: byPosition('goals_conceded', defaults.goalsConceded),
+      saves: single('saves', defaults.saves),
+      defensiveContribution: byPosition(
+        'defensive_contribution',
+        defaults.defensiveContribution,
+      ),
     );
   }
 }
@@ -218,11 +297,13 @@ class FplBootstrap {
     required this.gameweeks,
     required this.teams,
     required this.players,
+    this.scoring = const FplScoring(),
   });
 
   final List<Gameweek> gameweeks;
   final Map<int, FplTeam> teams;
   final Map<int, FplPlayer> players;
+  final FplScoring scoring;
 
   int get currentGameweekId {
     for (final gameweek in gameweeks) {
@@ -245,11 +326,30 @@ class FplBootstrap {
     final rawPlayers = (json['elements'] as List<dynamic>? ?? const [])
         .whereType<Map<String, dynamic>>()
         .map(FplPlayer.fromJson);
+    final positionCodes = {
+      for (final type
+          in (json['element_types'] as List<dynamic>? ?? const [])
+              .whereType<Map<String, dynamic>>())
+        if (type['singular_name_short'] is String)
+          _int(type['id']): type['singular_name_short'] as String,
+    };
+    final gameConfig = json['game_config'];
+    final scoring = gameConfig is Map<String, dynamic>
+        ? gameConfig['scoring']
+        : null;
 
     return FplBootstrap(
       gameweeks: rawEvents,
       teams: {for (final team in rawTeams) team.id: team},
       players: {for (final player in rawPlayers) player.id: player},
+      scoring: scoring is Map<String, dynamic>
+          ? FplScoring.fromJson(
+              scoring,
+              positionCodes: positionCodes.isEmpty
+                  ? const {1: 'GKP', 2: 'DEF', 3: 'MID', 4: 'FWD'}
+                  : positionCodes,
+            )
+          : const FplScoring(),
     );
   }
 }

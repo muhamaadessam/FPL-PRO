@@ -1629,12 +1629,18 @@ class _LeaderTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 4),
-              Text(
-                '${expectedPoints.toStringAsFixed(1)} ${l10n.ptsCue}',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w900,
-                  color: isDoubled ? colors.primary : null,
+              // Scales down rather than overflowing narrow cards.
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    '${expectedPoints.toStringAsFixed(1)} ${l10n.ptsCue}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: isDoubled ? colors.primary : null,
+                    ),
+                  ),
                 ),
               ),
             ],

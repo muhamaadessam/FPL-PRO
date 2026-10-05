@@ -390,6 +390,8 @@ class AppLocalizations {
       : 'Sign in again to submit team changes.';
   String get topPicks => isArabic ? 'أفضل الاختيارات' : 'Top picks';
   String get chipAdvice => isArabic ? 'قرار الـChip' : 'Chip decision';
+  String likelyRange(String low, String high) =>
+      isArabic ? 'المدى المرجّح $low–$high' : 'Likely $low–$high';
   String get noChip => isArabic ? 'بدون Chip' : 'No chip';
   String get projected => isArabic ? 'متوقع' : 'Projected';
   String get projectedGain =>
@@ -401,8 +403,8 @@ class AppLocalizations {
       ? 'لا يوجد تبديل واضح يستحق المخاطرة حاليًا.'
       : 'No clear transfer is worth the risk right now.';
   String get recommendationDisclaimer => isArabic
-      ? 'دي تقديرات وليست ضمانًا؛ راجع أخبار الإصابات والتشكيل قبل الـdeadline.'
-      : 'These are estimates, not guarantees. Recheck injuries and line-ups before the deadline.';
+      ? 'دي تقديرات وليست ضمانًا، والمدى المرجّح بيغطي حوالي 8 من كل 10 نتايج؛ راجع أخبار الإصابات والتشكيل قبل الـdeadline.'
+      : 'These are estimates, not guarantees; the likely range covers about 8 in 10 outcomes. Recheck injuries and line-ups before the deadline.';
   String get goalkeeper => isArabic ? 'حراس المرمى' : 'Goalkeepers';
   String get invalidFormation => isArabic
       ? 'التشكيلة لازم تضم حارس واحد، و3-5 مدافعين، و2-5 لاعبي وسط، و1-3 مهاجمين.'
@@ -442,6 +444,14 @@ class AppLocalizations {
       isArabic
           ? 'الفريق محتاج تغييرات متعددة لعدة جولات، وليس تبديلًا واحدًا.'
           : 'The squad needs several multi-week changes, not one transfer.',
+    'chipExpiring' =>
+      isArabic
+          ? 'الـChip ستنتهي قبل توفر جولات كافية لاستخدامها؛ استخدمها الآن بدل أن تضيع.'
+          : 'This chip expires before there are enough Gameweeks left to play it; use it now rather than lose it.',
+    'chipActive' =>
+      isArabic
+          ? 'الـChip دي مفعّلة بالفعل في الجولة دي.'
+          : 'This chip is already active for this Gameweek.',
     'strongBench' =>
       isArabic
           ? 'الدكة كلها متاحة وتوقع نقاطها مرتفع.'
