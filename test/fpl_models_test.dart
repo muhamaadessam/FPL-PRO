@@ -205,4 +205,15 @@ void main() {
     expect(withoutStats.expectedGoals, isNull);
     expect(withoutStats.defensiveContribution, isNull);
   });
+
+  test('keeps the most recent match minutes from element history', () {
+    final minutes = parseRecentMinutes({
+      'history': [
+        for (final value in [90, 0, 45, 90, 90, 12, 90]) {'minutes': value},
+      ],
+    });
+
+    expect(minutes, [45, 90, 90, 12, 90]);
+    expect(parseRecentMinutes(const {}), isEmpty);
+  });
 }

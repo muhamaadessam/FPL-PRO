@@ -35,6 +35,10 @@ final recommendationsProvider = FutureProvider.autoDispose<RecommendationData>((
   final gameweekId = gameweek.id;
   final fixtures = await ref.watch(allFixturesProvider.future);
   final team = await ref.watch(recommendationTeamProvider(gameweekId).future);
+  final recentMinutes = await _recentMinutesFor(
+    ref.read(fplApiClientProvider),
+    team,
+  );
 
   final engine = const RecommendationEngine();
   final result = engine.build(
@@ -42,6 +46,7 @@ final recommendationsProvider = FutureProvider.autoDispose<RecommendationData>((
     fixtures: fixtures,
     team: team,
     gameweekId: gameweekId,
+    recentMinutes: recentMinutes,
   );
 
   return RecommendationData(
@@ -50,6 +55,27 @@ final recommendationsProvider = FutureProvider.autoDispose<RecommendationData>((
     bootstrap: bootstrap,
   );
 });
+
+/// Recent minutes for the squad. A failed lookup only drops that player
+/// back to season-long minutes, so it never blocks the recommendations.
+Future<Map<int, List<int>>> _recentMinutesFor(
+  FplApiClient client,
+  MyTeam team,
+) async {
+  final entries = await Future.wait(
+    team.picks.map((pick) async {
+      try {
+        return MapEntry(
+          pick.elementId,
+          await client.getRecentMinutes(pick.elementId),
+        );
+      } on FplApiException {
+        return null;
+      }
+    }),
+  );
+  return Map.fromEntries(entries.whereType<MapEntry<int, List<int>>>());
+}
 
 class RecommendationsView extends ConsumerWidget {
   const RecommendationsView({super.key});
@@ -180,6 +206,10 @@ class _RecommendationContent extends StatelessWidget {
                     Expanded(child: _ChipCard(result: result)),
                   ],
                 ),
+              if (result.lineupEvaluated) ...[
+                const SizedBox(height: 8),
+                _LineupCard(result: result),
+              ],
               const SizedBox(height: 24),
               if (isNarrow) ...[
                 Text(
@@ -326,11 +356,18 @@ class _CaptainCard extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
             ),
             Text(
-              '${captain.nextPoints.toStringAsFixed(1)} pts',
+              '≈${captain.nextPoints.toStringAsFixed(1)} pts',
               style: TextStyle(
                 fontWeight: FontWeight.w800,
                 color: Theme.of(context).colorScheme.primary,
               ),
+            ),
+            Text(
+              l10n.likelyRange(
+                captain.nextRange.$1.toStringAsFixed(0),
+                captain.nextRange.$2.toStringAsFixed(0),
+              ),
+              style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
         ],
@@ -384,6 +421,73 @@ class _ChipCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LineupCard extends StatelessWidget {
+  const _LineupCard({required this.result});
+
+  final RecommendationResult result;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.swap_vert, size: 16),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  l10n.lineupAdvice,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (result.lineupChanges.isEmpty)
+            Text(
+              l10n.lineupOptimal,
+              style: Theme.of(context).textTheme.bodySmall,
+            )
+          else
+            for (final change in result.lineupChanges)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  '${l10n.startPlayer}: ${change.starting.player.webName} '
+                  '(≈${change.starting.nextPoints.toStringAsFixed(1)}) • '
+                  '${l10n.benchPlayer}: ${change.benched.player.webName} '
+                  '(≈${change.benched.nextPoints.toStringAsFixed(1)})',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+          if (result.suggestedBench.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              '${l10n.benchOrder}: '
+              '${result.suggestedBench.map((item) => item.player.webName).join(' → ')}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
         ],
       ),
     );
@@ -473,7 +577,7 @@ class _TransferCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '+${transfer.netProjectedGain.toStringAsFixed(1)}',
+                '≈+${transfer.netProjectedGain.toStringAsFixed(1)}',
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.primary,
                   fontWeight: FontWeight.w900,
@@ -581,9 +685,9 @@ class _PlayerRow extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           SizedBox(
-            width: 32,
+            width: 40,
             child: Text(
-              projection.nextPoints.toStringAsFixed(1),
+              '≈${projection.nextPoints.toStringAsFixed(1)}',
               textAlign: TextAlign.right,
               style: TextStyle(
                 fontWeight: FontWeight.w900,

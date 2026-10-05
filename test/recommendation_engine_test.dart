@@ -411,6 +411,129 @@ void main() {
       );
     });
   });
+
+  group('minutes, availability and line-up', () {
+    test('weights recent minutes over season minutes', () {
+      double nextPoints(Map<int, List<int>> recentMinutes) {
+        return _build(
+          players: [_player(1, 'Mid', 1, 3, 50, 5, epNext: 0)],
+          picks: [_pick(1, 1, 3)],
+          fixtures: [_fixture(5, 1, 2)],
+          recentMinutes: recentMinutes,
+        ).captain!.nextPoints;
+      }
+
+      expect(nextPoints(const {}), closeTo(5.0, 0.001));
+      // Dropped for five matches: reliability 0.7 * 0 + 0.3 * 1 on PPG.
+      expect(
+        nextPoints(const {
+          1: [0, 0, 0, 0, 0],
+        }),
+        closeTo(5 * 0.6 + 5 * 0.3 * 0.4, 0.001),
+      );
+    });
+
+    test('treats suspended players without a chance as unavailable', () {
+      final result = _build(
+        players: [_player(1, 'Banned', 1, 3, 50, 6, epNext: 0, status: 's')],
+        picks: [_pick(1, 1, 3)],
+        fixtures: [_fixture(5, 1, 2)],
+      );
+
+      expect(result.captain?.availability, 0);
+      expect(result.captain?.nextPoints, 0);
+    });
+
+    test('picks the best legal XI, bench order and captain', () {
+      // (id, position, projection, current squad slot)
+      const squad = [
+        (1, 1, 4.0, 1),
+        (2, 2, 4.0, 2),
+        (3, 2, 4.0, 3),
+        (4, 2, 4.0, 4),
+        (5, 3, 5.0, 5),
+        (6, 3, 5.0, 6),
+        (7, 3, 5.0, 7),
+        (8, 3, 5.0, 8),
+        (9, 3, 1.0, 9),
+        (10, 4, 5.0, 10),
+        (11, 4, 5.0, 11),
+        (12, 1, 2.0, 12),
+        (13, 2, 9.0, 13),
+        (14, 4, 2.0, 14),
+        (15, 2, 0.5, 15),
+      ];
+      final result = _build(
+        players: [
+          for (final (id, position, points, _) in squad)
+            _player(id, 'P$id', id, position, 50, points),
+        ],
+        picks: [
+          for (final (id, position, _, slot) in squad)
+            _pick(id, slot, position),
+        ],
+        fixtures: _fixturesFor(teams: [for (var id = 1; id <= 15; id++) id]),
+      );
+
+      expect(result.lineupEvaluated, isTrue);
+      expect(result.lineupChanges, hasLength(1));
+      expect(result.lineupChanges.single.starting.player.id, 13);
+      expect(result.lineupChanges.single.benched.player.id, 9);
+      expect(result.suggestedBench.map((item) => item.player.id), [
+        12,
+        14,
+        9,
+        15,
+      ]);
+      expect(result.captain?.player.id, 13);
+      expect(result.benchProjectedPoints, closeTo(5.5, 0.001));
+    });
+
+    test('skips the line-up for an incomplete squad', () {
+      final result = _build(
+        players: [_player(1, 'Mid', 1, 3, 50, 5)],
+        picks: [_pick(1, 1, 3)],
+        fixtures: [_fixture(5, 1, 2)],
+      );
+
+      expect(result.lineupEvaluated, isFalse);
+      expect(result.lineupChanges, isEmpty);
+    });
+
+    test('respects a chip that is already active', () {
+      final result = _build(
+        players: [
+          _player(1, 'Weak', 1, 3, 50, 1),
+          _player(2, 'Strong', 2, 3, 50, 8),
+        ],
+        picks: [_pick(1, 1, 3)],
+        transfers: {'bank': 0, 'limit': 1, 'made': 1},
+        chips: [
+          {'name': 'wildcard', 'status_for_entry': 'active'},
+          _chip('3xc', 1, 19),
+        ],
+        fixtures: _fixturesFor(teams: [1, 2]),
+      );
+
+      expect(result.chip, SuggestedChip.wildcard);
+      expect(result.chipReason, ChipReason.chipActive);
+      // Wildcard transfers are free even with no free transfers left.
+      expect(result.transfers.single.hitCost, 0);
+    });
+
+    test('gives a non-negative likely range around the projection', () {
+      final result = _build(
+        players: [_player(1, 'Mid', 1, 3, 50, 7)],
+        picks: [_pick(1, 1, 3)],
+        fixtures: [_fixture(5, 1, 2)],
+      );
+      final (low, high) = result.captain!.nextRange;
+
+      expect(low, greaterThanOrEqualTo(0));
+      expect(low, lessThan(7));
+      expect(high, greaterThan(7));
+    });
+  });
 }
 
 FplBootstrap _bootstrap(
@@ -441,6 +564,7 @@ Map<String, dynamic> _player(
   double expectedPoints, {
   double? epNext,
   int? chance,
+  String status = 'a',
   Map<String, dynamic> stats = const {},
 }) {
   return {
@@ -450,7 +574,7 @@ Map<String, dynamic> _player(
     'element_type': position,
     'now_cost': cost,
     'can_select': true,
-    'status': 'a',
+    'status': status,
     'form': '$expectedPoints',
     'points_per_game': '$expectedPoints',
     'ep_next': '${epNext ?? expectedPoints}',
@@ -479,6 +603,7 @@ RecommendationResult _build({
   Map<String, dynamic>? transfers,
   List<Map<String, dynamic>> chips = const [],
   List<Map<String, dynamic>>? teams,
+  Map<int, List<int>> recentMinutes = const {},
   int gameweekId = 5,
 }) {
   return const RecommendationEngine().build(
@@ -490,6 +615,7 @@ RecommendationResult _build({
       'chips': chips,
     }),
     gameweekId: gameweekId,
+    recentMinutes: recentMinutes,
   );
 }
 
