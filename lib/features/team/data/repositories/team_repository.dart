@@ -60,23 +60,19 @@ class TeamRepositoryImpl implements TeamRepository {
   }
 
   @override
-  Future<void> makeTransfer({
+  Future<void> makeTransfers({
     required OfficialSession session,
     required int entryId,
     required int gameweekId,
-    required int elementIn,
-    required int elementOut,
-    required int purchasePrice,
-    required int sellingPrice,
+    required List<TransferRequest> transfers,
+    String? chip,
   }) {
-    return _dataSource.makeTransfer(
+    return _dataSource.makeTransfers(
       session: session,
       entryId: entryId,
       gameweekId: gameweekId,
-      elementIn: elementIn,
-      elementOut: elementOut,
-      purchasePrice: purchasePrice,
-      sellingPrice: sellingPrice,
+      transfers: transfers,
+      chip: chip,
     );
   }
 

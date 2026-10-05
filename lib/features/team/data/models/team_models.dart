@@ -55,6 +55,54 @@ class TeamPick {
   }
 }
 
+/// Official chip identifiers used by the FPL write endpoints.
+abstract final class FplChipName {
+  static const wildcard = 'wildcard';
+  static const freeHit = 'freehit';
+  static const benchBoost = 'bboost';
+  static const tripleCaptain = '3xc';
+
+  /// Chips that are played together with transfers via `/transfers/`.
+  static const transferChips = {wildcard, freeHit};
+
+  /// Chips that are played by saving the lineup via `/my-team/{entry}/`.
+  static const lineupChips = {benchBoost, tripleCaptain};
+}
+
+/// One player swap sent to the official `/transfers/` endpoint.
+class TransferRequest {
+  const TransferRequest({
+    required this.elementIn,
+    required this.elementOut,
+    required this.purchasePrice,
+    required this.sellingPrice,
+  });
+
+  final int elementIn;
+  final int elementOut;
+  final int purchasePrice;
+  final int sellingPrice;
+
+  Map<String, dynamic> toJson() => {
+    'element_in': elementIn,
+    'element_out': elementOut,
+    'purchase_price': purchasePrice,
+    'selling_price': sellingPrice,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is TransferRequest &&
+      other.elementIn == elementIn &&
+      other.elementOut == elementOut &&
+      other.purchasePrice == purchasePrice &&
+      other.sellingPrice == sellingPrice;
+
+  @override
+  int get hashCode =>
+      Object.hash(elementIn, elementOut, purchasePrice, sellingPrice);
+}
+
 class FplEntry {
   const FplEntry({
     required this.id,

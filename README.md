@@ -1,6 +1,6 @@
 # Fantasy PL
 
-Flutter client for read-only official Fantasy Premier League data.
+Flutter client for official Fantasy Premier League data and team management.
 
 ## What is implemented
 
@@ -11,7 +11,17 @@ Flutter client for read-only official Fantasy Premier League data.
 - Access/refresh tokens stored in secure storage; passwords are never stored.
 - Private team lookup through `/api/me/` and `/api/my-team/{entryId}/`.
 - English/Arabic UI with RTL support.
-- Read-only Team and Matches screens.
+- Team and Matches screens.
+- Manage team (edit button on the Team screen, signed-in manager only), for
+  the next deadline through the official write endpoints:
+  - Pick team: substitutions (tap or long-press drag), captain and
+    vice-captain, with the official formation rules checked before saving.
+  - Bench Boost and Triple Captain: played by saving the lineup with the
+    chip; deselecting and saving sends `chip: null` to cancel before the
+    deadline.
+  - Transfers: several transfers confirmed in one request, with bank, club
+    limit (3) and points-hit checks; Wildcard and Free Hit are played with the
+    confirmed transfers.
 - Weekly Tips use your current authenticated squad to suggest a legal starting
   XI, captain, vice-captain and bench order, with a preview on the pitch.
 - Tips refresh when opened, when the app resumes, or with pull-to-refresh.
@@ -25,6 +35,9 @@ The current FPL web client uses:
 - Authority: `https://account.premierleague.com/as`
 - Authorization Code + PKCE (`S256`)
 - FPL API header: `X-API-Authorization: Bearer <access_token>`
+- Writes (`POST /api/my-team/{entry}/`, `POST /api/transfers/`) also send the
+  website session cookie and `X-CSRFToken` captured during the WebView
+  sign-in; sign in again if writes are rejected.
 
 The in-app flow opens the official sign-in page in a WebView and intercepts the
 approved website redirect before it navigates away. The app never posts the

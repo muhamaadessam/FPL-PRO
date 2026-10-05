@@ -24,14 +24,12 @@ abstract interface class TeamRepository {
 
   Future<MyTeam> getPublicTeam({required int entryId, required int gameweekId});
 
-  Future<void> makeTransfer({
+  Future<void> makeTransfers({
     required OfficialSession session,
     required int entryId,
     required int gameweekId,
-    required int elementIn,
-    required int elementOut,
-    required int purchasePrice,
-    required int sellingPrice,
+    required List<TransferRequest> transfers,
+    String? chip,
   });
 
   Future<void> saveMyTeam({

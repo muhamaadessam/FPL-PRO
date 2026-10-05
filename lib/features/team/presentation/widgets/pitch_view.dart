@@ -34,6 +34,7 @@ class PitchView extends StatelessWidget {
     required this.gameweekPoints,
     this.onSwap,
     this.onCompare,
+    this.onPlayerTap,
     this.metric = PlayerCardMetric.points,
   });
 
@@ -43,6 +44,9 @@ class PitchView extends StatelessWidget {
   final Map<int, num> gameweekPoints;
   final void Function(int draggedElementId, int targetElementId)? onSwap;
   final void Function(int playerId)? onCompare;
+
+  /// Replaces the player details sheet when set, e.g. for edit actions.
+  final ValueChanged<int>? onPlayerTap;
   final PlayerCardMetric metric;
 
   @override
@@ -69,6 +73,7 @@ class PitchView extends StatelessWidget {
                     gameweekPoints: gameweekPoints,
                     onSwap: onSwap,
                     onCompare: onCompare,
+                    onPlayerTap: onPlayerTap,
                     metric: metric,
                   ),
                   if (index != rows.length - 1) const SizedBox(height: 14),
@@ -87,6 +92,7 @@ class PitchView extends StatelessWidget {
               gameweekPoints: gameweekPoints,
               onSwap: onSwap,
               onCompare: onCompare,
+              onPlayerTap: onPlayerTap,
               metric: metric,
             ),
           ),
@@ -166,6 +172,7 @@ class _BenchSection extends StatelessWidget {
     required this.gameweekPoints,
     this.onSwap,
     this.onCompare,
+    this.onPlayerTap,
     required this.metric,
   });
 
@@ -174,6 +181,9 @@ class _BenchSection extends StatelessWidget {
   final Map<int, num> gameweekPoints;
   final void Function(int draggedElementId, int targetElementId)? onSwap;
   final void Function(int playerId)? onCompare;
+
+  /// Replaces the player details sheet when set, e.g. for edit actions.
+  final ValueChanged<int>? onPlayerTap;
   final PlayerCardMetric metric;
 
   @override
@@ -248,6 +258,7 @@ class _BenchSection extends StatelessWidget {
                         isBench: true,
                         onSwap: onSwap,
                         onCompare: onCompare,
+                        onPlayerTap: onPlayerTap,
                         metric: metric,
                       );
                     })
@@ -294,6 +305,7 @@ class _PitchRow extends StatelessWidget {
     required this.gameweekPoints,
     this.onSwap,
     this.onCompare,
+    this.onPlayerTap,
     required this.metric,
   });
 
@@ -302,6 +314,9 @@ class _PitchRow extends StatelessWidget {
   final Map<int, num> gameweekPoints;
   final void Function(int draggedElementId, int targetElementId)? onSwap;
   final void Function(int playerId)? onCompare;
+
+  /// Replaces the player details sheet when set, e.g. for edit actions.
+  final ValueChanged<int>? onPlayerTap;
   final PlayerCardMetric metric;
 
   @override
@@ -320,6 +335,7 @@ class _PitchRow extends StatelessWidget {
               isBench: false,
               onSwap: onSwap,
               onCompare: onCompare,
+              onPlayerTap: onPlayerTap,
               metric: metric,
               cardWidth: cardWidth,
             ),
@@ -349,6 +365,7 @@ class _PitchPlayer extends StatelessWidget {
     required this.isBench,
     this.onSwap,
     this.onCompare,
+    this.onPlayerTap,
     this.metric = PlayerCardMetric.points,
     this.cardWidth = 78.0,
   });
@@ -360,6 +377,9 @@ class _PitchPlayer extends StatelessWidget {
   final bool isBench;
   final void Function(int draggedElementId, int targetElementId)? onSwap;
   final void Function(int playerId)? onCompare;
+
+  /// Replaces the player details sheet when set, e.g. for edit actions.
+  final ValueChanged<int>? onPlayerTap;
   final PlayerCardMetric metric;
   final double cardWidth;
 
@@ -456,7 +476,9 @@ class _PitchPlayer extends StatelessWidget {
     }
 
     Widget cardContent = GestureDetector(
-      onTap: () => _showPlayerDetailsSheet(context),
+      onTap: onPlayerTap != null
+          ? () => onPlayerTap!(pick.elementId)
+          : () => _showPlayerDetailsSheet(context),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
