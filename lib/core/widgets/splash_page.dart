@@ -140,6 +140,9 @@ class _SplashPageState extends State<SplashPage>
                     builder: (context, preloadState) {
                       final isFailure =
                           preloadState.status == PreloadStatus.failure;
+                      final needsTeamSetup =
+                          preloadState.status ==
+                          PreloadStatus.teamSetupRequired;
                       final authLoading =
                           context.watch<AuthCubit>().state.isLoading;
 
@@ -224,23 +227,32 @@ class _SplashPageState extends State<SplashPage>
                           const Spacer(flex: 2),
 
                           // Loading State / Failure
-                          if (isFailure) ...[
+                          if (isFailure || needsTeamSetup) ...[
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: const Color(0xff2d111d),
+                                color: needsTeamSetup
+                                    ? const Color(0xff102b24)
+                                    : const Color(0xff2d111d),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: const Color(0xffef4444).withValues(alpha: 0.4),
+                                  color: (needsTeamSetup
+                                          ? const Color(0xff00ff87)
+                                          : const Color(0xffef4444))
+                                      .withValues(alpha: 0.4),
                                 ),
                               ),
                               child: Column(
                                 children: [
                                   Text(
-                                    l10n.errorLoadingData,
+                                    needsTeamSetup
+                                        ? l10n.fplTeamSetupRequired
+                                        : l10n.errorLoadingData,
                                     textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      color: Color(0xfffca5a5),
+                                    style: TextStyle(
+                                      color: needsTeamSetup
+                                          ? const Color(0xffc8f7e1)
+                                          : const Color(0xfffca5a5),
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -262,7 +274,9 @@ class _SplashPageState extends State<SplashPage>
                                     ),
                                     icon: const Icon(Icons.refresh_rounded, size: 18),
                                     label: Text(
-                                      l10n.retry,
+                                      needsTeamSetup
+                                          ? l10n.teamSetupRetry
+                                          : l10n.retry,
                                       style: const TextStyle(fontWeight: FontWeight.w800),
                                     ),
                                   ),

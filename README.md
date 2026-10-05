@@ -44,9 +44,11 @@ approved website redirect before it navigates away. The app never posts the
 email or password itself; it receives an authorization code and exchanges it
 with PKCE.
 
-This is suitable for a personal experiment, but the provider may reject an
-embedded WebView. A system browser with an approved mobile redirect is the
-preferred production flow.
+The sign-in page is hosted by the official Premier League site, but the app
+uses that site's current web OIDC client and an embedded WebView. The service
+owner may reject third-party use of that client. Do not ship or publish this
+integration until the service owner approves it. A system browser with an
+approved mobile client and redirect URI is the preferred production flow.
 
 The default app button uses the in-app WebView flow and needs no email or
 password configuration. The system-browser fallback needs an approved mobile
@@ -58,9 +60,30 @@ flutter run \
   --dart-define=FPL_OIDC_REDIRECT_URI=fantasypl://oauth/callback
 ```
 
-The authority is the official FPL OIDC authority. The current website client
-id is kept as a documented reference. Do not ship or publish this integration
-before the service owner approves the client and redirect URI.
+The authority and sign-in page are official FPL endpoints. The current website
+client id is a public client identifier, not an approval to use the client in a
+third-party app.
+
+## Android release signing
+
+Release builds use the local `android/key.properties` and
+`android/app/upload-keystore.jks` files. Keep both backed up securely; they are
+ignored by Git. Build the Play bundle with:
+
+```sh
+flutter build appbundle --release
+```
+
+Push to `closed-test` to build an Android App Bundle and upload it as a draft
+to the Google Play closed-testing (`alpha`) track. Workflow build numbers start
+above the current Play build and keep increasing with each run.
+
+Configure these repository secrets in GitHub Actions before the first upload:
+
+- `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_PASSWORD`, and `KEY_ALIAS` for
+  Android signing.
+- Actions variables `GCP_WORKLOAD_IDENTITY_PROVIDER` and `GCP_SERVICE_ACCOUNT`
+  for branch-restricted Workload Identity Federation; no service-account key is stored.
 
 ## Run and verify
 

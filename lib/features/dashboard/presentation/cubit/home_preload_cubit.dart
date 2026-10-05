@@ -1,12 +1,13 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../auth/presentation/cubit/auth_cubit.dart';
+import '../../../fixtures/data/datasources/fpl_api_client.dart';
 import '../../../fixtures/data/models/fpl_models.dart';
 import '../../../fixtures/domain/repositories/fixtures_repository.dart';
 import '../../../team/data/models/team_models.dart';
 import '../../../team/domain/repositories/team_repository.dart';
 
-enum PreloadStatus { initial, loading, success, failure }
+enum PreloadStatus { initial, loading, success, failure, teamSetupRequired }
 
 class HomePreloadState {
   const HomePreloadState({
@@ -109,11 +110,13 @@ class HomePreloadCubit extends Cubit<HomePreloadState> {
           .id;
 
       final futures = await Future.wait([
-        teamRepository.getTeamForGameweek(
-          entryId: session.entryId!,
-          gameweekId: currentGameweekId,
-          session: session,
-          currentGameweekId: currentGameweekId,
+        _loadCurrentTeamOrSetup(
+          teamRepository.getTeamForGameweek(
+            entryId: session.entryId!,
+            gameweekId: currentGameweekId,
+            session: session,
+            currentGameweekId: currentGameweekId,
+          ),
         ),
         teamRepository.getMyTeam(
           session: session,
@@ -178,10 +181,28 @@ class HomePreloadCubit extends Cubit<HomePreloadState> {
           entryId: session.entryId,
         ),
       );
+    } on _MissingTeamPicksException {
+      emit(
+        state.copyWith(
+          status: PreloadStatus.teamSetupRequired,
+          entryId: session.entryId,
+        ),
+      );
     } catch (e) {
       emit(state.copyWith(status: PreloadStatus.failure, error: e));
     } finally {
       _isLoading = false;
+    }
+  }
+
+  Future<MyTeam> _loadCurrentTeamOrSetup(Future<MyTeam> request) async {
+    try {
+      return await request;
+    } on FplApiException catch (error) {
+      if (error.statusCode == 404) {
+        throw const _MissingTeamPicksException();
+      }
+      rethrow;
     }
   }
 
@@ -195,4 +216,8 @@ class HomePreloadCubit extends Cubit<HomePreloadState> {
       // Keep the existing home data visible when a lightweight refresh fails.
     }
   }
+}
+
+class _MissingTeamPicksException implements Exception {
+  const _MissingTeamPicksException();
 }
