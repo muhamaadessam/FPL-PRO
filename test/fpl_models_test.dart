@@ -216,4 +216,41 @@ void main() {
     expect(minutes, [45, 90, 90, 12, 90]);
     expect(parseRecentMinutes(const {}), isEmpty);
   });
+
+  test('parses game_config scoring with per-field fallbacks', () {
+    final scoring = FplBootstrap.fromJson({
+      'element_types': [
+        {'id': 1, 'singular_name_short': 'GKP'},
+        {'id': 2, 'singular_name_short': 'DEF'},
+        {'id': 3, 'singular_name_short': 'MID'},
+        {'id': 4, 'singular_name_short': 'FWD'},
+      ],
+      'game_config': {
+        'scoring': {
+          'long_play': 3,
+          'goals_scored': {'GKP': 12, 'DEF': 7, 'MID': 6, 'FWD': 5},
+          'assists': 4,
+          // MID is missing and FWD is not a number: both use the defaults.
+          'clean_sheets': {'GKP': 5, 'DEF': 5, 'FWD': 'n/a'},
+          'saves': 'unexpected',
+        },
+      },
+    }).scoring;
+
+    expect(scoring.appearance, 3);
+    expect(scoring.goals, {1: 12, 2: 7, 3: 6, 4: 5});
+    expect(scoring.assists, {1: 4, 2: 4, 3: 4, 4: 4});
+    expect(scoring.cleanSheets, {1: 5, 2: 5, 3: 1, 4: 0});
+    expect(scoring.saves, 1);
+    expect(scoring.goalsConceded, {1: -1, 2: -1, 3: 0, 4: 0});
+    expect(scoring.defensiveContribution, {1: 0, 2: 2, 3: 2, 4: 2});
+  });
+
+  test('uses the 2026/27 scoring when game_config is missing', () {
+    final scoring = FplBootstrap.fromJson(const {}).scoring;
+
+    expect(scoring.appearance, 2);
+    expect(scoring.goals, {1: 10, 2: 6, 3: 5, 4: 4});
+    expect(scoring.cleanSheets, {1: 4, 2: 4, 3: 1, 4: 0});
+  });
 }

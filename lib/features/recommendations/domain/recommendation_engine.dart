@@ -125,12 +125,8 @@ class RecommendationEngine {
   /// Extra horizon points a wildcard must add over the normal transfer route.
   static const _wildcardMinExtraGain = 12.0;
 
-  // 2026/27 scoring by position id (1 GKP, 2 DEF, 3 MID, 4 FWD).
-  static const _goalPoints = {1: 10, 2: 6, 3: 5, 4: 4};
-  static const _assistPoints = 3;
-  static const _cleanSheetPoints = {1: 4, 2: 4, 3: 1, 4: 0};
-  static const _appearancePoints = 2;
-  static const _defensiveContributionPoints = 2;
+  /// 2026/27 defensive actions needed for defensive contribution points, by
+  /// position id. The points themselves come from `game_config.scoring`.
   static const _defensiveContributionThreshold = {2: 10, 3: 12, 4: 12};
 
   /// Minutes before underlying per-90 stats are trusted at all, and the
@@ -174,6 +170,7 @@ class RecommendationEngine {
           gameweekId,
           strengths,
           recentMinutes[player.id],
+          bootstrap.scoring,
         ),
     };
     final selectable =
@@ -329,6 +326,7 @@ class RecommendationEngine {
     int gameweekId,
     _TeamStrengths? strengths,
     List<int>? recentMinutes,
+    FplScoring scoring,
   ) {
     final availability = _availability(player);
     final reliability = _reliability(player, gameweekId, recentMinutes);
@@ -336,7 +334,7 @@ class RecommendationEngine {
     // already priced in; `points_per_game` only counts appearances.
     final formScore =
         player.form * 0.6 + player.pointsPerGame * reliability * 0.4;
-    final underlying = _underlying(player, reliability);
+    final underlying = _underlying(player, reliability, scoring);
     final underlyingWeight = underlying == null
         ? 0.0
         : _maxUnderlyingWeight *
@@ -750,7 +748,11 @@ class RecommendationEngine {
 
   /// Per-match points implied by season xG, xA, xGC, defensive actions,
   /// bonus and saves, plus the share of them that depends on the opponent.
-  _Underlying? _underlying(FplPlayer player, double reliability) {
+  _Underlying? _underlying(
+    FplPlayer player,
+    double reliability,
+    FplScoring scoring,
+  ) {
     final minutes = player.minutes;
     final expectedConceded = player.expectedGoalsConceded;
     if (minutes < _minUnderlyingMinutes || expectedConceded == null) {
@@ -769,13 +771,15 @@ class RecommendationEngine {
     final position = player.positionId;
     final per90 = 90 / minutes;
     final attack =
-        expectedGoals * per90 * (_goalPoints[position] ?? 0) +
-        expectedAssists * per90 * _assistPoints;
+        expectedGoals * per90 * (scoring.goals[position] ?? 0) +
+        expectedAssists * per90 * (scoring.assists[position] ?? 0);
 
     final concededPer90 = expectedConceded * per90;
     final cleanSheet =
-        math.exp(-concededPer90) * (_cleanSheetPoints[position] ?? 0);
-    final concededPenalty = position <= 2 ? concededPer90 / 2 : 0.0;
+        math.exp(-concededPer90) * (scoring.cleanSheets[position] ?? 0);
+    // Conceded points are scored per two goals and are zero or negative.
+    final concededPenalty =
+        -(scoring.goalsConceded[position] ?? 0) * concededPer90 / 2;
     // Floored at zero so the opponent-dependent share stays meaningful.
     final defence = math.max(0.0, cleanSheet - concededPenalty);
 
@@ -783,13 +787,13 @@ class RecommendationEngine {
     final actions = player.defensiveContribution;
     final defensiveContribution = threshold == null || actions == null
         ? 0.0
-        : _defensiveContributionPoints *
+        : (scoring.defensiveContribution[position] ?? 0) *
               _poissonAtLeast(actions * per90, threshold);
     final neutral =
-        _appearancePoints +
+        scoring.appearance +
         defensiveContribution +
         (player.bonus ?? 0) * per90 +
-        (position == 1 ? (player.saves ?? 0) * per90 / 3 : 0);
+        (position == 1 ? (player.saves ?? 0) * per90 / 3 * scoring.saves : 0);
 
     final total = attack + defence + neutral;
     return _Underlying(

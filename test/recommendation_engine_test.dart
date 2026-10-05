@@ -393,6 +393,43 @@ void main() {
       },
     );
 
+    test('reads scoring points from game_config', () {
+      double nextPoints(Map<String, dynamic>? scoring) {
+        return _build(
+          players: [
+            _player(
+              1,
+              'Scorer',
+              1,
+              3,
+              50,
+              5,
+              epNext: 0,
+              stats: _underlyingStats(expectedGoals: '6.0'),
+            ),
+          ],
+          picks: [_pick(1, 1, 3)],
+          fixtures: [_fixture(5, 1, 2)],
+          scoring: scoring,
+        ).captain!.nextPoints;
+      }
+
+      final defaults = nextPoints(null);
+      expect(
+        nextPoints({
+          'goals_scored': {'GKP': 10, 'DEF': 6, 'MID': 5, 'FWD': 4},
+        }),
+        closeTo(defaults, 0.001),
+      );
+      // Doubling midfield goal points raises an xG-heavy midfielder.
+      expect(
+        nextPoints({
+          'goals_scored': {'GKP': 10, 'DEF': 6, 'MID': 10, 'FWD': 4},
+        }),
+        greaterThan(defaults),
+      );
+    });
+
     test('ignores underlying stats that are missing or too thin', () {
       double nextPoints(Map<String, dynamic> stats) {
         return _build(
@@ -566,6 +603,7 @@ void main() {
 FplBootstrap _bootstrap(
   List<Map<String, dynamic>> players, {
   List<Map<String, dynamic>>? teams,
+  Map<String, dynamic>? scoring,
 }) {
   return FplBootstrap.fromJson({
     'events': [
@@ -579,6 +617,7 @@ FplBootstrap _bootstrap(
             {'id': id, 'name': 'Team $id', 'short_name': 'T$id'},
         ],
     'elements': players,
+    'game_config': ?(scoring == null ? null : {'scoring': scoring}),
   });
 }
 
@@ -631,10 +670,11 @@ RecommendationResult _build({
   List<Map<String, dynamic>> chips = const [],
   List<Map<String, dynamic>>? teams,
   Map<int, List<int>> recentMinutes = const {},
+  Map<String, dynamic>? scoring,
   int gameweekId = 5,
 }) {
   return const RecommendationEngine().build(
-    bootstrap: _bootstrap(players, teams: teams),
+    bootstrap: _bootstrap(players, teams: teams, scoring: scoring),
     fixtures: fixtures,
     team: MyTeam.fromJson({
       'picks': picks,
