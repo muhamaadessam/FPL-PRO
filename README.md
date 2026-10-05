@@ -62,6 +62,14 @@ The authority is the official FPL OIDC authority. The current website client
 id is kept as a documented reference. Do not ship or publish this integration
 before the service owner approves the client and redirect URI.
 
+## Closed testing uploads
+
+Push app changes to `closed-test` to build a signed Android App Bundle and
+upload it as a draft to the Google Play `alpha` track. GitHub Actions requires
+the repository secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_PASSWORD`,
+`KEY_ALIAS`, and `PLAY_CONSOLE_JSON_BASE64`. Keep releases in draft until the
+FPL sign-in integration is approved.
+
 ## Run and verify
 
 ```sh

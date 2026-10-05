@@ -10,6 +10,7 @@ import '../../features/dashboard/presentation/cubit/home_preload_cubit.dart';
 import '../../features/fixtures/presentation/screens/public_matches_page.dart';
 import '../../features/team/presentation/screens/team_view.dart';
 import '../widgets/splash_page.dart';
+import '../widgets/update_checker.dart';
 
 GoRouter createRouter(AuthCubit authCubit, HomePreloadCubit preloadCubit) {
   final refresh = ValueNotifier(0);
@@ -53,7 +54,10 @@ GoRouter createRouter(AuthCubit authCubit, HomePreloadCubit preloadCubit) {
           entryId: int.tryParse(state.pathParameters['entryId'] ?? ''),
         ),
       ),
-      GoRoute(path: '/home', builder: (_, _) => const DashboardShell()),
+      GoRoute(
+        path: '/home',
+        builder: (_, _) => const UpdateChecker(child: DashboardShell()),
+      ),
     ],
   );
 }
