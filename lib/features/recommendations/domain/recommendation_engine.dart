@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../../../core/models/fpl_models.dart';
 
 enum SuggestedChip { none, wildcard, freeHit, benchBoost, tripleCaptain }
@@ -97,15 +99,35 @@ class RecommendationEngine {
   /// Extra horizon points a wildcard must add over the normal transfer route.
   static const _wildcardMinExtraGain = 12.0;
 
+  // 2026/27 scoring by position id (1 GKP, 2 DEF, 3 MID, 4 FWD).
+  static const _goalPoints = {1: 10, 2: 6, 3: 5, 4: 4};
+  static const _assistPoints = 3;
+  static const _cleanSheetPoints = {1: 4, 2: 4, 3: 1, 4: 0};
+  static const _appearancePoints = 2;
+  static const _defensiveContributionPoints = 2;
+  static const _defensiveContributionThreshold = {2: 10, 3: 12, 4: 12};
+
+  /// Minutes before underlying per-90 stats are trusted at all, and the
+  /// minutes at which they reach their full blend weight.
+  static const _minUnderlyingMinutes = 270;
+  static const _fullUnderlyingMinutes = 900;
+  static const _maxUnderlyingWeight = 0.4;
+
+  /// Share of points driven by the opponent's defence (attack) and attack
+  /// (defence) when a player has no underlying stats; the rest is neutral.
+  static const _defaultAttackShare = {1: 0.0, 2: 0.25, 3: 0.6, 4: 0.75};
+  static const _defaultDefenceShare = {1: 0.6, 2: 0.45, 3: 0.1, 4: 0.0};
+
   RecommendationResult build({
     required FplBootstrap bootstrap,
     required List<FplFixture> fixtures,
     required MyTeam team,
     required int gameweekId,
   }) {
+    final strengths = _TeamStrengths.from(bootstrap.teams);
     final projections = {
       for (final player in bootstrap.players.values)
-        player.id: _project(player, fixtures, gameweekId),
+        player.id: _project(player, fixtures, gameweekId, strengths),
     };
     final selectable =
         projections.values
@@ -166,6 +188,7 @@ class RecommendationEngine {
     FplPlayer player,
     List<FplFixture> fixtures,
     int gameweekId,
+    _TeamStrengths? strengths,
   ) {
     final availability = _availability(player);
     final reliability = player.minutes == 0
@@ -176,7 +199,22 @@ class RecommendationEngine {
           );
     // `form` averages over all of the club's recent matches, so absences are
     // already priced in; `points_per_game` only counts appearances.
-    final recent = player.form * 0.6 + player.pointsPerGame * reliability * 0.4;
+    final formScore =
+        player.form * 0.6 + player.pointsPerGame * reliability * 0.4;
+    final underlying = _underlying(player, reliability);
+    final underlyingWeight = underlying == null
+        ? 0.0
+        : _maxUnderlyingWeight *
+              (player.minutes / _fullUnderlyingMinutes).clamp(0.0, 1.0);
+    final recent =
+        formScore * (1 - underlyingWeight) +
+        (underlying?.points ?? 0) * underlyingWeight;
+    final attackShare =
+        underlying?.attackShare ?? _defaultAttackShare[player.positionId] ?? 0;
+    final defenceShare =
+        underlying?.defenceShare ??
+        _defaultDefenceShare[player.positionId] ??
+        0;
     var horizon = 0.0;
     var next = 0.0;
     var nextCount = 0;
@@ -195,11 +233,19 @@ class RecommendationEngine {
       final difficulties = eventFixtures
           .map((fixture) => _difficultyFor(player.teamId, fixture))
           .toList(growable: false);
-      final difficulty =
-          difficulties.reduce((a, b) => a + b) / difficulties.length;
-      final difficultyFactor = 1.24 - (difficulty * 0.08);
-      final recentScore =
-          recent * availability * difficultyFactor * eventFixtures.length;
+      final fixtureFactor = eventFixtures.fold(
+        0.0,
+        (total, fixture) =>
+            total +
+            _fixtureFactor(
+              player.teamId,
+              fixture,
+              strengths,
+              attackShare: attackShare,
+              defenceShare: defenceShare,
+            ),
+      );
+      final recentScore = recent * availability * fixtureFactor;
       // `ep_next` already accounts for availability, fixture difficulty and
       // Double Gameweeks, so it must not be scaled by them again.
       final eventScore = offset == 0 && player.expectedPointsNext > 0
@@ -492,6 +538,88 @@ class RecommendationEngine {
     return null;
   }
 
+  /// Fixture multiplier around 1.0. With team strengths, attacking returns
+  /// scale with the opponent's defence and clean-sheet returns with its
+  /// attack; otherwise the official FDR is used for the whole projection.
+  double _fixtureFactor(
+    int teamId,
+    FplFixture fixture,
+    _TeamStrengths? strengths, {
+    required double attackShare,
+    required double defenceShare,
+  }) {
+    final factors = strengths?.factors(teamId, fixture);
+    if (factors == null) {
+      return 1.24 - (_difficultyFor(teamId, fixture) * 0.08);
+    }
+    final (attack, defence) = factors;
+    return attackShare * attack +
+        defenceShare * defence +
+        (1 - attackShare - defenceShare);
+  }
+
+  /// Per-match points implied by season xG, xA, xGC, defensive actions,
+  /// bonus and saves, plus the share of them that depends on the opponent.
+  _Underlying? _underlying(FplPlayer player, double reliability) {
+    final minutes = player.minutes;
+    final expectedConceded = player.expectedGoalsConceded;
+    if (minutes < _minUnderlyingMinutes || expectedConceded == null) {
+      return null;
+    }
+    var expectedGoals = player.expectedGoals;
+    var expectedAssists = player.expectedAssists;
+    if (expectedGoals == null || expectedAssists == null) {
+      final involvements = player.expectedGoalInvolvements;
+      if (involvements == null) return null;
+      // Without the split, assume involvements are half goals, half assists.
+      expectedGoals = involvements / 2;
+      expectedAssists = involvements / 2;
+    }
+
+    final position = player.positionId;
+    final per90 = 90 / minutes;
+    final attack =
+        expectedGoals * per90 * (_goalPoints[position] ?? 0) +
+        expectedAssists * per90 * _assistPoints;
+
+    final concededPer90 = expectedConceded * per90;
+    final cleanSheet =
+        math.exp(-concededPer90) * (_cleanSheetPoints[position] ?? 0);
+    final concededPenalty = position <= 2 ? concededPer90 / 2 : 0.0;
+    // Floored at zero so the opponent-dependent share stays meaningful.
+    final defence = math.max(0.0, cleanSheet - concededPenalty);
+
+    final threshold = _defensiveContributionThreshold[position];
+    final actions = player.defensiveContribution;
+    final defensiveContribution = threshold == null || actions == null
+        ? 0.0
+        : _defensiveContributionPoints *
+              _poissonAtLeast(actions * per90, threshold);
+    final neutral =
+        _appearancePoints +
+        defensiveContribution +
+        (player.bonus ?? 0) * per90 +
+        (position == 1 ? (player.saves ?? 0) * per90 / 3 : 0);
+
+    final total = attack + defence + neutral;
+    return _Underlying(
+      points: total * reliability,
+      attackShare: attack / total,
+      defenceShare: defence / total,
+    );
+  }
+
+  /// P(X >= threshold) for X ~ Poisson(mean).
+  double _poissonAtLeast(double mean, int threshold) {
+    var term = math.exp(-mean);
+    var below = 0.0;
+    for (var k = 0; k < threshold; k++) {
+      below += term;
+      term *= mean / (k + 1);
+    }
+    return (1 - below).clamp(0.0, 1.0);
+  }
+
   int _difficultyFor(int teamId, FplFixture fixture) {
     return teamId == fixture.homeTeamId
         ? fixture.homeDifficulty ?? 3
@@ -530,4 +658,80 @@ class _Upgrade {
   final double gain;
   final int cost;
   final int sellingPrice;
+}
+
+class _Underlying {
+  const _Underlying({
+    required this.points,
+    required this.attackShare,
+    required this.defenceShare,
+  });
+
+  final double points;
+  final double attackShare;
+  final double defenceShare;
+}
+
+/// Opponent strength relative to the league average, from the official
+/// team `strength_attack_*` and `strength_defence_*` ratings.
+class _TeamStrengths {
+  const _TeamStrengths(this._teams, this._averageAttack, this._averageDefence);
+
+  /// Exponent that widens the ratings' narrow spread into a fixture swing.
+  static const _sensitivity = 2.0;
+  static const _minFactor = 0.6;
+  static const _maxFactor = 1.5;
+
+  final Map<int, FplTeam> _teams;
+  final double _averageAttack;
+  final double _averageDefence;
+
+  static _TeamStrengths? from(Map<int, FplTeam> teams) {
+    final rated = {
+      for (final team in teams.values)
+        if (team.strengthAttackHome != null &&
+            team.strengthAttackAway != null &&
+            team.strengthDefenceHome != null &&
+            team.strengthDefenceAway != null)
+          team.id: team,
+    };
+    if (rated.length < 2) return null;
+    double average(Iterable<int> values) =>
+        values.fold(0, (total, value) => total + value) / values.length;
+    // Pooled over both venues so home advantage is kept in the factors.
+    return _TeamStrengths(
+      rated,
+      average(
+        rated.values.expand(
+          (team) => [team.strengthAttackHome!, team.strengthAttackAway!],
+        ),
+      ),
+      average(
+        rated.values.expand(
+          (team) => [team.strengthDefenceHome!, team.strengthDefenceAway!],
+        ),
+      ),
+    );
+  }
+
+  /// (attack, defence) multipliers for [teamId] in [fixture], or null when
+  /// either side has no rating.
+  (double, double)? factors(int teamId, FplFixture fixture) {
+    final isHome = teamId == fixture.homeTeamId;
+    if (!_teams.containsKey(teamId)) return null;
+    final opponent = _teams[isHome ? fixture.awayTeamId : fixture.homeTeamId];
+    if (opponent == null) return null;
+    final opponentAttack = isHome
+        ? opponent.strengthAttackAway!
+        : opponent.strengthAttackHome!;
+    final opponentDefence = isHome
+        ? opponent.strengthDefenceAway!
+        : opponent.strengthDefenceHome!;
+    double scale(double ratio) =>
+        math.pow(ratio, _sensitivity).toDouble().clamp(_minFactor, _maxFactor);
+    return (
+      scale(_averageDefence / opponentDefence),
+      scale(_averageAttack / opponentAttack),
+    );
+  }
 }

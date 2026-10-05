@@ -39,12 +39,20 @@ class FplTeam {
     required this.name,
     required this.shortName,
     this.code,
+    this.strengthAttackHome,
+    this.strengthAttackAway,
+    this.strengthDefenceHome,
+    this.strengthDefenceAway,
   });
 
   final int id;
   final String name;
   final String shortName;
   final int? code;
+  final int? strengthAttackHome;
+  final int? strengthAttackAway;
+  final int? strengthDefenceHome;
+  final int? strengthDefenceAway;
 
   factory FplTeam.fromJson(Map<String, dynamic> json) {
     return FplTeam(
@@ -52,6 +60,10 @@ class FplTeam {
       name: json['name'] as String? ?? 'Team ${json['id']}',
       shortName: json['short_name'] as String? ?? '',
       code: _nullableInt(json['code']),
+      strengthAttackHome: _nullableInt(json['strength_attack_home']),
+      strengthAttackAway: _nullableInt(json['strength_attack_away']),
+      strengthDefenceHome: _nullableInt(json['strength_defence_home']),
+      strengthDefenceAway: _nullableInt(json['strength_defence_away']),
     );
   }
 }
@@ -76,9 +88,13 @@ class FplPlayer {
     this.selectedByPercent = 0,
     this.minutes = 0,
     this.starts = 0,
-    this.expectedGoalInvolvements = 0,
-    this.expectedGoalsConceded = 0,
-    this.defensiveContribution = 0,
+    this.expectedGoals,
+    this.expectedAssists,
+    this.expectedGoalInvolvements,
+    this.expectedGoalsConceded,
+    this.defensiveContribution,
+    this.bonus,
+    this.saves,
   });
 
   final int id;
@@ -99,9 +115,17 @@ class FplPlayer {
   final double selectedByPercent;
   final int minutes;
   final int starts;
-  final double expectedGoalInvolvements;
-  final double expectedGoalsConceded;
-  final int defensiveContribution;
+
+  // Season totals; null when the field is missing, so unknown is not zero.
+  final double? expectedGoals;
+  final double? expectedAssists;
+  final double? expectedGoalInvolvements;
+  final double? expectedGoalsConceded;
+
+  /// Total defensive actions counted towards defensive contribution points.
+  final int? defensiveContribution;
+  final int? bonus;
+  final int? saves;
 
   factory FplPlayer.fromJson(Map<String, dynamic> json) {
     return FplPlayer(
@@ -125,9 +149,15 @@ class FplPlayer {
       selectedByPercent: _double(json['selected_by_percent']),
       minutes: _int(json['minutes']),
       starts: _int(json['starts']),
-      expectedGoalInvolvements: _double(json['expected_goal_involvements']),
-      expectedGoalsConceded: _double(json['expected_goals_conceded']),
-      defensiveContribution: _int(json['defensive_contribution']),
+      expectedGoals: _nullableDouble(json['expected_goals']),
+      expectedAssists: _nullableDouble(json['expected_assists']),
+      expectedGoalInvolvements: _nullableDouble(
+        json['expected_goal_involvements'],
+      ),
+      expectedGoalsConceded: _nullableDouble(json['expected_goals_conceded']),
+      defensiveContribution: _nullableInt(json['defensive_contribution']),
+      bonus: _nullableInt(json['bonus']),
+      saves: _nullableInt(json['saves']),
     );
   }
 }
@@ -391,6 +421,11 @@ int _int(dynamic value) => value is int ? value : int.tryParse('$value') ?? 0;
 
 double _double(dynamic value) =>
     value is num ? value.toDouble() : double.tryParse('$value') ?? 0;
+
+double? _nullableDouble(dynamic value) {
+  if (value == null) return null;
+  return value is num ? value.toDouble() : double.tryParse('$value');
+}
 
 int? _nullableInt(dynamic value) {
   if (value == null) return null;

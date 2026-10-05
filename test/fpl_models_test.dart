@@ -166,4 +166,43 @@ void main() {
     expect(chip.isAvailableFor(20), isFalse);
     expect(chip.isAvailableFor(21), isTrue);
   });
+
+  test('parses team strengths and keeps missing player stats unknown', () {
+    final bootstrap = FplBootstrap.fromJson({
+      'teams': [
+        {
+          'id': 1,
+          'name': 'Arsenal',
+          'short_name': 'ARS',
+          'strength_attack_home': 1340,
+          'strength_attack_away': 1310,
+          'strength_defence_home': 1350,
+          'strength_defence_away': 1320,
+        },
+      ],
+      'elements': [
+        {
+          'id': 10,
+          'team': 1,
+          'element_type': 2,
+          'expected_goals': '1.25',
+          'expected_goals_conceded': '8.40',
+          'defensive_contribution': 96,
+        },
+        {'id': 11, 'team': 1, 'element_type': 3},
+      ],
+    });
+
+    final team = bootstrap.teams[1]!;
+    expect(team.strengthAttackHome, 1340);
+    expect(team.strengthDefenceAway, 1320);
+    final withStats = bootstrap.players[10]!;
+    expect(withStats.expectedGoals, 1.25);
+    expect(withStats.expectedGoalsConceded, 8.4);
+    expect(withStats.defensiveContribution, 96);
+    expect(withStats.expectedAssists, isNull);
+    final withoutStats = bootstrap.players[11]!;
+    expect(withoutStats.expectedGoals, isNull);
+    expect(withoutStats.defensiveContribution, isNull);
+  });
 }

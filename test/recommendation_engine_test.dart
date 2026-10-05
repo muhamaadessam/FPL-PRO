@@ -283,18 +283,151 @@ void main() {
       expect(crowded.chipReason, ChipReason.chipExpiring);
     });
   });
+
+  group('underlying stats and opponent strength', () {
+    test('scales attackers and defenders by different opponent sides', () {
+      final teams = [
+        _ratedTeam(1),
+        _ratedTeam(2, attack: 1400, defence: 1000),
+        _ratedTeam(3, attack: 1000, defence: 1400),
+      ];
+      Map<int, double> nextPointsAgainst(int opponent) {
+        final result = _build(
+          players: [
+            _player(1, 'Defender', 1, 2, 50, 5, epNext: 0),
+            _player(2, 'Forward', 1, 4, 50, 5, epNext: 0),
+          ],
+          picks: [_pick(1, 1, 2), _pick(2, 2, 4)],
+          fixtures: [_fixture(5, 1, opponent)],
+          teams: teams,
+        );
+        return {
+          for (final projection in [result.captain!, result.viceCaptain!])
+            projection.player.id: projection.nextPoints,
+        };
+      }
+
+      final dangerousButLeaky = nextPointsAgainst(2);
+      final bluntButSolid = nextPointsAgainst(3);
+      expect(dangerousButLeaky[2]!, greaterThan(bluntButSolid[2]!));
+      expect(dangerousButLeaky[1]!, lessThan(bluntButSolid[1]!));
+    });
+
+    test('blends expected goal involvement into the projection', () {
+      final result = _build(
+        players: [
+          _player(
+            1,
+            'Threat',
+            1,
+            3,
+            50,
+            5,
+            epNext: 0,
+            stats: _underlyingStats(
+              expectedGoals: '6.0',
+              expectedAssists: '3.0',
+            ),
+          ),
+          _player(
+            2,
+            'Passenger',
+            2,
+            3,
+            50,
+            5,
+            epNext: 0,
+            stats: _underlyingStats(
+              expectedGoals: '0.5',
+              expectedAssists: '0.5',
+            ),
+          ),
+        ],
+        picks: [_pick(1, 1, 3), _pick(2, 2, 3)],
+        fixtures: _fixturesFor(teams: [1, 2]),
+        gameweekId: 5,
+      );
+
+      expect(result.captain?.player.id, 1);
+      expect(
+        result.captain!.nextPoints,
+        greaterThan(result.viceCaptain!.nextPoints),
+      );
+    });
+
+    test(
+      'rewards defenders who reach the defensive contribution threshold',
+      () {
+        final result = _build(
+          players: [
+            _player(
+              1,
+              'Blocker',
+              1,
+              2,
+              50,
+              4,
+              epNext: 0,
+              stats: _underlyingStats(defensiveActions: 120),
+            ),
+            _player(
+              2,
+              'Spectator',
+              2,
+              2,
+              50,
+              4,
+              epNext: 0,
+              stats: _underlyingStats(defensiveActions: 30),
+            ),
+          ],
+          picks: [_pick(1, 1, 2), _pick(2, 2, 2)],
+          fixtures: _fixturesFor(teams: [1, 2]),
+        );
+
+        expect(result.captain?.player.id, 1);
+        expect(
+          result.captain!.nextPoints,
+          greaterThan(result.viceCaptain!.nextPoints),
+        );
+      },
+    );
+
+    test('ignores underlying stats that are missing or too thin', () {
+      double nextPoints(Map<String, dynamic> stats) {
+        return _build(
+          players: [_player(1, 'Mid', 1, 3, 50, 5, epNext: 0, stats: stats)],
+          picks: [_pick(1, 1, 3)],
+          fixtures: [_fixture(5, 1, 2)],
+        ).captain!.nextPoints;
+      }
+
+      // No expected stats at all: form only, at full reliability.
+      expect(nextPoints(const {}), closeTo(5.0, 0.001));
+      // 180 minutes is too few: form with 0.5 reliability on PPG only.
+      expect(
+        nextPoints(_underlyingStats(minutes: 180)),
+        closeTo(5 * 0.6 + 5 * 0.5 * 0.4, 0.001),
+      );
+    });
+  });
 }
 
-FplBootstrap _bootstrap(List<Map<String, dynamic>> players) {
+FplBootstrap _bootstrap(
+  List<Map<String, dynamic>> players, {
+  List<Map<String, dynamic>>? teams,
+}) {
   return FplBootstrap.fromJson({
     'events': [
       {'id': 4, 'name': 'Gameweek 4', 'is_current': true},
       {'id': 5, 'name': 'Gameweek 5', 'is_next': true},
     ],
-    'teams': [
-      for (var id = 1; id <= 20; id++)
-        {'id': id, 'name': 'Team $id', 'short_name': 'T$id'},
-    ],
+    'teams':
+        teams ??
+        [
+          for (var id = 1; id <= 20; id++)
+            {'id': id, 'name': 'Team $id', 'short_name': 'T$id'},
+        ],
     'elements': players,
   });
 }
@@ -308,6 +441,7 @@ Map<String, dynamic> _player(
   double expectedPoints, {
   double? epNext,
   int? chance,
+  Map<String, dynamic> stats = const {},
 }) {
   return {
     'id': id,
@@ -323,6 +457,7 @@ Map<String, dynamic> _player(
     'chance_of_playing_next_round': chance,
     'minutes': 360,
     'starts': 4,
+    ...stats,
   };
 }
 
@@ -343,10 +478,11 @@ RecommendationResult _build({
   required List<FplFixture> fixtures,
   Map<String, dynamic>? transfers,
   List<Map<String, dynamic>> chips = const [],
+  List<Map<String, dynamic>>? teams,
   int gameweekId = 5,
 }) {
   return const RecommendationEngine().build(
-    bootstrap: _bootstrap(players),
+    bootstrap: _bootstrap(players, teams: teams),
     fixtures: fixtures,
     team: MyTeam.fromJson({
       'picks': picks,
@@ -384,4 +520,37 @@ List<FplFixture> _fixturesFor({
     for (final event in events)
       for (final team in teams) _fixture(event, team, 20),
   ];
+}
+
+Map<String, dynamic> _ratedTeam(
+  int id, {
+  int attack = 1200,
+  int defence = 1200,
+}) {
+  return {
+    'id': id,
+    'name': 'Team $id',
+    'short_name': 'T$id',
+    'strength_attack_home': attack,
+    'strength_attack_away': attack,
+    'strength_defence_home': defence,
+    'strength_defence_away': defence,
+  };
+}
+
+Map<String, dynamic> _underlyingStats({
+  String expectedGoals = '1.0',
+  String expectedAssists = '1.0',
+  String expectedConceded = '10.0',
+  int defensiveActions = 50,
+  int minutes = 900,
+}) {
+  return {
+    'minutes': minutes,
+    'expected_goals': expectedGoals,
+    'expected_assists': expectedAssists,
+    'expected_goals_conceded': expectedConceded,
+    'defensive_contribution': defensiveActions,
+    'bonus': 3,
+  };
 }
