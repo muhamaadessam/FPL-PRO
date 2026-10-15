@@ -877,6 +877,24 @@ void main() {
       expect(result.transfers.single.hitCost, 0);
     });
 
+    test('scales per-match evidence by a Double Gameweek', () {
+      final result = _build(
+        players: [
+          // ep_next already counts both matches.
+          _player(1, 'Double', 1, 3, 50, 6, epNext: 12),
+          _player(2, 'Single', 3, 3, 50, 6),
+        ],
+        picks: [_pick(1, 1, 3), _pick(2, 2, 3)],
+        fixtures: [_fixture(5, 1, 2), _fixture(5, 1, 4), _fixture(5, 3, 5)],
+      );
+      final points = {
+        for (final player in result.squadAnalysis.players)
+          player.projection.player.id: player.expectedPoints,
+      };
+
+      expect(points[1]! / points[2]!, closeTo(2, 0.05));
+    });
+
     test('gives a non-negative likely range around the projection', () {
       final result = _build(
         players: [_player(1, 'Mid', 1, 3, 50, 7)],

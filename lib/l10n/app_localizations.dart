@@ -162,10 +162,16 @@ class AppLocalizations {
   String get cleanSheetChance =>
       isArabic ? 'فرصة الشباك النظيفة' : 'Clean-sheet chance';
   String predictionConfidence(int value) =>
-      isArabic ? 'ثقة $value٪' : '$value% confidence';
+      isArabic ? 'احتمال $value٪' : '$value% likely';
+  String get predictionHomeWin => isArabic ? 'فوز الأرض' : 'Home win';
+  String get predictionDraw => isArabic ? 'تعادل' : 'Draw';
+  String get predictionAwayWin => isArabic ? 'فوز الضيف' : 'Away win';
+  String predictionExpectedGoals(String home, String away) => isArabic
+      ? 'الأهداف المتوقعة (xG) $home - $away'
+      : 'Expected goals (xG) $home - $away';
   String get predictionDisclaimer => isArabic
-      ? 'توقع إحصائي مبني على xG وxA والفورمة والدقائق وصعوبة المباراة؛ وليس ضمانًا للنتيجة الفعلية.'
-      : 'Statistical estimate using xG, xA, form, minutes and fixture difficulty; it is not a guarantee.';
+      ? 'توقع إحصائي (نموذج بواسون/ديكسون-كولز) مبني على قوة الفريقين من نتائج وxG هذا الموسم، وxG وxA والدقائق والإصابات؛ وليس ضمانًا للنتيجة الفعلية.'
+      : 'Statistical estimate (Poisson/Dixon-Coles) from team strength this season (goals and xG), plus player xG, xA, minutes and injuries; it is not a guarantee.';
   String get predictionWindowHint => isArabic
       ? 'التوقعات متاحة لمباريات الجولات الثلاث القادمة.'
       : 'Predictions are available for fixtures in the next three gameweeks.';

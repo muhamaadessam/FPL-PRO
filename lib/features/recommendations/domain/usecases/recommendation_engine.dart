@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import '../../../fixtures/data/models/fpl_models.dart';
+import '../../../fixtures/domain/usecases/team_ratings.dart';
 import '../../../team/data/models/team_models.dart';
 
 enum SuggestedChip { none, wildcard, freeHit, benchBoost, tripleCaptain }
@@ -24,7 +25,8 @@ class PlayerProjection {
     required this.availability,
     required this.nextFixtureCount,
     required this.nextDifficulties,
-  });
+    double? nextFixtureLoad,
+  }) : nextFixtureLoad = nextFixtureLoad ?? nextFixtureCount * 1.0;
 
   final FplPlayer player;
   final double nextPoints;
@@ -32,6 +34,10 @@ class PlayerProjection {
   final double availability;
   final int nextFixtureCount;
   final List<int> nextDifficulties;
+
+  /// Sum of the next Gameweek's fixture multipliers: a per-match estimate
+  /// times this gives the Gameweek, covering blanks, doubles and opponents.
+  final double nextFixtureLoad;
 
   /// Rough 80% band for the next Gameweek; see [likelyPointsRange].
   (double, double) get nextRange => likelyPointsRange(nextPoints);
@@ -244,7 +250,13 @@ class RecommendationEngine {
     required int gameweekId,
     Map<int, FplPlayerSummary> playerSummaries = const {},
   }) {
-    final strengths = _TeamStrengths.from(bootstrap.teams);
+    final strengths = _TeamStrengths.from(
+      TeamRatings.from(
+        teams: bootstrap.teams,
+        fixtures: fixtures,
+        players: bootstrap.players,
+      ),
+    );
     final projections =
         bootstrap.players.values
             .map(
@@ -679,6 +691,9 @@ class RecommendationEngine {
     return (player.starts / (gameweekId - 1).clamp(1, 38)).clamp(0, 1);
   }
 
+  /// Blends the projection with per-match evidence. The per-match parts are
+  /// scaled to the Gameweek (doubles, blanks, opponents) and by availability
+  /// once; [PlayerProjection.nextPoints] already includes both.
   double _expectedPoints({
     required PlayerProjection projection,
     required double recentPoints,
@@ -689,31 +704,30 @@ class RecommendationEngine {
     if (projection.nextFixtureCount == 0 || projection.availability == 0) {
       return 0;
     }
+    // Per-appearance figures only count when the player is on the pitch;
+    // recent points already include the matches the player missed.
+    final perMatch = projection.nextFixtureLoad * projection.availability;
     var weighted = projection.nextPoints * 0.45;
     var weight = 0.45;
     if (recentPoints > 0) {
-      weighted += recentPoints * 0.2;
+      weighted += recentPoints * perMatch * 0.2;
       weight += 0.2;
     }
     if (projection.player.pointsPerGame > 0) {
-      weighted += projection.player.pointsPerGame * 0.2;
+      weighted +=
+          projection.player.pointsPerGame * reliability * perMatch * 0.2;
       weight += 0.2;
     }
     final underlyingPoints = _underlyingPoints(projection.player, scoring);
     if (underlyingPoints > 0) {
-      weighted += underlyingPoints * 0.1;
+      weighted += underlyingPoints * reliability * perMatch * 0.1;
       weight += 0.1;
     }
     if (previousSeasonPoints != null && previousSeasonPoints > 0) {
-      weighted += previousSeasonPoints * 0.05;
+      weighted += previousSeasonPoints * reliability * perMatch * 0.05;
       weight += 0.05;
     }
-    final availabilityFactor = 0.55 + projection.availability * 0.45;
-    final reliabilityFactor = 0.8 + reliability * 0.2;
-    return (weighted / weight * availabilityFactor * reliabilityFactor).clamp(
-      0,
-      20,
-    );
+    return (weighted / weight).clamp(0, 25);
   }
 
   int _fixtureScore(List<int> difficulties) {
@@ -852,7 +866,12 @@ class RecommendationEngine {
     FplScoring scoring,
   ) {
     final availability = _availability(player);
-    final reliability = _minutesShare(player, gameweekId, recentMinutes);
+    final reliability = _minutesShare(
+      player,
+      strengths?.matchesPlayed(player.teamId) ?? 0,
+      gameweekId,
+      recentMinutes,
+    );
     // `form` averages over all of the club's recent matches, so absences are
     // already priced in; `points_per_game` only counts appearances.
     final formScore =
@@ -875,6 +894,7 @@ class RecommendationEngine {
     var next = 0.0;
     var nextCount = 0;
     var nextDifficulties = const <int>[];
+    var nextLoad = 0.0;
 
     for (var offset = 0; offset < 3; offset++) {
       final eventFixtures = fixtures
@@ -914,6 +934,7 @@ class RecommendationEngine {
         next = eventScore;
         nextCount = eventFixtures.length;
         nextDifficulties = difficulties;
+        nextLoad = fixtureFactor;
       }
     }
 
@@ -924,6 +945,7 @@ class RecommendationEngine {
       availability: availability,
       nextFixtureCount: nextCount,
       nextDifficulties: nextDifficulties,
+      nextFixtureLoad: nextLoad,
     );
   }
 
@@ -1235,10 +1257,15 @@ class RecommendationEngine {
   /// dominate so a new starter or a dropped player is picked up quickly.
   double _minutesShare(
     FplPlayer player,
+    int teamMatches,
     int gameweekId,
     List<int>? recentMinutes,
   ) {
-    final matches = (gameweekId - 1).clamp(1, 38);
+    // The club's own finished matches cover blanks, doubles and postponed
+    // games; the Gameweek count is only a fallback.
+    final matches = teamMatches > 0
+        ? teamMatches
+        : (gameweekId - 1).clamp(1, 38);
     final minutesShare = player.minutes / (90 * matches);
     // Starting earns the full appearance points and keeps a clean sheet even
     // when subbed after 60 minutes, so the start rate counts as much as
@@ -1393,67 +1420,38 @@ class _Underlying {
   final double defenceShare;
 }
 
-/// Opponent strength relative to the league average, from the official
-/// team `strength_attack_*` and `strength_defence_*` ratings.
+/// Fixture multipliers from [TeamRatings]: attacking returns follow the
+/// side's expected goals and defensive returns its clean-sheet chance, both
+/// relative to an average fixture.
 class _TeamStrengths {
-  const _TeamStrengths(this._teams, this._averageAttack, this._averageDefence);
+  const _TeamStrengths(this._ratings);
 
-  /// Exponent that widens the ratings' narrow spread into a fixture swing.
-  static const _sensitivity = 2.0;
-  static const _missingRating = 1000;
   static const _minFactor = 0.6;
   static const _maxFactor = 1.5;
 
-  final Map<int, FplTeam> _teams;
-  final double _averageAttack;
-  final double _averageDefence;
+  final TeamRatings _ratings;
 
-  static _TeamStrengths? from(Map<int, FplTeam> teams) {
-    // Missing ratings parse as 1000 for all four fields.
-    final rated = {
-      for (final team in teams.values)
-        if ({
-          team.strengthAttackHome,
-          team.strengthAttackAway,
-          team.strengthDefenceHome,
-          team.strengthDefenceAway,
-        }.any((rating) => rating != _missingRating))
-          team.id: team,
-    };
-    final attack = rated.values.expand(
-      (team) => [team.strengthAttackHome, team.strengthAttackAway],
-    );
-    final defence = rated.values.expand(
-      (team) => [team.strengthDefenceHome, team.strengthDefenceAway],
-    );
-    if (rated.length < 2 ||
-        (attack.toSet().length < 2 && defence.toSet().length < 2)) {
-      return null;
-    }
-    double average(Iterable<int> values) =>
-        values.fold(0, (total, value) => total + value) / values.length;
-    // Pooled over both venues so home advantage is kept in the factors.
-    return _TeamStrengths(rated, average(attack), average(defence));
-  }
+  static _TeamStrengths? from(TeamRatings ratings) =>
+      identical(ratings, TeamRatings.empty) ? null : _TeamStrengths(ratings);
+
+  int matchesPlayed(int teamId) => _ratings.matchesPlayed(teamId);
 
   /// (attack, defence) multipliers for [teamId] in [fixture], or null when
   /// either side has no rating.
   (double, double)? factors(int teamId, FplFixture fixture) {
     final isHome = teamId == fixture.homeTeamId;
-    if (!_teams.containsKey(teamId)) return null;
-    final opponent = _teams[isHome ? fixture.awayTeamId : fixture.homeTeamId];
-    if (opponent == null) return null;
-    final opponentAttack = isHome
-        ? opponent.strengthAttackAway
-        : opponent.strengthAttackHome;
-    final opponentDefence = isHome
-        ? opponent.strengthDefenceAway
-        : opponent.strengthDefenceHome;
-    double scale(double ratio) =>
-        math.pow(ratio, _sensitivity).toDouble().clamp(_minFactor, _maxFactor);
+    final opponentId = isHome ? fixture.awayTeamId : fixture.homeTeamId;
+    if (!_ratings.isRated(teamId) || !_ratings.isRated(opponentId)) {
+      return null;
+    }
+    final (homeGoals, awayGoals) = _ratings.expectedGoals(fixture);
+    final scored = isHome ? homeGoals : awayGoals;
+    final conceded = isHome ? awayGoals : homeGoals;
+    final average = _ratings.averageGoals;
     return (
-      scale(_averageDefence / opponentDefence),
-      scale(_averageAttack / opponentAttack),
+      (scored / average).clamp(_minFactor, _maxFactor),
+      // Ratio of clean-sheet chances: e^-conceded against e^-average.
+      math.exp(average - conceded).clamp(_minFactor, _maxFactor),
     );
   }
 }

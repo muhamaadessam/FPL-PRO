@@ -98,6 +98,62 @@ void main() {
     expect(prediction.confidence, inInclusiveRange(40, 85));
     expect(prediction.homeCleanSheetChance, inInclusiveRange(5, 75));
   });
+
+  test('keeps the scoreline consistent with the result probabilities', () {
+    final prediction = engine.predict(
+      fixture: _fixture(1, 5),
+      teams: teams,
+      players: players,
+    );
+
+    expect(
+      prediction.homeWinChance +
+          prediction.drawChance +
+          prediction.awayWinChance,
+      inInclusiveRange(99, 101),
+    );
+    expect(prediction.homeWinChance, greaterThan(prediction.awayWinChance));
+    expect(prediction.homeGoals, greaterThan(prediction.awayGoals));
+    expect(prediction.confidence, prediction.homeWinChance);
+    expect(
+      prediction.homeExpectedGoals,
+      greaterThan(prediction.awayExpectedGoals),
+    );
+  });
+
+  test('an injured finisher lowers the side and leaves the scorer list', () {
+    final injured = {
+      ...players,
+      1: const FplPlayer(
+        id: 1,
+        webName: 'Finisher',
+        teamId: 1,
+        positionId: 4,
+        status: 'i',
+        minutes: 900,
+        starts: 10,
+        goalsScored: 7,
+        expectedGoals: 8,
+        expectedAssists: 2,
+      ),
+    };
+    final fit = engine.predict(
+      fixture: _fixture(1, 5),
+      teams: teams,
+      players: players,
+    );
+    final without = engine.predict(
+      fixture: _fixture(1, 5),
+      teams: teams,
+      players: injured,
+    );
+
+    expect(without.homeExpectedGoals, lessThan(fit.homeExpectedGoals));
+    expect(
+      without.homeScorers.map((event) => event.player.webName),
+      isNot(contains('Finisher')),
+    );
+  });
 }
 
 FplFixture _fixture(int id, int gameweek, {bool started = false}) {
