@@ -331,6 +331,9 @@ class _FakeFixturesRepository implements FixturesRepository {
   }
 
   @override
+  Future<Map<int, int>> getGameweekMinutes(int gameweekId) async => const {};
+
+  @override
   Future<Map<int, int>> getEntryHistoryPoints(int entryId) async {
     if (historyJson != null) return parseEntryHistoryPoints(historyJson!);
     throw StateError('history is supplementary');

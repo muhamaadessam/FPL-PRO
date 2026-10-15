@@ -77,12 +77,21 @@ class RecommendationsCubit extends Cubit<RecommendationsState> {
           }),
         ),
       );
-      final result = const RecommendationEngine().build(
+      const engine = RecommendationEngine();
+      final projections = engine.buildPlayerProjections(
+        bootstrap: bootstrap,
+        fixtures: fixtures,
+        gameweekId: gameweek.id,
+        playerSummaries: playerSummaries,
+        recentGameweekMinutes: await _recentGameweekMinutes(bootstrap),
+      );
+      final result = engine.build(
         bootstrap: bootstrap,
         fixtures: fixtures,
         team: team,
         gameweekId: gameweek.id,
         playerSummaries: playerSummaries,
+        precomputedProjections: projections,
       );
       if (isClosed) return;
       emit(
@@ -94,6 +103,7 @@ class RecommendationsCubit extends Cubit<RecommendationsState> {
             bootstrap: bootstrap,
             team: team,
             fixtures: fixtures,
+            projections: projections,
             updatedAt: DateTime.now(),
           ),
         ),
@@ -102,6 +112,34 @@ class RecommendationsCubit extends Cubit<RecommendationsState> {
       if (isClosed) return;
       emit(state.copyWith(status: RecommendationsStatus.failure, error: error));
     }
+  }
+
+  /// Live minutes for every player in the latest finished Gameweeks, so
+  /// transfer targets are judged on recent minutes like the squad is. A
+  /// Gameweek that fails to load is skipped.
+  Future<Map<int, Map<int, int>>> _recentGameweekMinutes(
+    FplBootstrap bootstrap,
+  ) async {
+    final finished =
+        bootstrap.gameweeks
+            .where((gameweek) => gameweek.finished)
+            .map((gameweek) => gameweek.id)
+            .toList()
+          ..sort();
+    final recent = finished.reversed.take(5).toList(growable: false);
+    final minutes = await Future.wait(
+      recent.map((id) async {
+        try {
+          return MapEntry(id, await fixturesRepository.getGameweekMinutes(id));
+        } on Object {
+          return null;
+        }
+      }),
+    );
+    return {
+      for (final entry in minutes.nonNulls)
+        if (entry.value.isNotEmpty) entry.key: entry.value,
+    };
   }
 
   Gameweek _nextGameweek(FplBootstrap bootstrap) {

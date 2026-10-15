@@ -144,7 +144,9 @@ class _NextGameweekAnalysisPageState extends State<NextGameweekAnalysisPage>
     final l10n = AppLocalizations.of(context);
     final chanceText =
         '${chance ?? (player.projection.availability * 100).round()}%';
-    final news = fplPlayer.news.isNotEmpty ? fplPlayer.news : l10n.noNews;
+    final news = fplPlayer.news.isNotEmpty
+        ? l10n.playerNews(fplPlayer.news)
+        : l10n.noNews;
 
     showDialog(
       context: context,
@@ -175,12 +177,15 @@ class _NextGameweekAnalysisPageState extends State<NextGameweekAnalysisPage>
         .firstOrNull;
     if (current == null) return;
 
-    final projections = const RecommendationEngine()
-        .buildPlayerProjections(
-          bootstrap: widget.data.bootstrap,
-          fixtures: widget.data.fixtures,
-          gameweekId: widget.data.result.gameweekId,
-        )
+    final data = widget.data;
+    final allProjections = data.projections.isNotEmpty
+        ? data.projections
+        : const RecommendationEngine().buildPlayerProjections(
+            bootstrap: data.bootstrap,
+            fixtures: data.fixtures,
+            gameweekId: data.result.gameweekId,
+          );
+    final projections = allProjections
         .where(
           (projection) =>
               projection.player.positionId ==
@@ -1330,7 +1335,7 @@ class _AlertPlayerRow extends StatelessWidget {
     };
     final chance = player.nextRoundChanceOfPlaying;
     final details = player.news.trim().isNotEmpty
-        ? player.news.trim()
+        ? l10n.playerNews(player.news)
         : chance != null
             ? l10n.chanceOfPlaying(chance)
             : status;

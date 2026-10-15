@@ -469,6 +469,65 @@ void main() {
           stats: {'news': news, 'chance_of_playing_next_round': 0},
         );
 
+    test('sells two players together to afford a premium one', () {
+      final result = _build(
+        players: [
+          _player(1, 'Weak A', 1, 3, 50, 2),
+          _player(2, 'Weak B', 2, 3, 50, 2),
+          _player(3, 'Star', 3, 3, 90, 10),
+          _player(4, 'Budget', 4, 3, 10, 3),
+          _player(5, 'Mid 1', 5, 3, 50, 5),
+          _player(6, 'Mid 2', 6, 3, 50, 5),
+        ],
+        picks: [_pick(1, 1, 3), _pick(2, 2, 3)],
+        transfers: {'bank': 0, 'limit': 2, 'made': 0},
+        fixtures: _fixturesFor(teams: [1, 2, 3, 4, 5, 6]),
+      );
+
+      expect(result.transfers.map((transfer) => transfer.inPlayer.id).toSet(), {
+        3,
+        4,
+      });
+      expect(result.transfers.first.inPlayer.id, 3);
+    });
+
+    test('judges recent minutes for every player from live data', () {
+      Map<int, double> nextPoints(Map<int, Map<int, int>> minutes) {
+        final result = const RecommendationEngine().buildPlayerProjections(
+          bootstrap: _bootstrap([
+            _player(1, 'Dropped', 1, 3, 50, 5, epNext: 0),
+            _player(2, 'Regular', 3, 3, 50, 5, epNext: 0),
+          ]),
+          fixtures: [
+            for (final event in [2, 3, 4])
+              for (final home in [1, 3])
+                FplFixture.fromJson({
+                  'id': event * 100 + home,
+                  'event': event,
+                  'team_h': home,
+                  'team_a': home + 1,
+                  'finished': true,
+                  'team_h_score': 1,
+                  'team_a_score': 1,
+                }),
+            _fixture(5, 1, 2),
+            _fixture(5, 3, 4),
+          ],
+          gameweekId: 5,
+          recentGameweekMinutes: minutes,
+        );
+        return {for (final p in result) p.player.id: p.nextPoints};
+      }
+
+      final points = nextPoints({
+        for (final event in [2, 3, 4]) event: {1: 0, 2: 90},
+      });
+      expect(points[1]!, lessThan(points[2]! * 0.8));
+      // Without live minutes both fall back to the same season numbers.
+      final fallback = nextPoints(const {});
+      expect(fallback[1], closeTo(fallback[2]!, 0.001));
+    });
+
     test(
       'keeps a player due back next week and sells the long-term injury',
       () {

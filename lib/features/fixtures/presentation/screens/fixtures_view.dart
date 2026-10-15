@@ -91,15 +91,34 @@ class _FixtureList extends StatefulWidget {
 class _FixtureListState extends State<_FixtureList> {
   late int _selectedGameweekId;
 
+  /// Rebuilt only when the data changes, not on every Gameweek switch.
+  late Map<int, FixturePrediction> _predictions;
+
   @override
   void initState() {
     super.initState();
     _selectedGameweekId = widget.gameweekId;
+    _predictions = _predict();
+  }
+
+  Map<int, FixturePrediction> _predict() {
+    return const FixturePredictionEngine().predictNextGameweeks(
+      fixtures: widget.fixtures,
+      teams: widget.teams,
+      players: widget.players,
+      fromGameweekId: widget.gameweekId,
+    );
   }
 
   @override
   void didUpdateWidget(covariant _FixtureList oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!identical(widget.fixtures, oldWidget.fixtures) ||
+        !identical(widget.teams, oldWidget.teams) ||
+        !identical(widget.players, oldWidget.players) ||
+        widget.gameweekId != oldWidget.gameweekId) {
+      _predictions = _predict();
+    }
     if (!widget.gameweeks.any(
       (gameweek) => gameweek.id == _selectedGameweekId,
     )) {
@@ -141,12 +160,7 @@ class _FixtureListState extends State<_FixtureList> {
     final canGoNext =
         selectedGameweekIndex >= 0 &&
         selectedGameweekIndex < widget.gameweeks.length - 1;
-    final predictions = const FixturePredictionEngine().predictNextGameweeks(
-      fixtures: widget.fixtures,
-      teams: widget.teams,
-      players: widget.players,
-      fromGameweekId: widget.gameweekId,
-    );
+    final predictions = _predictions;
 
     return RefreshIndicator(
       onRefresh: () async {

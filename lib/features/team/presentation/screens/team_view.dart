@@ -1378,8 +1378,8 @@ class _TeamListView extends StatelessWidget {
                   ],
                 ),
                 if (isUnavailable)
-                  const Text(
-                    'Unavailable',
+                  Text(
+                    AppLocalizations.of(context).unavailable,
                     style: TextStyle(
                       fontSize: 11,
                       color: Color(0xffdc2626),
@@ -1388,7 +1388,9 @@ class _TeamListView extends StatelessWidget {
                   )
                 else if (isDoubtful)
                   Text(
-                    player?.news.isNotEmpty == true ? player!.news : 'Doubtful',
+                    player?.news.isNotEmpty == true
+                        ? AppLocalizations.of(context).playerNews(player!.news)
+                        : AppLocalizations.of(context).doubtful,
                     style: const TextStyle(
                       fontSize: 11,
                       color: Color(0xfff59e0b),

@@ -895,6 +895,7 @@ class _TopPicksTab extends StatelessWidget {
                   bootstrap: data.bootstrap,
                   fixtures: data.fixtures,
                   gameweekId: data.result.gameweekId,
+                  projections: data.projections,
                 ),
               ),
             ),
@@ -2176,7 +2177,7 @@ class _TransferAvailabilityNote extends StatelessWidget {
     final status = projection.isShortTermAbsence
         ? l10n.backSoon
         : (unavailable ? l10n.unavailable : l10n.doubtful);
-    final news = player.news.trim();
+    final news = l10n.playerNews(player.news);
 
     return Padding(
       padding: const EdgeInsetsDirectional.only(start: 31, top: 4),

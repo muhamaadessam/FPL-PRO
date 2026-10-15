@@ -213,6 +213,11 @@ class RecommendationEngine {
   static const _maxFreeTransfers = 5;
   static const _maxSuggestedTransfers = 3;
 
+  /// Targets per position searched for two-transfer combinations, and the
+  /// extra gain a pair must show over two greedy moves.
+  static const _pairPoolSize = 15;
+  static const _pairMargin = 0.5;
+
   /// Gameweeks covered by the horizon projection.
   static const _horizon = 3;
 
@@ -275,13 +280,16 @@ class RecommendationEngine {
   /// Weight of the season start rate against the season minutes share.
   static const _startRateWeight = 0.5;
 
-  /// [playerSummaries] supplies recent match minutes where available, which
-  /// outweigh season-long minutes for those players.
+  /// Recent minutes outweigh season-long minutes. [recentGameweekMinutes]
+  /// (Gameweek id → player id → minutes, from the live endpoint) covers every
+  /// player alike, so it is preferred; [playerSummaries] is the fallback and
+  /// only covers the players it holds.
   List<PlayerProjection> buildPlayerProjections({
     required FplBootstrap bootstrap,
     required List<FplFixture> fixtures,
     required int gameweekId,
     Map<int, FplPlayerSummary> playerSummaries = const {},
+    Map<int, Map<int, int>> recentGameweekMinutes = const {},
   }) {
     final strengths = _TeamStrengths.from(
       TeamRatings.from(
@@ -294,6 +302,7 @@ class RecommendationEngine {
       for (final gameweek in bootstrap.gameweeks)
         gameweek.id: gameweek.deadlineTime,
     };
+    final recentGameweeks = _recentGameweeks(recentGameweekMinutes, fixtures);
     final projections =
         bootstrap.players.values
             .map(
@@ -303,7 +312,9 @@ class RecommendationEngine {
                 gameweekId,
                 deadlines,
                 strengths,
-                _recentMinutes(playerSummaries[player.id]),
+                recentGameweeks.isEmpty
+                    ? _summaryMinutes(playerSummaries[player.id])
+                    : _liveMinutes(player, recentGameweeks),
                 bootstrap.scoring,
               ),
             )
@@ -312,15 +323,58 @@ class RecommendationEngine {
     return List.unmodifiable(projections);
   }
 
-  /// Minutes in the player's most recent matches, oldest first.
-  List<int>? _recentMinutes(FplPlayerSummary? summary) {
+  /// (minutes, matches) over the player's most recent matches.
+  (int, int)? _summaryMinutes(FplPlayerSummary? summary) {
     if (summary == null || summary.history.isEmpty) return null;
     final history = [...summary.history]
       ..sort((a, b) => a.round.compareTo(b.round));
-    return history
-        .skip(math.max(0, history.length - _recentMatches))
-        .map((match) => match.minutes)
-        .toList(growable: false);
+    final recent = history.skip(math.max(0, history.length - _recentMatches));
+    return (
+      recent.fold(0, (total, match) => total + match.minutes),
+      recent.length,
+    );
+  }
+
+  /// The latest [_recentMatches] Gameweeks with live minutes, each with the
+  /// clubs' match counts so blanks and doubles are scaled correctly.
+  List<(Map<int, int>, Map<int, int>)> _recentGameweeks(
+    Map<int, Map<int, int>> minutesByGameweek,
+    List<FplFixture> fixtures,
+  ) {
+    final ids = minutesByGameweek.keys.toList()..sort();
+    return [
+      for (final id in ids.reversed.take(_recentMatches))
+        (minutesByGameweek[id]!, _matchCounts(fixtures, id)),
+    ];
+  }
+
+  Map<int, int> _matchCounts(List<FplFixture> fixtures, int gameweekId) {
+    final counts = <int, int>{};
+    for (final fixture in fixtures) {
+      if (fixture.gameweekId != gameweekId ||
+          !(fixture.started || fixture.isFinished)) {
+        continue;
+      }
+      for (final team in [fixture.homeTeamId, fixture.awayTeamId]) {
+        counts[team] = (counts[team] ?? 0) + 1;
+      }
+    }
+    return counts;
+  }
+
+  (int, int)? _liveMinutes(
+    FplPlayer player,
+    List<(Map<int, int>, Map<int, int>)> gameweeks,
+  ) {
+    var minutes = 0;
+    var matches = 0;
+    for (final (minutesByPlayer, matchCounts) in gameweeks) {
+      final played = matchCounts[player.teamId] ?? 0;
+      if (played == 0) continue;
+      minutes += minutesByPlayer[player.id] ?? 0;
+      matches += played;
+    }
+    return matches == 0 ? null : (minutes, matches);
   }
 
   RecommendationResult build({
@@ -329,13 +383,18 @@ class RecommendationEngine {
     required MyTeam team,
     required int gameweekId,
     Map<int, FplPlayerSummary> playerSummaries = const {},
+    Map<int, Map<int, int>> recentGameweekMinutes = const {},
+    List<PlayerProjection>? precomputedProjections,
   }) {
-    final allProjections = buildPlayerProjections(
-      bootstrap: bootstrap,
-      fixtures: fixtures,
-      gameweekId: gameweekId,
-      playerSummaries: playerSummaries,
-    );
+    final allProjections =
+        precomputedProjections ??
+        buildPlayerProjections(
+          bootstrap: bootstrap,
+          fixtures: fixtures,
+          gameweekId: gameweekId,
+          playerSummaries: playerSummaries,
+          recentGameweekMinutes: recentGameweekMinutes,
+        );
     final projections = {
       for (final projection in allProjections) projection.player.id: projection,
     };
@@ -901,7 +960,7 @@ class RecommendationEngine {
     int gameweekId,
     Map<int, DateTime?> deadlines,
     _TeamStrengths? strengths,
-    List<int>? recentMinutes,
+    (int, int)? recentMinutes,
     FplScoring scoring,
   ) {
     final availability = _availability(player);
@@ -1035,8 +1094,10 @@ class RecommendationEngine {
     );
   }
 
-  /// Greedily builds a transfer plan whose moves are valid together: they
-  /// share one bank, respect the club limit and never reuse a player.
+  /// Builds a transfer plan whose moves are valid together: they share one
+  /// bank, respect the club limit and never reuse a player. Moves are picked
+  /// greedily, except that the first two may be a pair that only works
+  /// together, such as selling two players to afford a premium one.
   List<TransferSuggestion> _planTransfers({
     required MyTeam team,
     required FplBootstrap bootstrap,
@@ -1047,54 +1108,181 @@ class RecommendationEngine {
     required double Function(int index, int hitCost) minGainFor,
   }) {
     final squadIds = team.picks.map((pick) => pick.elementId).toSet();
-    final clubCounts = <int, int>{};
+    final startingClubCounts = <int, int>{};
     for (final id in squadIds) {
       final player = bootstrap.players[id];
       if (player == null) continue;
-      clubCounts[player.teamId] = (clubCounts[player.teamId] ?? 0) + 1;
+      startingClubCounts[player.teamId] =
+          (startingClubCounts[player.teamId] ?? 0) + 1;
     }
-    var bank = team.transfers.bank ?? 0;
-    final outgoingIds = <int>{};
-    final incomingIds = <int>{};
-    final plan = <TransferSuggestion>[];
+    final startingBank = team.transfers.bank ?? 0;
 
-    while (plan.length < maxTransfers) {
-      final hitCost = hitCostFor(plan.length);
-      _Upgrade? best;
-      for (final pick in team.picks) {
-        if (outgoingIds.contains(pick.elementId)) continue;
-        final upgrade = _bestUpgrade(
-          pick: pick,
-          bootstrap: bootstrap,
-          projections: projections,
-          excludedIds: {...squadIds, ...incomingIds},
-          bank: bank,
-          clubCounts: clubCounts,
-          benchWeight: benchWeight,
+    List<TransferSuggestion> run(List<_Upgrade> opening) {
+      final clubCounts = {...startingClubCounts};
+      var bank = startingBank;
+      final outgoingIds = <int>{};
+      final incomingIds = <int>{};
+      final plan = <TransferSuggestion>[];
+      void apply(_Upgrade move) {
+        plan.add(
+          TransferSuggestion(
+            outProjection: move.outProjection,
+            inProjection: move.inProjection,
+            projectedGain: move.gain,
+            hitCost: hitCostFor(plan.length),
+          ),
         );
-        if (upgrade != null && (best == null || upgrade.gain > best.gain)) {
-          best = upgrade;
+        final outPlayer = move.outProjection.player;
+        final inPlayer = move.inProjection.player;
+        bank += move.sellingPrice - move.cost;
+        outgoingIds.add(outPlayer.id);
+        incomingIds.add(inPlayer.id);
+        clubCounts[outPlayer.teamId] = (clubCounts[outPlayer.teamId] ?? 1) - 1;
+        clubCounts[inPlayer.teamId] = (clubCounts[inPlayer.teamId] ?? 0) + 1;
+      }
+
+      opening.forEach(apply);
+      while (plan.length < maxTransfers) {
+        _Upgrade? best;
+        for (final pick in team.picks) {
+          if (outgoingIds.contains(pick.elementId)) continue;
+          final upgrade = _bestUpgrade(
+            pick: pick,
+            bootstrap: bootstrap,
+            projections: projections,
+            excludedIds: {...squadIds, ...incomingIds},
+            bank: bank,
+            clubCounts: clubCounts,
+            benchWeight: benchWeight,
+          );
+          if (upgrade != null && (best == null || upgrade.gain > best.gain)) {
+            best = upgrade;
+          }
+        }
+        if (best == null ||
+            best.gain < minGainFor(plan.length, hitCostFor(plan.length))) {
+          break;
+        }
+        apply(best);
+      }
+      return plan;
+    }
+
+    final greedy = run(const []);
+    if (maxTransfers < 2) return greedy;
+    final pair = _bestPair(
+      team: team,
+      bootstrap: bootstrap,
+      projections: projections,
+      squadIds: squadIds,
+      bank: startingBank,
+      clubCounts: startingClubCounts,
+      benchWeight: benchWeight,
+    );
+    if (pair == null) return greedy;
+    final pairGain = pair.$1.gain + pair.$2.gain;
+    final greedyGain = greedy
+        .take(2)
+        .fold(0.0, (total, move) => total + move.projectedGain);
+    final required =
+        minGainFor(0, hitCostFor(0)) + minGainFor(1, hitCostFor(1));
+    if (pairGain < required || pairGain <= greedyGain + _pairMargin) {
+      return greedy;
+    }
+    // The stronger move first, so a one-transfer reading still makes sense.
+    return run(
+      pair.$1.gain >= pair.$2.gain ? [pair.$1, pair.$2] : [pair.$2, pair.$1],
+    );
+  }
+
+  /// Best two moves made together, searching each position's strongest
+  /// [_pairPoolSize] targets.
+  (_Upgrade, _Upgrade)? _bestPair({
+    required MyTeam team,
+    required FplBootstrap bootstrap,
+    required Map<int, PlayerProjection> projections,
+    required Set<int> squadIds,
+    required int bank,
+    required Map<int, int> clubCounts,
+    required double benchWeight,
+  }) {
+    final pools = <int, List<PlayerProjection>>{};
+    for (final candidate in projections.values) {
+      final player = candidate.player;
+      if (squadIds.contains(player.id) ||
+          !player.canSelect ||
+          candidate.availability < 0.5 ||
+          player.nowCost == null) {
+        continue;
+      }
+      pools.putIfAbsent(player.positionId, () => []).add(candidate);
+    }
+    for (final pool in pools.values) {
+      pool.sort((a, b) => b.horizonPoints.compareTo(a.horizonPoints));
+      if (pool.length > _pairPoolSize) {
+        pool.removeRange(_pairPoolSize, pool.length);
+      }
+    }
+
+    final sellable = [
+      for (final pick in team.picks)
+        if (pick.sellingPrice != null && projections[pick.elementId] != null)
+          (pick, projections[pick.elementId]!),
+    ];
+    (_Upgrade, _Upgrade)? best;
+    var bestGain = 0.0;
+    for (var i = 0; i < sellable.length; i++) {
+      for (var j = i + 1; j < sellable.length; j++) {
+        final (firstPick, firstOut) = sellable[i];
+        final (secondPick, secondOut) = sellable[j];
+        final budget =
+            firstPick.sellingPrice! + secondPick.sellingPrice! + bank;
+        final firstWeight = firstPick.position > 11 ? benchWeight : 1.0;
+        final secondWeight = secondPick.position > 11 ? benchWeight : 1.0;
+        int clubAfter(int club, PlayerProjection a, PlayerProjection b) =>
+            (clubCounts[club] ?? 0) -
+            (firstOut.player.teamId == club ? 1 : 0) -
+            (secondOut.player.teamId == club ? 1 : 0) +
+            (a.player.teamId == club ? 1 : 0) +
+            (b.player.teamId == club ? 1 : 0);
+        for (final a in pools[firstOut.player.positionId] ?? const []) {
+          final firstGain =
+              (a.horizonPoints - firstOut.horizonPoints) * firstWeight;
+          for (final b in pools[secondOut.player.positionId] ?? const []) {
+            if (a.player.id == b.player.id ||
+                a.player.nowCost! + b.player.nowCost! > budget) {
+              continue;
+            }
+            final gain =
+                firstGain +
+                (b.horizonPoints - secondOut.horizonPoints) * secondWeight;
+            if (gain <= bestGain ||
+                clubAfter(a.player.teamId, a, b) > 3 ||
+                clubAfter(b.player.teamId, a, b) > 3) {
+              continue;
+            }
+            bestGain = gain;
+            best = (
+              _Upgrade(
+                outProjection: firstOut,
+                inProjection: a,
+                gain: firstGain,
+                cost: a.player.nowCost!,
+                sellingPrice: firstPick.sellingPrice!,
+              ),
+              _Upgrade(
+                outProjection: secondOut,
+                inProjection: b,
+                gain: gain - firstGain,
+                cost: b.player.nowCost!,
+                sellingPrice: secondPick.sellingPrice!,
+              ),
+            );
+          }
         }
       }
-      if (best == null || best.gain < minGainFor(plan.length, hitCost)) break;
-
-      plan.add(
-        TransferSuggestion(
-          outProjection: best.outProjection,
-          inProjection: best.inProjection,
-          projectedGain: best.gain,
-          hitCost: hitCost,
-        ),
-      );
-      final outPlayer = best.outProjection.player;
-      final inPlayer = best.inProjection.player;
-      bank += best.sellingPrice - best.cost;
-      outgoingIds.add(outPlayer.id);
-      incomingIds.add(inPlayer.id);
-      clubCounts[outPlayer.teamId] = (clubCounts[outPlayer.teamId] ?? 1) - 1;
-      clubCounts[inPlayer.teamId] = (clubCounts[inPlayer.teamId] ?? 0) + 1;
     }
-    return plan;
+    return best;
   }
 
   _Upgrade? _bestUpgrade({
@@ -1305,7 +1493,7 @@ class RecommendationEngine {
     FplPlayer player,
     int teamMatches,
     int gameweekId,
-    List<int>? recentMinutes,
+    (int, int)? recentMinutes,
   ) {
     // The club's own finished matches cover blanks, doubles and postponed
     // games; the Gameweek count is only a fallback.
@@ -1320,10 +1508,8 @@ class RecommendationEngine {
         minutesShare * (1 - _startRateWeight) +
         (player.starts / matches).clamp(0.0, 1.0) * _startRateWeight;
     final season = player.minutes == 0 ? 0.55 : played.clamp(0.45, 1.0);
-    if (recentMinutes == null || recentMinutes.isEmpty) return season;
-    final recent =
-        recentMinutes.fold(0, (total, minutes) => total + minutes) /
-        (90 * recentMinutes.length);
+    if (recentMinutes == null || recentMinutes.$2 == 0) return season;
+    final recent = (recentMinutes.$1 / (90 * recentMinutes.$2)).clamp(0.0, 1.0);
     return (recent * _recentMinutesWeight + season * (1 - _recentMinutesWeight))
         .clamp(0.2, 1.0);
   }
