@@ -85,6 +85,148 @@ void main() {
     expect(entry.leagues.last.lastRank, 3);
   });
 
+  group('a manager whose first gameweek has not started', () {
+    // Shapes taken from the live API for an entry that joined in GW7 while
+    // GW6 was the current gameweek.
+    const entryJson = <String, dynamic>{
+      'id': 11089273,
+      'joined_time': '2026-10-15T08:09:44.052338Z',
+      'started_event': 7,
+      'player_first_name': 'New',
+      'player_last_name': 'Manager',
+      'name': null,
+      'years_active': 0,
+      'summary_overall_points': null,
+      'summary_overall_rank': null,
+      'summary_event_points': null,
+      'summary_event_rank': null,
+      'current_event': 6,
+      'leagues': {
+        'classic': [
+          {
+            'id': 15,
+            'name': 'Man City',
+            'short_name': 'team-15',
+            'rank': null,
+            'max_entries': null,
+            'league_type': 's',
+            'scoring': 'c',
+            'admin_entry': null,
+            'rank_count': 714759,
+            'entry_percentile_rank': null,
+            'entry_rank': 0,
+            'entry_last_rank': 0,
+          },
+        ],
+        'h2h': [],
+        'cup': {'matches': [], 'status': {}},
+        'cup_matches': [],
+      },
+    };
+
+    test('parses the entry with null summary and zero league ranks', () {
+      final entry = FplEntry.fromJson(entryJson);
+
+      expect(entry.id, 11089273);
+      expect(entry.name, isEmpty);
+      expect(entry.playerFullName, 'New Manager');
+      expect(entry.summaryOverallPoints, isNull);
+      expect(entry.summaryOverallRank, isNull);
+      expect(entry.summaryEventPoints, isNull);
+      expect(entry.startedEvent, 7);
+      expect(entry.hasStartedBy(6), isFalse);
+      expect(entry.hasStartedBy(7), isTrue);
+      expect(entry.leagues.single.currentRank, isNull);
+      expect(entry.leagues.single.lastRank, isNull);
+      expect(entry.leagues.single.rankCount, 714759);
+    });
+
+    test('treats an entry without started_event as already playing', () {
+      final entry = FplEntry.fromJson(const {'id': 1, 'started_event': null});
+
+      expect(entry.startedEvent, isNull);
+      expect(entry.hasStartedBy(1), isTrue);
+    });
+
+    test('parses my-team without entry history or a transfer limit', () {
+      final team = MyTeam.fromJson({
+        'picks': [
+          {
+            'element': 10,
+            'position': 1,
+            'selling_price': 55,
+            'multiplier': 1,
+            'purchase_price': 55,
+            'is_captain': false,
+            'is_vice_captain': false,
+            'element_type': 1,
+          },
+        ],
+        'chips': [
+          {
+            'id': 1,
+            'status_for_entry': 'available',
+            'played_by_entry': [],
+            'name': 'wildcard',
+            'number': 1,
+            'start_event': 2,
+            'stop_event': 19,
+            'chip_type': 'transfer',
+          },
+        ],
+        'transfers': {
+          'cost': 4,
+          'status': 'unlimited',
+          'limit': null,
+          'made': 0,
+          'bank': 0,
+          'value': 1000,
+        },
+      });
+
+      expect(team.picks.single.elementId, 10);
+      expect(team.summary.gameweekId, 0);
+      expect(team.summary.points, 0);
+      expect(team.summary.overallRank, isNull);
+      expect(team.transfers.limit, isNull);
+      expect(team.transfers.bank, 0);
+      expect(team.activeChip, isNull);
+    });
+
+    test('parses empty history as no points', () {
+      expect(
+        parseEntryHistoryPoints(const {'current': [], 'past': [], 'chips': []}),
+        isEmpty,
+      );
+    });
+
+    test('surfaces 404 picks for the current gameweek', () async {
+      final dio = Dio()
+        ..httpClientAdapter = _FakeAdapter(
+          (_) => ResponseBody.fromString(
+            jsonEncode({'detail': 'Not found.'}),
+            404,
+            headers: {
+              Headers.contentTypeHeader: [Headers.jsonContentType],
+            },
+          ),
+        );
+
+      await expectLater(
+        TeamRepositoryImpl(
+          FplApiClient(dio: dio),
+        ).getPublicTeam(entryId: 11089273, gameweekId: 6),
+        throwsA(
+          isA<FplApiException>().having(
+            (error) => error.statusCode,
+            'statusCode',
+            404,
+          ),
+        ),
+      );
+    });
+  });
+
   test(
     'returns the first standings page without waiting for the rest',
     () async {

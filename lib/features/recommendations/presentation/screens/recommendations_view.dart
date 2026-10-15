@@ -113,6 +113,8 @@ String _errorMessage(BuildContext context, Object error) {
       l10n.rateLimited,
     FplApiException(:final kind) when kind == FplApiErrorKind.authentication =>
       l10n.authExpired,
+    FplApiException(:final statusCode) when statusCode == 404 =>
+      l10n.fplTeamSetupRequired,
     TeamAccessException() => l10n.entryIdInvalid,
     _ => l10n.genericError,
   };

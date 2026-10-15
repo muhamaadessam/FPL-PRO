@@ -112,6 +112,7 @@ class FplEntry {
     this.summaryOverallPoints,
     this.summaryOverallRank,
     this.summaryEventPoints,
+    this.startedEvent,
     this.leagues = const [],
   });
 
@@ -122,7 +123,16 @@ class FplEntry {
   final int? summaryOverallPoints;
   final int? summaryOverallRank;
   final int? summaryEventPoints;
+
+  /// The first gameweek this entry plays in. Managers who join mid-season
+  /// have no picks, points or history before it.
+  final int? startedEvent;
   final List<FplLeague> leagues;
+
+  /// Whether the entry had a squad in [gameweekId]. Unknown start events are
+  /// treated as started so older or partial payloads keep working.
+  bool hasStartedBy(int gameweekId) =>
+      startedEvent == null || startedEvent! <= gameweekId;
 
   String get playerFullName {
     final first = playerFirstName.trim();
@@ -145,8 +155,9 @@ class FplEntry {
       playerFirstName: json['player_first_name'] as String? ?? '',
       playerLastName: json['player_last_name'] as String? ?? '',
       summaryOverallPoints: _nullableInt(json['summary_overall_points']),
-      summaryOverallRank: _nullableInt(json['summary_overall_rank']),
+      summaryOverallRank: _positiveInt(json['summary_overall_rank']),
       summaryEventPoints: _nullableInt(json['summary_event_points']),
+      startedEvent: _positiveInt(json['started_event']),
       leagues: leagues,
     );
   }
@@ -186,8 +197,8 @@ class FplLeague {
       leagueType: json['league_type'] as String? ?? '',
       scoring: json['scoring'] as String? ?? '',
       isHeadToHead: isHeadToHead,
-      currentRank: _nullableInt(json['entry_rank']),
-      lastRank: _nullableInt(json['entry_last_rank']),
+      currentRank: _positiveInt(json['entry_rank']),
+      lastRank: _positiveInt(json['entry_last_rank']),
       rankCount: _nullableInt(json['rank_count']),
     );
   }
@@ -426,4 +437,11 @@ int _int(dynamic value) => value is int ? value : int.tryParse('$value') ?? 0;
 int? _nullableInt(dynamic value) {
   if (value == null) return null;
   return _int(value);
+}
+
+/// Ranks and gameweek ids start at 1; the API sends 0 or null for entries that
+/// have not played yet.
+int? _positiveInt(dynamic value) {
+  final parsed = _nullableInt(value);
+  return parsed == null || parsed <= 0 ? null : parsed;
 }

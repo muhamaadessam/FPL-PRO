@@ -587,6 +587,14 @@ class AppLocalizations {
 
   String gameweekLabel(int id) => '${isArabic ? 'الأسبوع' : 'Gameweek'} $id';
 
+  String firstGameweekPending(int id) => isArabic
+      ? 'موسمك لسه ما بدأش. أول جولة ليك هي الأسبوع $id، والنقاط هتظهر بعد ما تبدأ.'
+      : 'Your season hasn\'t started yet. Your first gameweek is Gameweek $id; points appear once it kicks off.';
+
+  String managerNotStarted(int id) => isArabic
+      ? 'المدرب ده لسه ما لعبش أي جولة. أول جولة ليه هي الأسبوع $id.'
+      : 'This manager hasn\'t played a gameweek yet. Their first gameweek is Gameweek $id.';
+
   String pointsLabel(int value) => '$value $points';
 
   String kickoffLabel(DateTime? dateTime) {

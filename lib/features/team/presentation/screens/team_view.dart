@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -44,7 +46,7 @@ class TeamView extends StatelessWidget {
                   entry: preload?.entry,
                   gameweekPoints: preload?.gameweekPoints ?? const {},
                   historyPoints: preload?.historyPoints ?? const {},
-                  selectedGameweekId: preload?.bootstrap?.currentGameweekId,
+                  selectedGameweekId: preload?.homeGameweekId,
                 )
               : null,
         );
@@ -119,6 +121,8 @@ String _errorMessage(BuildContext context, Object error) {
     if (error.kind == FplApiErrorKind.network) return l10n.networkError;
     if (error.kind == FplApiErrorKind.rateLimited) return l10n.rateLimited;
     if (error.kind == FplApiErrorKind.authentication) return l10n.authExpired;
+  } else if (error is TeamNotStartedException) {
+    return l10n.managerNotStarted(error.firstGameweekId);
   } else if (error is TeamAccessException) {
     if (error.error == TeamAccessError.entryIdMissing) {
       return l10n.entryIdMissing;
@@ -218,6 +222,7 @@ class _TeamContentState extends State<_TeamContent> {
                               showBackButton: widget.entryId != null,
                               selectedGameweekId: widget.selectedGameweekId,
                               bootstrap: widget.bootstrap,
+                              firstGameweekId: widget.entry?.startedEvent,
                               onGameweekChanged: widget.onGameweekChanged,
                               onManage: widget.entryId == null
                                   ? () => _openManageTeam(context)
@@ -227,6 +232,19 @@ class _TeamContentState extends State<_TeamContent> {
                         ),
                       ),
                       SizedBox(height: headerToStats),
+                      if (widget.entryId == null &&
+                          !(widget.entry?.hasStartedBy(
+                                widget.bootstrap.currentGameweekId,
+                              ) ??
+                              true)) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: _FirstGameweekNotice(
+                            firstGameweekId: widget.entry!.startedEvent!,
+                          ),
+                        ),
+                        SizedBox(height: headerToStats),
+                      ],
 
                       // 2. Stats Row: Average | Total Pts (Highlighted Card) | Highest (tappable)
                       Padding(
@@ -332,6 +350,7 @@ class _TeamHeader extends StatelessWidget {
     this.showBackButton = false,
     this.selectedGameweekId,
     this.bootstrap,
+    this.firstGameweekId,
     this.onGameweekChanged,
     this.onManage,
   });
@@ -341,6 +360,7 @@ class _TeamHeader extends StatelessWidget {
   final bool showBackButton;
   final int? selectedGameweekId;
   final FplBootstrap? bootstrap;
+  final int? firstGameweekId;
   final ValueChanged<int?>? onGameweekChanged;
 
   /// Opens the pick-team and transfers editor for the signed-in manager.
@@ -432,9 +452,46 @@ class _TeamHeader extends StatelessWidget {
             _GameweekSelector(
               selectedGameweekId: selectedGameweekId!,
               bootstrap: bootstrap!,
+              firstGameweekId: firstGameweekId,
               onGameweekChanged: onGameweekChanged!,
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _FirstGameweekNotice extends StatelessWidget {
+  const _FirstGameweekNotice({required this.firstGameweekId});
+
+  final int firstGameweekId;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
+    return Container(
+      key: const Key('team-first-gameweek-notice'),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: colors.primaryContainer.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.schedule_rounded, size: 18, color: colors.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              l10n.firstGameweekPending(firstGameweekId),
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: colors.onPrimaryContainer,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -446,18 +503,24 @@ class _GameweekSelector extends StatelessWidget {
     required this.selectedGameweekId,
     required this.bootstrap,
     required this.onGameweekChanged,
+    this.firstGameweekId,
   });
 
   final int selectedGameweekId;
   final FplBootstrap bootstrap;
   final ValueChanged<int?> onGameweekChanged;
 
+  /// The manager's first gameweek; earlier gameweeks have no picks.
+  final int? firstGameweekId;
+
   @override
   Widget build(BuildContext context) {
     final currentIndex = bootstrap.gameweeks.indexWhere(
       (g) => g.id == selectedGameweekId,
     );
-    final canGoPrev = currentIndex > 0;
+    final canGoPrev =
+        currentIndex > 0 &&
+        bootstrap.gameweeks[currentIndex - 1].id >= (firstGameweekId ?? 0);
 
     // Limit next gameweek navigation to the active current gameweek in production
     // (Future gameweeks like GW5 should not open before the deadline)
@@ -466,8 +529,9 @@ class _GameweekSelector extends StatelessWidget {
       orElse: () => bootstrap.gameweeks.first,
     );
     final isFullSeason = bootstrap.gameweeks.length > 2;
+    // A new manager opens on their first gameweek, which can be the next one.
     final maxAllowedId = isFullSeason
-        ? currentGw.id
+        ? math.max(currentGw.id, selectedGameweekId)
         : bootstrap.gameweeks.last.id;
     final canGoNext =
         selectedGameweekId < maxAllowedId &&
