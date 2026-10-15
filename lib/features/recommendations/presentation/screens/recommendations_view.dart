@@ -113,6 +113,8 @@ String _errorMessage(BuildContext context, Object error) {
       l10n.rateLimited,
     FplApiException(:final kind) when kind == FplApiErrorKind.authentication =>
       l10n.authExpired,
+    FplApiException(:final statusCode) when statusCode == 404 =>
+      l10n.fplTeamSetupRequired,
     TeamAccessException() => l10n.entryIdInvalid,
     _ => l10n.genericError,
   };
@@ -893,6 +895,7 @@ class _TopPicksTab extends StatelessWidget {
                   bootstrap: data.bootstrap,
                   fixtures: data.fixtures,
                   gameweekId: data.result.gameweekId,
+                  projections: data.projections,
                 ),
               ),
             ),
@@ -1809,6 +1812,10 @@ class _TransferCard extends StatelessWidget {
                           ),
                         ],
                       ),
+                      if (transfer.outProjection.availability < 1)
+                        _TransferAvailabilityNote(
+                          projection: transfer.outProjection,
+                        ),
                       const SizedBox(height: 8),
                       // In Player
                       Row(
@@ -2153,3 +2160,45 @@ class _PlayerRow extends StatelessWidget {
 
 String _price(int? value) =>
     value == null ? '—' : (value / 10).toStringAsFixed(1);
+
+/// Why an injured, doubtful or suspended player is being sold.
+class _TransferAvailabilityNote extends StatelessWidget {
+  const _TransferAvailabilityNote({required this.projection});
+
+  final PlayerProjection projection;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = Theme.of(context).colorScheme;
+    final player = projection.player;
+    final unavailable = projection.availability == 0;
+    final color = unavailable ? colors.error : colors.tertiary;
+    final status = projection.isShortTermAbsence
+        ? l10n.backSoon
+        : (unavailable ? l10n.unavailable : l10n.doubtful);
+    final news = l10n.playerNews(player.news);
+
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(start: 31, top: 4),
+      child: Row(
+        children: [
+          Icon(Icons.healing_rounded, size: 13, color: color),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              news.isEmpty ? status : '$status • $news',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontSize: 11,
+                color: color,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

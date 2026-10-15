@@ -10,11 +10,15 @@ class PlayerDirectoryPage extends StatefulWidget {
     required this.bootstrap,
     required this.fixtures,
     required this.gameweekId,
+    this.projections = const [],
   });
 
   final FplBootstrap bootstrap;
   final List<FplFixture> fixtures;
   final int gameweekId;
+
+  /// Projections from the recommendations load; computed here when empty.
+  final List<PlayerProjection> projections;
 
   @override
   State<PlayerDirectoryPage> createState() => _PlayerDirectoryPageState();
@@ -30,11 +34,13 @@ class _PlayerDirectoryPageState extends State<PlayerDirectoryPage> {
   @override
   void initState() {
     super.initState();
-    _projections = const RecommendationEngine().buildPlayerProjections(
-      bootstrap: widget.bootstrap,
-      fixtures: widget.fixtures,
-      gameweekId: widget.gameweekId,
-    );
+    _projections = widget.projections.isNotEmpty
+        ? widget.projections
+        : const RecommendationEngine().buildPlayerProjections(
+            bootstrap: widget.bootstrap,
+            fixtures: widget.fixtures,
+            gameweekId: widget.gameweekId,
+          );
     _searchController.addListener(_refreshResults);
   }
 
@@ -703,7 +709,11 @@ class _NewsComparison extends StatelessWidget {
         children: [
           Text(status, style: const TextStyle(fontWeight: FontWeight.w800)),
           const SizedBox(height: 4),
-          Text(player.news.trim().isEmpty ? l10n.noNews : player.news.trim()),
+          Text(
+            player.news.trim().isEmpty
+                ? l10n.noNews
+                : l10n.playerNews(player.news),
+          ),
         ],
       ),
     );

@@ -162,10 +162,16 @@ class AppLocalizations {
   String get cleanSheetChance =>
       isArabic ? 'فرصة الشباك النظيفة' : 'Clean-sheet chance';
   String predictionConfidence(int value) =>
-      isArabic ? 'ثقة $value٪' : '$value% confidence';
+      isArabic ? 'احتمال $value٪' : '$value% likely';
+  String get predictionHomeWin => isArabic ? 'فوز الأرض' : 'Home win';
+  String get predictionDraw => isArabic ? 'تعادل' : 'Draw';
+  String get predictionAwayWin => isArabic ? 'فوز الضيف' : 'Away win';
+  String predictionExpectedGoals(String home, String away) => isArabic
+      ? 'الأهداف المتوقعة (xG) $home - $away'
+      : 'Expected goals (xG) $home - $away';
   String get predictionDisclaimer => isArabic
-      ? 'توقع إحصائي مبني على xG وxA والفورمة والدقائق وصعوبة المباراة؛ وليس ضمانًا للنتيجة الفعلية.'
-      : 'Statistical estimate using xG, xA, form, minutes and fixture difficulty; it is not a guarantee.';
+      ? 'توقع إحصائي (نموذج بواسون/ديكسون-كولز) مبني على قوة الفريقين من نتائج وxG هذا الموسم، وxG وxA والدقائق والإصابات؛ وليس ضمانًا للنتيجة الفعلية.'
+      : 'Statistical estimate (Poisson/Dixon-Coles) from team strength this season (goals and xG), plus player xG, xA, minutes and injuries; it is not a guarantee.';
   String get predictionWindowHint => isArabic
       ? 'التوقعات متاحة لمباريات الجولات الثلاث القادمة.'
       : 'Predictions are available for fixtures in the next three gameweeks.';
@@ -399,6 +405,117 @@ class AppLocalizations {
   String get suspended => isArabic ? 'موقوف' : 'Suspended';
   String get doubtful => isArabic ? 'مشكوك في مشاركته' : 'Doubtful';
   String get unavailable => isArabic ? 'غير متاح' : 'Unavailable';
+  /// FPL news comes in English with a few fixed shapes; in Arabic those are
+  /// translated and anything else is shown as published.
+  String playerNews(String news) {
+    final text = news.trim();
+    if (!isArabic || text.isEmpty) return text;
+    final injury = RegExp(
+      r'^(.+?) injury - (.+)$',
+      caseSensitive: false,
+    ).firstMatch(text);
+    if (injury != null) {
+      final part = _injuryParts[injury.group(1)!.toLowerCase()];
+      final detail = _newsDetail(injury.group(2)!);
+      if (part != null && detail != null) return '$part - $detail';
+    }
+    final other = RegExp(
+      r'^(knock|illness|lack of match fitness) - (.+)$',
+      caseSensitive: false,
+    ).firstMatch(text);
+    if (other != null) {
+      final detail = _newsDetail(other.group(2)!);
+      final label = switch (other.group(1)!.toLowerCase()) {
+        'knock' => 'كدمة',
+        'illness' => 'مرض',
+        _ => 'عدم جاهزية بدنية',
+      };
+      if (detail != null) return '$label - $detail';
+    }
+    final suspended = RegExp(
+      r'^suspended until (\d{1,2}) ([a-z]{3})',
+      caseSensitive: false,
+    ).firstMatch(text);
+    if (suspended != null) {
+      final date = _newsDate(suspended.group(1)!, suspended.group(2)!);
+      if (date != null) return 'موقوف حتى $date';
+    }
+    final lower = text.toLowerCase();
+    if (lower.startsWith('has joined') && lower.contains('loan')) {
+      return 'انتقل على سبيل الإعارة';
+    }
+    if (lower.startsWith('has joined') ||
+        lower.startsWith('has departed') ||
+        lower.startsWith('has returned')) {
+      return 'غادر النادي';
+    }
+    if (lower.startsWith('not included in squad')) {
+      return 'خارج القائمة';
+    }
+    return text;
+  }
+
+  String? _newsDetail(String detail) {
+    final lower = detail.trim().toLowerCase();
+    if (lower.startsWith('unknown return date')) return 'موعد العودة غير معروف';
+    final chance = RegExp(r'^(\d{1,3})% chance of playing').firstMatch(lower);
+    if (chance != null) return 'فرصة المشاركة ${chance.group(1)}٪';
+    final back = RegExp(
+      r'^expected back (\d{1,2}) ([a-z]{3})',
+    ).firstMatch(lower);
+    if (back != null) {
+      final date = _newsDate(back.group(1)!, back.group(2)!);
+      if (date != null) return 'العودة المتوقعة $date';
+    }
+    return null;
+  }
+
+  String? _newsDate(String day, String month) {
+    final name = _arabicMonths[month.toLowerCase()];
+    return name == null ? null : '$day $name';
+  }
+
+  static const _arabicMonths = {
+    'jan': 'يناير',
+    'feb': 'فبراير',
+    'mar': 'مارس',
+    'apr': 'أبريل',
+    'may': 'مايو',
+    'jun': 'يونيو',
+    'jul': 'يوليو',
+    'aug': 'أغسطس',
+    'sep': 'سبتمبر',
+    'oct': 'أكتوبر',
+    'nov': 'نوفمبر',
+    'dec': 'ديسمبر',
+  };
+
+  static const _injuryParts = {
+    'hamstring': 'إصابة في العضلة الخلفية',
+    'knee': 'إصابة في الركبة',
+    'ankle': 'إصابة في الكاحل',
+    'thigh': 'إصابة في الفخذ',
+    'calf': 'إصابة في السمانة',
+    'groin': 'إصابة في العانة',
+    'back': 'إصابة في الظهر',
+    'shoulder': 'إصابة في الكتف',
+    'foot': 'إصابة في القدم',
+    'leg': 'إصابة في الساق',
+    'shin': 'إصابة في القصبة',
+    'arm': 'إصابة في الذراع',
+    'hip': 'إصابة في الورك',
+    'head': 'إصابة في الرأس',
+    'achilles': 'إصابة في وتر أكيليس',
+    'muscle': 'إصابة عضلية',
+    'hand': 'إصابة في اليد',
+    'wrist': 'إصابة في الرسغ',
+    'toe': 'إصابة في إصبع القدم',
+    'neck': 'إصابة في الرقبة',
+    'unspecified': 'إصابة غير محددة',
+  };
+
+  String get backSoon =>
+      isArabic ? 'غائب الآن ويعود قريبًا' : 'Out now, back soon';
   String chanceOfPlaying(int chance) =>
       isArabic ? '$chance٪ احتمال المشاركة' : '$chance% chance of playing';
   String get unknown => isArabic ? 'غير معروف' : 'Unknown';
@@ -578,6 +695,14 @@ class AppLocalizations {
   };
 
   String gameweekLabel(int id) => '${isArabic ? 'الأسبوع' : 'Gameweek'} $id';
+
+  String firstGameweekPending(int id) => isArabic
+      ? 'موسمك لسه ما بدأش. أول جولة ليك هي الأسبوع $id، والنقاط هتظهر بعد ما تبدأ.'
+      : 'Your season hasn\'t started yet. Your first gameweek is Gameweek $id; points appear once it kicks off.';
+
+  String managerNotStarted(int id) => isArabic
+      ? 'المدرب ده لسه ما لعبش أي جولة. أول جولة ليه هي الأسبوع $id.'
+      : 'This manager hasn\'t played a gameweek yet. Their first gameweek is Gameweek $id.';
 
   String pointsLabel(int value) => '$value $points';
 

@@ -915,7 +915,7 @@ class _PlayerDetailBottomSheet extends StatelessWidget {
                         if (player?.news.isNotEmpty == true) ...[
                           const SizedBox(height: 4),
                           Text(
-                            player!.news,
+                            AppLocalizations.of(context).playerNews(player!.news),
                             style: TextStyle(
                               fontSize: 12,
                               color: isUnavailable

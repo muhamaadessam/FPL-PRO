@@ -152,6 +152,9 @@ class _FakeFixturesRepository implements FixturesRepository {
   Future<Map<int, int>> getGameweekPoints(int gameweekId) async => const {};
 
   @override
+  Future<Map<int, int>> getGameweekMinutes(int gameweekId) async => const {};
+
+  @override
   Future<Map<int, int>> getEntryHistoryPoints(int entryId) async => const {};
 
   @override

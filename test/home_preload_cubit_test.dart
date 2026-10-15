@@ -11,6 +11,7 @@ import 'package:fantasy_pl/features/fixtures/data/models/fpl_models.dart';
 import 'package:fantasy_pl/features/fixtures/domain/repositories/fixtures_repository.dart';
 import 'package:fantasy_pl/features/team/data/models/team_models.dart';
 import 'package:fantasy_pl/features/team/domain/repositories/team_repository.dart';
+import 'package:fantasy_pl/features/team/presentation/screens/team_view.dart';
 import 'package:fantasy_pl/core/widgets/splash_page.dart';
 import 'package:fantasy_pl/l10n/app_localizations.dart';
 
@@ -71,7 +72,144 @@ void main() {
     expect(teamRepository.entryRequests, [42, 42]);
   });
 
-  testWidgets('treats missing picks as an FPL team setup state', (
+  group('a manager whose first gameweek has not started', () {
+    test('opens home on the upcoming squad without current data', () async {
+      final session = const OfficialSession(accessToken: 'token', entryId: 42);
+      final authCubit = AuthCubit(
+        _FakeAuthRepository(session),
+        initialState: AuthAuthenticated(session),
+      );
+      final fixturesRepository = _FakeFixturesRepository()
+        ..historyJson = const {'current': [], 'past': [], 'chips': []};
+      // Joined after the GW4 deadline: no GW4 picks, points or history.
+      final teamRepository = _FakeTeamRepository()
+        ..entryJson = const {
+          'id': 42,
+          'name': 'New FC',
+          'started_event': 5,
+          'summary_overall_points': null,
+          'summary_overall_rank': null,
+          'summary_event_points': null,
+          'leagues': {'classic': [], 'h2h': []},
+        }
+        ..currentError = const FplApiException(
+          kind: FplApiErrorKind.unknown,
+          statusCode: 404,
+          message: 'Not found.',
+        );
+      final cubit = HomePreloadCubit(
+        fixturesRepository: fixturesRepository,
+        teamRepository: teamRepository,
+        authCubit: authCubit,
+      );
+
+      await cubit.load();
+
+      expect(cubit.state.status, PreloadStatus.success);
+      expect(cubit.state.error, isNull);
+      expect(teamRepository.currentRequests, isEmpty);
+      expect(fixturesRepository.pointsRequests, isEmpty);
+      expect(cubit.state.teamCurrent, same(teamRepository.nextTeam));
+      expect(cubit.state.teamNext, same(teamRepository.nextTeam));
+      expect(cubit.state.gameweekPoints, isEmpty);
+      expect(cubit.state.historyPoints, isEmpty);
+      expect(cubit.state.entry?.startedEvent, 5);
+      expect(cubit.state.entry?.summaryOverallRank, isNull);
+      expect(cubit.state.homeGameweekId, 5);
+    });
+
+    test('falls back to the upcoming squad when current picks 404', () async {
+      final session = const OfficialSession(accessToken: 'token', entryId: 42);
+      final authCubit = AuthCubit(
+        _FakeAuthRepository(session),
+        initialState: AuthAuthenticated(session),
+      );
+      // Entry metadata is unavailable, so the start event is unknown.
+      final teamRepository = _FakeTeamRepository()
+        ..entryError = StateError('entry is supplementary')
+        ..currentError = const FplApiException(
+          kind: FplApiErrorKind.unknown,
+          statusCode: 404,
+          message: 'Not found.',
+        );
+      final fixturesRepository = _FakeFixturesRepository()
+        ..pointsError = const FplApiException(
+          kind: FplApiErrorKind.unknown,
+          statusCode: 404,
+          message: 'Not found.',
+        );
+      final cubit = HomePreloadCubit(
+        fixturesRepository: fixturesRepository,
+        teamRepository: teamRepository,
+        authCubit: authCubit,
+      );
+
+      await cubit.load();
+
+      expect(cubit.state.status, PreloadStatus.success);
+      expect(teamRepository.currentRequests, [4]);
+      expect(cubit.state.teamCurrent, same(teamRepository.nextTeam));
+      expect(cubit.state.gameweekPoints, isEmpty);
+      expect(cubit.state.entry, isNull);
+      expect(cubit.state.homeGameweekId, 4);
+    });
+
+    testWidgets('team tab opens on the first gameweek with a notice', (
+      tester,
+    ) async {
+      final session = const OfficialSession(accessToken: 'token', entryId: 42);
+      final authCubit = AuthCubit(
+        _FakeAuthRepository(session),
+        initialState: AuthAuthenticated(session),
+      );
+      final fixturesRepository = _FakeFixturesRepository();
+      final teamRepository = _FakeTeamRepository()
+        ..entryJson = const {'id': 42, 'name': 'New FC', 'started_event': 5};
+      final cubit = HomePreloadCubit(
+        fixturesRepository: fixturesRepository,
+        teamRepository: teamRepository,
+        authCubit: authCubit,
+      );
+      await tester.runAsync(cubit.load);
+      expect(cubit.state.status, PreloadStatus.success);
+
+      await tester.pumpWidget(
+        MultiRepositoryProvider(
+          providers: [
+            RepositoryProvider<FixturesRepository>.value(
+              value: fixturesRepository,
+            ),
+            RepositoryProvider<TeamRepository>.value(value: teamRepository),
+          ],
+          child: MultiBlocProvider(
+            providers: [
+              BlocProvider<AuthCubit>.value(value: authCubit),
+              BlocProvider<HomePreloadCubit>.value(value: cubit),
+            ],
+            child: const MaterialApp(
+              locale: Locale('en'),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: Scaffold(body: TeamView()),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final l10n = AppLocalizations(const Locale('en'));
+      expect(find.text(l10n.firstGameweekPending(5)), findsOneWidget);
+      expect(find.text('Gameweek 5'), findsOneWidget);
+      expect(find.text(l10n.errorLoadingData), findsNothing);
+      final prev = tester.widget<IconButton>(
+        find.byKey(const Key('team-gameweek-prev')),
+      );
+      expect(prev.onPressed, isNull);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  testWidgets('treats a missing upcoming squad as an FPL team setup state', (
     tester,
   ) async {
     final session = const OfficialSession(accessToken: 'token', entryId: 42);
@@ -80,7 +218,7 @@ void main() {
       initialState: AuthAuthenticated(session),
     );
     final teamRepository = _FakeTeamRepository()
-      ..currentError = const FplApiException(
+      ..nextError = const FplApiException(
         kind: FplApiErrorKind.unknown,
         statusCode: 404,
         message: 'Not found.',
@@ -141,6 +279,9 @@ class _FakeAuthRepository implements AuthRepository {
 
 class _FakeFixturesRepository implements FixturesRepository {
   final fixtureRequests = <int?>[];
+  final pointsRequests = <int>[];
+  Object? pointsError;
+  Map<String, dynamic>? historyJson;
 
   final _bootstrap = FplBootstrap.fromJson({
     'events': [
@@ -183,10 +324,18 @@ class _FakeFixturesRepository implements FixturesRepository {
   }
 
   @override
-  Future<Map<int, int>> getGameweekPoints(int gameweekId) async => {10: 7};
+  Future<Map<int, int>> getGameweekPoints(int gameweekId) async {
+    pointsRequests.add(gameweekId);
+    if (pointsError != null) throw pointsError!;
+    return {10: 7};
+  }
+
+  @override
+  Future<Map<int, int>> getGameweekMinutes(int gameweekId) async => const {};
 
   @override
   Future<Map<int, int>> getEntryHistoryPoints(int entryId) async {
+    if (historyJson != null) return parseEntryHistoryPoints(historyJson!);
     throw StateError('history is supplementary');
   }
 
@@ -197,6 +346,9 @@ class _FakeFixturesRepository implements FixturesRepository {
 
 class _FakeTeamRepository implements TeamRepository {
   Object? currentError;
+  Object? nextError;
+  Object? entryError;
+  Map<String, dynamic>? entryJson;
   final currentRequests = <int>[];
   final nextRequests = <int>[];
   final entryRequests = <int>[];
@@ -230,6 +382,8 @@ class _FakeTeamRepository implements TeamRepository {
   @override
   Future<FplEntry> getEntry(int entryId) async {
     entryRequests.add(entryId);
+    if (entryError != null) throw entryError!;
+    if (entryJson != null) return FplEntry.fromJson(entryJson!);
     return FplEntry(id: entryId, name: 'Fake FC');
   }
 
@@ -263,6 +417,7 @@ class _FakeTeamRepository implements TeamRepository {
     required int gameweekId,
   }) async {
     nextRequests.add(gameweekId);
+    if (nextError != null) throw nextError!;
     return nextTeam;
   }
 

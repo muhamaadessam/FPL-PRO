@@ -73,15 +73,37 @@ class TeamCubit extends Cubit<TeamState> {
   Future<void> load({int? gameweekId}) async {
     emit(state.copyWith(status: TeamStatus.loading, error: null));
     try {
-      final bootstrap = await fixturesRepository.getBootstrap();
-      final targetGameweekId =
-          gameweekId ?? state.selectedGameweekId ?? bootstrap.currentGameweekId;
-      final team = await _loadTeam(bootstrap, targetGameweekId);
-      final points = await fixturesRepository.getGameweekPoints(
-        targetGameweekId,
-      );
-
       final session = authCubit?.state.session;
+      final effectiveEntryId = entryId ?? session?.entryId;
+      final entryFuture = effectiveEntryId == null
+          ? Future<FplEntry?>.value()
+          : _loadEntry(effectiveEntryId);
+      final bootstrap = await fixturesRepository.getBootstrap();
+      final entry = await entryFuture ?? state.entry;
+      final currentGameweekId = bootstrap.currentGameweekId;
+      final startedEvent = entry?.startedEvent;
+
+      var targetGameweekId =
+          gameweekId ?? state.selectedGameweekId ?? currentGameweekId;
+      // There are no picks before a manager's first gameweek, so open on it.
+      if (startedEvent != null && targetGameweekId < startedEvent) {
+        targetGameweekId = startedEvent;
+      }
+      if (entryId != null &&
+          startedEvent != null &&
+          startedEvent > currentGameweekId) {
+        // Public picks only exist once the manager's first gameweek starts.
+        throw TeamNotStartedException(startedEvent);
+      }
+
+      final team = await _loadTeam(bootstrap, targetGameweekId);
+      var points = const <int, int>{};
+      try {
+        points = await fixturesRepository.getGameweekPoints(targetGameweekId);
+      } on Object {
+        // Live points are supplementary; the squad is still worth showing.
+      }
+
       var historyPoints = const <int, int>{};
       if (entryId == null && session?.entryId != null) {
         try {
@@ -90,16 +112,6 @@ class TeamCubit extends Cubit<TeamState> {
           );
         } on Object {
           // History is supplementary; the team and live points remain useful.
-        }
-      }
-
-      FplEntry? entry = state.entry;
-      final effectiveEntryId = entryId ?? session?.entryId;
-      if (effectiveEntryId != null) {
-        try {
-          entry = await teamRepository.getEntry(effectiveEntryId);
-        } on Object {
-          // Entry metadata is supplementary
         }
       }
 
@@ -116,6 +128,15 @@ class TeamCubit extends Cubit<TeamState> {
       );
     } on Object catch (error) {
       emit(state.copyWith(status: TeamStatus.failure, error: error));
+    }
+  }
+
+  Future<FplEntry?> _loadEntry(int entryId) async {
+    try {
+      return await teamRepository.getEntry(entryId);
+    } on Object {
+      // Entry metadata is supplementary
+      return null;
     }
   }
 
@@ -146,4 +167,12 @@ class TeamCubit extends Cubit<TeamState> {
   }
 
   Future<void> refresh() => load(gameweekId: state.selectedGameweekId);
+}
+
+/// The entry joined after the requested gameweek, so it has no public picks
+/// yet. [firstGameweekId] is the first gameweek it plays in.
+class TeamNotStartedException implements Exception {
+  const TeamNotStartedException(this.firstGameweekId);
+
+  final int firstGameweekId;
 }

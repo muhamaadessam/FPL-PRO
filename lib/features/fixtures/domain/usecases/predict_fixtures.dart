@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import '../../data/models/fpl_models.dart';
+import 'team_ratings.dart';
 
 class PlayerEventPrediction {
   const PlayerEventPrediction({required this.player, required this.chance});
@@ -18,27 +19,85 @@ class FixturePrediction {
     required this.confidence,
     required this.scorers,
     required this.assists,
+    this.homeExpectedGoals = 0,
+    this.awayExpectedGoals = 0,
+    this.homeWinChance = 0,
+    this.drawChance = 0,
+    this.awayWinChance = 0,
     this.homeScorers = const [],
     this.awayScorers = const [],
     this.homeAssists = const [],
     this.awayAssists = const [],
   });
 
+  /// The likeliest scoreline within the likeliest result, so the score never
+  /// contradicts the win/draw/loss split.
   final int homeGoals;
   final int awayGoals;
   final int homeCleanSheetChance;
   final int awayCleanSheetChance;
+
+  /// Probability of the predicted result (home win, draw or away win).
   final int confidence;
   final List<PlayerEventPrediction> scorers;
   final List<PlayerEventPrediction> assists;
+  final double homeExpectedGoals;
+  final double awayExpectedGoals;
+  final int homeWinChance;
+  final int drawChance;
+  final int awayWinChance;
   final List<PlayerEventPrediction> homeScorers;
   final List<PlayerEventPrediction> awayScorers;
   final List<PlayerEventPrediction> homeAssists;
   final List<PlayerEventPrediction> awayAssists;
 }
 
+/// Dixon-Coles match model: each side's goals are Poisson with a rate from
+/// [TeamRatings], corrected for the extra draws seen in low-scoring games.
+/// Player events split the team's expected goals by each player's
+/// shrunk xG (or xA) rate and expected share of the minutes.
 class FixturePredictionEngine {
-  const FixturePredictionEngine();
+  /// The defaults are the tuned values; overrides exist for the backtest in
+  /// test/backtest/.
+  const FixturePredictionEngine({
+    this.rho = defaultRho,
+    this.priorMinutes = defaultPriorMinutes,
+    this.absenceImpact = defaultAbsenceImpact,
+    this.ratedTeamPriorMatches = TeamRatings.defaultRatedTeamPriorMatches,
+    this.teamPriorMatches = TeamRatings.defaultTeamPriorMatches,
+    this.expectedGoalsWeight = TeamRatings.defaultExpectedGoalsWeight,
+  });
+
+  /// Dixon-Coles low-score dependence; negative raises 0-0 and 1-1.
+  static const defaultRho = -0.08;
+  static const _maxGoals = 10;
+
+  /// Share of goals that are own goals, and that earn an FPL assist.
+  static const _ownGoalShare = 0.03;
+  static const _assistedShare = 0.8;
+
+  /// Minutes of position-average output added to each player's record, so a
+  /// lucky 90 minutes does not outrank a season of evidence.
+  static const defaultPriorMinutes = 450.0;
+
+  /// Position-average xG and xA per 90, by position id.
+  static const _goalPrior = {1: 0.005, 2: 0.05, 3: 0.13, 4: 0.33};
+  static const _assistPrior = {1: 0.01, 2: 0.07, 3: 0.15, 4: 0.12};
+
+  /// Actual goals carry some finishing skill that xG misses.
+  static const _goalsWeight = 0.2;
+
+  /// Part of a missing player's threat the rest of the side cannot replace.
+  static const defaultAbsenceImpact = 0.6;
+
+  final double rho;
+  final double priorMinutes;
+  final double absenceImpact;
+
+  /// See [TeamRatings.from].
+  final double ratedTeamPriorMatches;
+  final double teamPriorMatches;
+  final double expectedGoalsWeight;
 
   Map<int, FixturePrediction> predictNextGameweeks({
     required List<FplFixture> fixtures,
@@ -60,11 +119,24 @@ class FixturePredictionEngine {
       ..removeWhere((gameweek) => gameweek <= 0);
     final selectedGameweeks = gameweeks.toList()..sort();
     final horizon = selectedGameweeks.take(gameweekCount).toSet();
+    final ratings = TeamRatings.from(
+      teams: teams,
+      fixtures: fixtures,
+      players: players,
+      ratedTeamPriorMatches: ratedTeamPriorMatches,
+      teamPriorMatches: teamPriorMatches,
+      expectedGoalsWeight: expectedGoalsWeight,
+    );
 
     return Map.unmodifiable({
       for (final fixture in upcoming)
         if (horizon.contains(fixture.gameweekId))
-          fixture.id: predict(fixture: fixture, teams: teams, players: players),
+          fixture.id: predict(
+            fixture: fixture,
+            teams: teams,
+            players: players,
+            ratings: ratings,
+          ),
     });
   }
 
@@ -72,232 +144,290 @@ class FixturePredictionEngine {
     required FplFixture fixture,
     required Map<int, FplTeam> teams,
     required Map<int, FplPlayer> players,
+    TeamRatings? ratings,
   }) {
-    final home = _teamProjection(
+    final teamRatings =
+        ratings ??
+        TeamRatings.from(
+          teams: teams,
+          fixtures: const [],
+          ratedTeamPriorMatches: ratedTeamPriorMatches,
+          teamPriorMatches: teamPriorMatches,
+          expectedGoalsWeight: expectedGoalsWeight,
+        );
+    final (homeRate, awayRate) = _teamRates(fixture, teamRatings);
+    final priceAverages = _averagePriceByPosition(players);
+    final home = _squad(
       teamId: fixture.homeTeamId,
-      opponentId: fixture.awayTeamId,
-      isHome: true,
-      difficulty: fixture.homeDifficulty ?? 3,
-      teams: teams,
       players: players,
+      matchesPlayed: teamRatings.matchesPlayed(fixture.homeTeamId),
+      priceAverages: priceAverages,
     );
-    final away = _teamProjection(
+    final away = _squad(
       teamId: fixture.awayTeamId,
-      opponentId: fixture.homeTeamId,
-      isHome: false,
-      difficulty: fixture.awayDifficulty ?? 3,
-      teams: teams,
       players: players,
+      matchesPlayed: teamRatings.matchesPlayed(fixture.awayTeamId),
+      priceAverages: priceAverages,
     );
-    final scorers = [...home.scorers, ...away.scorers]
+    final homeLambda = (homeRate * home.absenceFactor).clamp(0.2, 4.5);
+    final awayLambda = (awayRate * away.absenceFactor).clamp(0.2, 4.5);
+
+    final matrix = _scoreMatrix(homeLambda, awayLambda);
+    var homeWin = 0.0;
+    var draw = 0.0;
+    var awayWin = 0.0;
+    var homeCleanSheet = 0.0;
+    var awayCleanSheet = 0.0;
+    for (var h = 0; h <= _maxGoals; h++) {
+      for (var a = 0; a <= _maxGoals; a++) {
+        final p = matrix[h][a];
+        if (h > a) {
+          homeWin += p;
+        } else if (h == a) {
+          draw += p;
+        } else {
+          awayWin += p;
+        }
+        if (a == 0) homeCleanSheet += p;
+        if (h == 0) awayCleanSheet += p;
+      }
+    }
+    final outcome = homeWin >= draw && homeWin >= awayWin
+        ? 1
+        : (awayWin > draw ? -1 : 0);
+    var bestScore = (0, 0);
+    var bestProbability = -1.0;
+    for (var h = 0; h <= _maxGoals; h++) {
+      for (var a = 0; a <= _maxGoals; a++) {
+        if ((h - a).sign != outcome) continue;
+        if (matrix[h][a] > bestProbability) {
+          bestProbability = matrix[h][a];
+          bestScore = (h, a);
+        }
+      }
+    }
+
+    final homeScorers = home.events(homeLambda * (1 - _ownGoalShare), true);
+    final awayScorers = away.events(awayLambda * (1 - _ownGoalShare), true);
+    final homeAssists = home.events(homeLambda * _assistedShare, false);
+    final awayAssists = away.events(awayLambda * _assistedShare, false);
+    final scorers = [...homeScorers, ...awayScorers]
       ..sort((a, b) => b.chance.compareTo(a.chance));
-    final assists = [...home.assists, ...away.assists]
+    final assists = [...homeAssists, ...awayAssists]
       ..sort((a, b) => b.chance.compareTo(a.chance));
-    final coverage = (home.dataCoverage + away.dataCoverage) / 2;
-    final separation = (home.expectedGoals - away.expectedGoals).abs();
 
     return FixturePrediction(
-      homeGoals: home.expectedGoals.round().clamp(0, 4).toInt(),
-      awayGoals: away.expectedGoals.round().clamp(0, 4).toInt(),
-      homeCleanSheetChance: _cleanSheetChance(away.expectedGoals),
-      awayCleanSheetChance: _cleanSheetChance(home.expectedGoals),
-      confidence: (45 + coverage * 32 + separation.clamp(0, 1) * 8)
-          .round()
-          .clamp(40, 85)
-          .toInt(),
+      homeGoals: bestScore.$1,
+      awayGoals: bestScore.$2,
+      homeExpectedGoals: homeLambda,
+      awayExpectedGoals: awayLambda,
+      homeWinChance: _percent(homeWin),
+      drawChance: _percent(draw),
+      awayWinChance: _percent(awayWin),
+      homeCleanSheetChance: _percent(homeCleanSheet),
+      awayCleanSheetChance: _percent(awayCleanSheet),
+      confidence: _percent(math.max(homeWin, math.max(draw, awayWin))),
       scorers: List.unmodifiable(scorers.take(3)),
       assists: List.unmodifiable(assists.take(3)),
-      homeScorers: List.unmodifiable(home.scorers),
-      awayScorers: List.unmodifiable(away.scorers),
-      homeAssists: List.unmodifiable(home.assists),
-      awayAssists: List.unmodifiable(away.assists),
+      homeScorers: List.unmodifiable(homeScorers),
+      awayScorers: List.unmodifiable(awayScorers),
+      homeAssists: List.unmodifiable(homeAssists),
+      awayAssists: List.unmodifiable(awayAssists),
     );
   }
 
-  _TeamProjection _teamProjection({
+  /// Expected goals per side; without ratings the official FDR is used.
+  (double, double) _teamRates(FplFixture fixture, TeamRatings ratings) {
+    if (ratings.isRated(fixture.homeTeamId) &&
+        ratings.isRated(fixture.awayTeamId)) {
+      return ratings.expectedGoals(fixture);
+    }
+    double fdr(int? difficulty) => 1.24 - (difficulty ?? 3).clamp(1, 5) * 0.08;
+    return (
+      ratings.homeGoals * fdr(fixture.homeDifficulty),
+      ratings.awayGoals * fdr(fixture.awayDifficulty),
+    );
+  }
+
+  List<List<double>> _scoreMatrix(double homeLambda, double awayLambda) {
+    final home = _poisson(homeLambda);
+    final away = _poisson(awayLambda);
+    double tau(int h, int a) => switch ((h, a)) {
+      (0, 0) => 1 - homeLambda * awayLambda * rho,
+      (0, 1) => 1 + homeLambda * rho,
+      (1, 0) => 1 + awayLambda * rho,
+      (1, 1) => 1 - rho,
+      _ => 1.0,
+    };
+    final matrix = [
+      for (var h = 0; h <= _maxGoals; h++)
+        [
+          for (var a = 0; a <= _maxGoals; a++)
+            math.max(0.0, home[h] * away[a] * tau(h, a)),
+        ],
+    ];
+    final total = matrix.fold(
+      0.0,
+      (sum, row) => sum + row.fold(0.0, (rowSum, p) => rowSum + p),
+    );
+    return [
+      for (final row in matrix) [for (final p in row) p / total],
+    ];
+  }
+
+  List<double> _poisson(double lambda) {
+    final probabilities = <double>[];
+    var p = math.exp(-lambda);
+    for (var k = 0; k <= _maxGoals; k++) {
+      probabilities.add(p);
+      p *= lambda / (k + 1);
+    }
+    return probabilities;
+  }
+
+  _Squad _squad({
     required int teamId,
-    required int opponentId,
-    required bool isHome,
-    required int difficulty,
-    required Map<int, FplTeam> teams,
     required Map<int, FplPlayer> players,
+    required int matchesPlayed,
+    required Map<int, double> priceAverages,
   }) {
-    final team = teams[teamId];
-    final opponent = teams[opponentId];
-    final teamPlayers = players.values
-        .where(
-          (player) =>
-              player.teamId == teamId &&
-              player.canSelect &&
-              !player.isUnavailable,
-        )
-        .toList(growable: false);
-    final maxStarts = teamPlayers.fold<int>(
-      1,
-      (maximum, player) => math.max(maximum, player.starts),
-    );
-    final attackStrength = _strength(
-      isHome ? team?.strengthAttackHome : team?.strengthAttackAway,
-    );
-    final opponentDefence = _strength(
-      isHome ? opponent?.strengthDefenceAway : opponent?.strengthDefenceHome,
-    );
-    final contextFactor =
-        ((attackStrength / 1000).clamp(0.75, 1.35) *
-                (1000 / opponentDefence).clamp(0.75, 1.35) *
-                (1.28 - difficulty.clamp(1, 5) * 0.09) *
-                (isHome ? 1.06 : 0.96))
-            .toDouble();
-    final metrics = teamPlayers
-        .map(
-          (player) => _playerMetrics(
+    final members = <_Member>[];
+    for (final player in players.values) {
+      if (player.teamId != teamId || !player.canSelect) continue;
+      final availability = player.isUnavailable
+          ? 0.0
+          : ((player.effectiveChanceOfPlaying ?? 100) / 100).clamp(0.0, 1.0);
+      // Expected share of the team's minutes; with no matches yet, price is
+      // the best guess at who plays.
+      final minutesShare = matchesPlayed > 0
+          ? (player.minutes / (90 * matchesPlayed)).clamp(0.0, 1.0)
+          : (player.minutes > 0 ? 1.0 : 0.5);
+      final priceFactor = _priceFactor(player, priceAverages);
+      members.add(
+        _Member(
+          player: player,
+          minutesShare: minutesShare.toDouble(),
+          availability: availability.toDouble(),
+          goalRate: _rate(
             player,
-            maxStarts: maxStarts,
-            contextFactor: contextFactor,
+            player.expectedGoals,
+            player.goalsScored,
+            (_goalPrior[player.positionId] ?? 0) * priceFactor,
           ),
-        )
-        .toList(growable: false);
-    final likelyOutfield =
-        metrics.where((metric) => metric.player.positionId != 1).toList()
-          ..sort((a, b) => b.participation.compareTo(a.participation));
-    final likelyTen = likelyOutfield.take(10).toList(growable: false);
-    final measuredPlayers = likelyTen
-        .where(
-          (metric) =>
-              metric.player.minutes > 0 &&
-              (metric.player.expectedGoals > 0 ||
-                  metric.player.goalsScored > 0),
-        )
-        .length;
-    final dataCoverage = (measuredPlayers / 10).clamp(0.0, 1.0).toDouble();
-    final measuredGoals = likelyTen.fold<double>(
-      0,
-      (total, metric) => total + metric.goalLambda,
-    );
-    final baselineGoals = 1.25 * contextFactor;
-    final expectedGoals = (measuredGoals + baselineGoals * (1 - dataCoverage))
-        .clamp(0.35, 3.4)
-        .toDouble();
-    final scorers =
-        metrics
-            .where((metric) => metric.player.positionId != 1)
-            .map(
-              (metric) => PlayerEventPrediction(
-                player: metric.player,
-                chance: _eventChance(metric.goalLambda),
-              ),
-            )
-            .where((candidate) => candidate.chance >= 4)
-            .toList()
-          ..sort((a, b) => b.chance.compareTo(a.chance));
-    final assists =
-        metrics
-            .where((metric) => metric.player.positionId != 1)
-            .map(
-              (metric) => PlayerEventPrediction(
-                player: metric.player,
-                chance: _eventChance(metric.assistLambda),
-              ),
-            )
-            .where((candidate) => candidate.chance >= 4)
-            .toList()
-          ..sort((a, b) => b.chance.compareTo(a.chance));
-
-    return _TeamProjection(
-      expectedGoals: expectedGoals,
-      dataCoverage: dataCoverage,
-      scorers: scorers.take(3).toList(growable: false),
-      assists: assists.take(3).toList(growable: false),
-    );
+          assistRate: _rate(
+            player,
+            player.expectedAssists,
+            player.assists,
+            (_assistPrior[player.positionId] ?? 0) * priceFactor,
+          ),
+        ),
+      );
+    }
+    return _Squad(members, absenceImpact);
   }
 
-  _PlayerMetrics _playerMetrics(
-    FplPlayer player, {
-    required int maxStarts,
-    required double contextFactor,
-  }) {
-    final matches = math.max(player.minutes / 90, 1.0);
-    final startShare = (player.starts / maxStarts).clamp(0.0, 1.0);
-    final minutesPerStart = player.starts == 0
-        ? (player.minutes > 0 ? 0.45 : 0.35)
-        : (player.minutes / player.starts / 90).clamp(0.35, 1.0);
-    final participation = (0.45 + startShare * 0.35 + minutesPerStart * 0.2)
-        .clamp(0.45, 1.0)
-        .toDouble();
-    final availability = ((player.effectiveChanceOfPlaying ?? 100) / 100)
-        .clamp(0.0, 1.0)
-        .toDouble();
-    final goalBaseline = switch (player.positionId) {
-      1 => 0.005,
-      2 => 0.045,
-      3 => 0.14,
-      _ => 0.22,
-    };
-    final assistBaseline = switch (player.positionId) {
-      1 => 0.005,
-      2 => 0.06,
-      3 => 0.16,
-      _ => 0.11,
-    };
-    final formFactor = (0.75 + (player.form + player.pointsPerGame) / 24)
-        .clamp(0.75, 1.35)
-        .toDouble();
-    final expectedGoalsPer90 = player.expectedGoals / matches;
-    final goalsPer90 = player.goalsScored / matches;
-    final expectedAssistsPer90 = player.expectedAssists / matches;
-    final assistsPer90 = player.assists / matches;
-    final goalRate = expectedGoalsPer90 > 0 || goalsPer90 > 0
-        ? expectedGoalsPer90 * 0.72 + goalsPer90 * 0.2 + goalBaseline * 0.08
-        : goalBaseline * formFactor;
-    final assistRate = expectedAssistsPer90 > 0 || assistsPer90 > 0
-        ? expectedAssistsPer90 * 0.72 +
-              assistsPer90 * 0.2 +
-              assistBaseline * 0.08
-        : assistBaseline * formFactor;
-    final playerFactor = participation * availability * contextFactor;
-
-    return _PlayerMetrics(
-      player: player,
-      participation: participation,
-      goalLambda: (goalRate * playerFactor).clamp(0.0, 1.4).toDouble(),
-      assistLambda: (assistRate * playerFactor).clamp(0.0, 1.2).toDouble(),
-    );
+  /// Per-90 rate shrunk towards [prior] by [priorMinutes] of average output.
+  double _rate(FplPlayer player, double expected, int actual, double prior) {
+    final evidence = expected > 0 || actual > 0
+        ? expected * (1 - _goalsWeight) + actual * _goalsWeight
+        : 0.0;
+    return (evidence + prior * priorMinutes / 90) /
+        ((player.minutes + priorMinutes) / 90);
   }
 
-  int _cleanSheetChance(double opponentExpectedGoals) =>
-      (math.exp(-opponentExpectedGoals) * 100).round().clamp(5, 75).toInt();
+  /// Pricier players carry more attacking threat than their position average.
+  double _priceFactor(FplPlayer player, Map<int, double> averages) {
+    final cost = player.nowCost;
+    final average = averages[player.positionId];
+    if (cost == null || average == null || average <= 0) return 1;
+    return math.pow(cost / average, 1.5).toDouble().clamp(0.5, 2.5);
+  }
 
-  int _eventChance(double lambda) =>
-      ((1 - math.exp(-lambda)) * 100).round().clamp(0, 85).toInt();
+  Map<int, double> _averagePriceByPosition(Map<int, FplPlayer> players) {
+    final totals = <int, (double, int)>{};
+    for (final player in players.values) {
+      final cost = player.nowCost;
+      if (cost == null) continue;
+      final (sum, count) = totals[player.positionId] ?? (0.0, 0);
+      totals[player.positionId] = (sum + cost, count + 1);
+    }
+    return {
+      for (final entry in totals.entries)
+        entry.key: entry.value.$1 / entry.value.$2,
+    };
+  }
 
-  double _strength(int? value) =>
-      value == null || value <= 0 ? 1000 : value.toDouble();
+  static int _percent(double probability) =>
+      (probability * 100).round().clamp(0, 100).toInt();
 }
 
-class _TeamProjection {
-  const _TeamProjection({
-    required this.expectedGoals,
-    required this.dataCoverage,
-    required this.scorers,
-    required this.assists,
-  });
-
-  final double expectedGoals;
-  final double dataCoverage;
-  final List<PlayerEventPrediction> scorers;
-  final List<PlayerEventPrediction> assists;
-}
-
-class _PlayerMetrics {
-  const _PlayerMetrics({
+class _Member {
+  const _Member({
     required this.player,
-    required this.participation,
-    required this.goalLambda,
-    required this.assistLambda,
+    required this.minutesShare,
+    required this.availability,
+    required this.goalRate,
+    required this.assistRate,
   });
 
   final FplPlayer player;
-  final double participation;
-  final double goalLambda;
-  final double assistLambda;
+  final double minutesShare;
+  final double availability;
+  final double goalRate;
+  final double assistRate;
+
+  double weight(bool goals) => (goals ? goalRate : assistRate) * minutesShare;
+}
+
+class _Squad {
+  const _Squad(this.members, this.absenceImpact);
+
+  final List<_Member> members;
+  final double absenceImpact;
+
+  /// Share of the side's usual threat still available, softened because
+  /// replacements cover part of an absence.
+  double get absenceFactor {
+    final full = members.fold(0.0, (sum, m) => sum + m.weight(true));
+    if (full <= 0) return 1;
+    final available = members.fold(
+      0.0,
+      (sum, m) => sum + m.weight(true) * m.availability,
+    );
+    return 1 - absenceImpact * (1 - (available / full).clamp(0.0, 1.0));
+  }
+
+  /// Top three outfield candidates to score ([goals]) or assist, splitting
+  /// [teamLambda] by each player's expected contribution.
+  List<PlayerEventPrediction> events(double teamLambda, bool goals) {
+    final total = members.fold(
+      0.0,
+      (sum, m) => sum + m.weight(goals) * m.availability,
+    );
+    if (total <= 0) return const [];
+    final candidates =
+        members
+            .where((m) => m.player.positionId != 1 && m.availability > 0)
+            .map(
+              (m) => PlayerEventPrediction(
+                player: m.player,
+                chance:
+                    ((1 -
+                                math.exp(
+                                  -teamLambda *
+                                      m.weight(goals) *
+                                      m.availability /
+                                      total,
+                                )) *
+                            100)
+                        .round()
+                        .clamp(0, 95)
+                        .toInt(),
+              ),
+            )
+            .where((candidate) => candidate.chance >= 4)
+            .toList()
+          ..sort((a, b) => b.chance.compareTo(a.chance));
+    return candidates.take(3).toList(growable: false);
+  }
 }

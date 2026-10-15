@@ -91,15 +91,34 @@ class _FixtureList extends StatefulWidget {
 class _FixtureListState extends State<_FixtureList> {
   late int _selectedGameweekId;
 
+  /// Rebuilt only when the data changes, not on every Gameweek switch.
+  late Map<int, FixturePrediction> _predictions;
+
   @override
   void initState() {
     super.initState();
     _selectedGameweekId = widget.gameweekId;
+    _predictions = _predict();
+  }
+
+  Map<int, FixturePrediction> _predict() {
+    return const FixturePredictionEngine().predictNextGameweeks(
+      fixtures: widget.fixtures,
+      teams: widget.teams,
+      players: widget.players,
+      fromGameweekId: widget.gameweekId,
+    );
   }
 
   @override
   void didUpdateWidget(covariant _FixtureList oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!identical(widget.fixtures, oldWidget.fixtures) ||
+        !identical(widget.teams, oldWidget.teams) ||
+        !identical(widget.players, oldWidget.players) ||
+        widget.gameweekId != oldWidget.gameweekId) {
+      _predictions = _predict();
+    }
     if (!widget.gameweeks.any(
       (gameweek) => gameweek.id == _selectedGameweekId,
     )) {
@@ -141,12 +160,7 @@ class _FixtureListState extends State<_FixtureList> {
     final canGoNext =
         selectedGameweekIndex >= 0 &&
         selectedGameweekIndex < widget.gameweeks.length - 1;
-    final predictions = const FixturePredictionEngine().predictNextGameweeks(
-      fixtures: widget.fixtures,
-      teams: widget.teams,
-      players: widget.players,
-      fromGameweekId: widget.gameweekId,
-    );
+    final predictions = _predictions;
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -911,8 +925,85 @@ class _PredictedScoreCard extends StatelessWidget {
               ),
             ],
           ),
+          if (prediction.homeWinChance +
+                  prediction.drawChance +
+                  prediction.awayWinChance >
+              0) ...[
+            const SizedBox(height: 10),
+            Text(
+              l10n.predictionExpectedGoals(
+                prediction.homeExpectedGoals.toStringAsFixed(1),
+                prediction.awayExpectedGoals.toStringAsFixed(1),
+              ),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: colors.onSurfaceVariant,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 10),
+            _OutcomeProbabilityBar(prediction: prediction, l10n: l10n),
+          ],
         ],
       ),
+    );
+  }
+}
+
+/// Home win / draw / away win split as one segmented bar.
+class _OutcomeProbabilityBar extends StatelessWidget {
+  const _OutcomeProbabilityBar({required this.prediction, required this.l10n});
+
+  final FixturePrediction prediction;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final percent = l10n.isArabic ? '٪' : '%';
+    final outcomes = [
+      (l10n.predictionHomeWin, prediction.homeWinChance, colors.primary),
+      (l10n.predictionDraw, prediction.drawChance, colors.outline),
+      (l10n.predictionAwayWin, prediction.awayWinChance, colors.tertiary),
+    ];
+
+    return Column(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: SizedBox(
+            height: 8,
+            child: Row(
+              children: [
+                for (final (_, chance, color) in outcomes)
+                  if (chance > 0)
+                    Expanded(flex: chance, child: ColoredBox(color: color)),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            for (final (index, (label, chance, color)) in outcomes.indexed)
+              Expanded(
+                child: Text(
+                  '$label $chance$percent',
+                  textAlign: switch (index) {
+                    0 => TextAlign.start,
+                    1 => TextAlign.center,
+                    _ => TextAlign.end,
+                  },
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }

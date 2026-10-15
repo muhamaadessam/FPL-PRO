@@ -9,6 +9,7 @@ class RecommendationData {
     required this.bootstrap,
     required this.team,
     this.fixtures = const [],
+    this.projections = const [],
     this.updatedAt,
   });
 
@@ -17,5 +18,9 @@ class RecommendationData {
   final FplBootstrap bootstrap;
   final MyTeam team;
   final List<FplFixture> fixtures;
+
+  /// Every player's projection, as used for [result]; screens read these so
+  /// the same player never shows two different numbers.
+  final List<PlayerProjection> projections;
   final DateTime? updatedAt;
 }

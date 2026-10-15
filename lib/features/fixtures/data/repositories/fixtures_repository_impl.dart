@@ -21,6 +21,11 @@ class FixturesRepositoryImpl implements FixturesRepository {
   }
 
   @override
+  Future<Map<int, int>> getGameweekMinutes(int gameweekId) {
+    return _dataSource.getGameweekMinutes(gameweekId);
+  }
+
+  @override
   Future<Map<int, int>> getEntryHistoryPoints(int entryId) {
     return _dataSource.getEntryHistoryPoints(entryId);
   }

@@ -38,6 +38,17 @@ class HomePreloadState {
   final Object? error;
   final int? entryId;
 
+  /// The gameweek the home team view opens on: the current one, or the
+  /// manager's first gameweek when they joined after its deadline.
+  int? get homeGameweekId {
+    final currentGameweekId = bootstrap?.currentGameweekId;
+    if (currentGameweekId == null) return null;
+    final startedEvent = entry?.startedEvent;
+    return startedEvent != null && startedEvent > currentGameweekId
+        ? startedEvent
+        : currentGameweekId;
+  }
+
   HomePreloadState copyWith({
     PreloadStatus? status,
     FplBootstrap? bootstrap,
@@ -95,61 +106,72 @@ class HomePreloadCubit extends Cubit<HomePreloadState> {
 
     _isLoading = true;
     emit(state.copyWith(status: PreloadStatus.loading, error: null));
+    final entryId = session.entryId!;
     try {
+      // Entry metadata is supplementary, but it tells us whether this manager
+      // has played yet, so fetch it alongside the bootstrap.
+      final entryFuture = _loadEntry(entryId);
       final bootstrap = await fixturesRepository.getBootstrap();
+      final entry = await entryFuture;
       final currentGameweekId = bootstrap.currentGameweekId;
+      final nextGameweekId = bootstrap.gameweeks.isEmpty
+          ? currentGameweekId
+          : bootstrap.gameweeks
+                .firstWhere(
+                  (gameweek) => gameweek.isNext,
+                  orElse: () => bootstrap.gameweeks.firstWhere(
+                    (gameweek) => gameweek.id > currentGameweekId,
+                    orElse: () => bootstrap.gameweeks.last,
+                  ),
+                )
+                .id;
 
-      final nextGameweekId = bootstrap.gameweeks
-          .firstWhere(
-            (gameweek) => gameweek.isNext,
-            orElse: () => bootstrap.gameweeks.firstWhere(
-              (gameweek) => gameweek.id > bootstrap.currentGameweekId,
-              orElse: () => bootstrap.gameweeks.last,
-            ),
-          )
-          .id;
+      // A manager who joined after the current gameweek's deadline has no
+      // squad, live points or history for it yet; only the upcoming squad.
+      final hasCurrentSquad = entry?.hasStartedBy(currentGameweekId) ?? true;
 
       final futures = await Future.wait([
-        _loadCurrentTeamOrSetup(
-          teamRepository.getTeamForGameweek(
-            entryId: session.entryId!,
-            gameweekId: currentGameweekId,
+        hasCurrentSquad
+            ? _loadOptional(
+                teamRepository.getTeamForGameweek(
+                  entryId: entryId,
+                  gameweekId: currentGameweekId,
+                  session: session,
+                  currentGameweekId: currentGameweekId,
+                ),
+              )
+            : Future<MyTeam?>.value(),
+        _loadTeamOrSetup(
+          teamRepository.getMyTeam(
             session: session,
-            currentGameweekId: currentGameweekId,
+            entryId: entryId,
+            gameweekId: nextGameweekId,
           ),
         ),
-        teamRepository.getMyTeam(
-          session: session,
-          entryId: session.entryId!,
-          gameweekId: nextGameweekId,
-        ),
         fixturesRepository.getFixtures(),
-        fixturesRepository.getGameweekPoints(currentGameweekId),
+        hasCurrentSquad
+            ? _loadOptional(
+                fixturesRepository.getGameweekPoints(currentGameweekId),
+              )
+            : Future<Map<int, int>?>.value(),
       ]);
 
-      final teamCurrent = futures[0] as MyTeam;
       final teamNext = futures[1] as MyTeam;
+      // The current-gameweek squad is missing for new managers; the upcoming
+      // squad is what they have picked, so show that instead of failing.
+      final teamCurrent = futures[0] as MyTeam? ?? teamNext;
       final fixtures = futures[2] as List<FplFixture>;
-      final gameweekPoints = futures[3] as Map<int, int>;
+      final gameweekPoints = futures[3] as Map<int, int>? ?? const <int, int>{};
       final currentGameweekFixtures = fixtures
           .where((fixture) => fixture.gameweekId == currentGameweekId)
           .toList(growable: false);
 
-      var historyPoints = const <int, int>{};
-      try {
-        historyPoints = await fixturesRepository.getEntryHistoryPoints(
-          session.entryId!,
-        );
-      } catch (_) {
-        // history points are supplementary, failure shouldn't fail whole preload
-      }
-
-      FplEntry? entry;
-      try {
-        entry = await teamRepository.getEntry(session.entryId!);
-      } catch (_) {
-        // entry metadata is supplementary, failure shouldn't fail whole preload
-      }
+      // History points are supplementary; failure shouldn't fail the preload.
+      final historyPoints =
+          await _loadOptional(
+            fixturesRepository.getEntryHistoryPoints(entryId),
+          ) ??
+          const <int, int>{};
 
       final playerSummaries = Map<int, FplPlayerSummary>.fromEntries(
         await Future.wait(
@@ -178,14 +200,14 @@ class HomePreloadCubit extends Cubit<HomePreloadState> {
           gameweekPoints: gameweekPoints,
           historyPoints: historyPoints,
           playerSummaries: playerSummaries,
-          entryId: session.entryId,
+          entryId: entryId,
         ),
       );
     } on _MissingTeamPicksException {
       emit(
         state.copyWith(
           status: PreloadStatus.teamSetupRequired,
-          entryId: session.entryId,
+          entryId: entryId,
         ),
       );
     } catch (e) {
@@ -195,7 +217,18 @@ class HomePreloadCubit extends Cubit<HomePreloadState> {
     }
   }
 
-  Future<MyTeam> _loadCurrentTeamOrSetup(Future<MyTeam> request) async {
+  Future<FplEntry?> _loadEntry(int entryId) =>
+      _loadOptional(teamRepository.getEntry(entryId));
+
+  Future<T?> _loadOptional<T extends Object>(Future<T> request) async {
+    try {
+      return await request;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<MyTeam> _loadTeamOrSetup(Future<MyTeam> request) async {
     try {
       return await request;
     } on FplApiException catch (error) {

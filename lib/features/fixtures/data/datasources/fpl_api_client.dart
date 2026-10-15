@@ -109,6 +109,11 @@ class FplApiClient {
     return parseGameweekPoints(json);
   }
 
+  Future<Map<int, int>> getGameweekMinutes(int gameweekId) async {
+    final json = await _getMap('/event/$gameweekId/live/');
+    return parseGameweekStat(json, 'minutes');
+  }
+
   Future<Map<int, int>> getEntryHistoryPoints(int entryId) async {
     final json = await _getMap('/entry/$entryId/history/');
     return parseEntryHistoryPoints(json);
@@ -288,14 +293,18 @@ class FplApiClient {
 
 int? _intValue(dynamic value) => value is int ? value : int.tryParse('$value');
 
-Map<int, int> parseGameweekPoints(Map<String, dynamic> json) {
+Map<int, int> parseGameweekPoints(Map<String, dynamic> json) =>
+    parseGameweekStat(json, 'total_points');
+
+/// One stat per player from an `/event/{id}/live/` response.
+Map<int, int> parseGameweekStat(Map<String, dynamic> json, String stat) {
   final elements = json['elements'];
   if (elements is! List) return const {};
   return {
     for (final element in elements.whereType<Map>())
       if (_intValue(element['id']) != null && element['stats'] is Map)
         _intValue(element['id'])!:
-            _intValue((element['stats'] as Map)['total_points']) ?? 0,
+            _intValue((element['stats'] as Map)[stat]) ?? 0,
   };
 }
 

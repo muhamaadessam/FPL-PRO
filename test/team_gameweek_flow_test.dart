@@ -10,6 +10,7 @@ import 'package:fantasy_pl/features/fixtures/data/repositories/fixtures_reposito
 import 'package:fantasy_pl/features/fixtures/domain/repositories/fixtures_repository.dart';
 import 'package:fantasy_pl/features/team/data/repositories/team_repository.dart';
 import 'package:fantasy_pl/features/team/domain/repositories/team_repository.dart';
+import 'package:fantasy_pl/features/team/presentation/cubit/team_cubit.dart';
 import 'package:fantasy_pl/features/team/presentation/screens/team_view.dart';
 import 'package:fantasy_pl/features/team/presentation/widgets/pitch_view.dart';
 import 'package:fantasy_pl/l10n/app_localizations.dart';
@@ -170,6 +171,29 @@ void main() {
     expect(nextButton.onPressed, isNull);
   });
 
+  test('explains a looked-up manager whose first gameweek is ahead', () async {
+    final api = _NotStartedFplApiClient();
+    final cubit = TeamCubit(
+      fixturesRepository: FixturesRepositoryImpl(api),
+      teamRepository: TeamRepositoryImpl(api),
+      entryId: 123,
+    );
+
+    await cubit.load();
+
+    expect(cubit.state.status, TeamStatus.failure);
+    expect(
+      cubit.state.error,
+      isA<TeamNotStartedException>().having(
+        (error) => error.firstGameweekId,
+        'firstGameweekId',
+        5,
+      ),
+    );
+    expect(api.teamRequests, isEmpty);
+    await cubit.close();
+  });
+
   testWidgets('team layout bounds in Arabic at 320px', (tester) async {
     tester.view.physicalSize = const Size(320, 800);
     tester.view.devicePixelRatio = 1.0;
@@ -275,4 +299,16 @@ class _FakeFplApiClient extends FplApiClient {
 
   @override
   void dispose() {}
+}
+
+class _NotStartedFplApiClient extends _FakeFplApiClient {
+  @override
+  Future<FplEntry> getEntry(int entryId) async {
+    return FplEntry.fromJson({
+      'id': entryId,
+      'name': 'New FC',
+      'started_event': 5,
+      'summary_overall_rank': null,
+    });
+  }
 }
