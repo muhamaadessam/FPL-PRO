@@ -156,7 +156,7 @@ class TeamCubit extends Cubit<TeamState> {
       session: session,
       entryId: session.entryId!,
       gameweekId: gameweekId,
-      currentGameweekId: bootstrap.currentGameweekId,
+      editableGameweekId: bootstrap.editableGameweekId,
     );
   }
 

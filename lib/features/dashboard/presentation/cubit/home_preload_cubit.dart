@@ -137,7 +137,7 @@ class HomePreloadCubit extends Cubit<HomePreloadState> {
                   entryId: entryId,
                   gameweekId: currentGameweekId,
                   session: session,
-                  currentGameweekId: currentGameweekId,
+                  editableGameweekId: nextGameweekId,
                 ),
               )
             : Future<MyTeam?>.value(),

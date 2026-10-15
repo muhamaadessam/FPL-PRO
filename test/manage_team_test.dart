@@ -254,7 +254,7 @@ class _FakeTeamRepository implements TeamRepository {
     required OfficialSession session,
     required int entryId,
     required int gameweekId,
-    required int currentGameweekId,
+    required int editableGameweekId,
   }) async => _team();
 
   @override

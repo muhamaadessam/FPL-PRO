@@ -39,9 +39,11 @@ class TeamRepositoryImpl implements TeamRepository {
     required OfficialSession session,
     required int entryId,
     required int gameweekId,
-    required int currentGameweekId,
+    required int editableGameweekId,
   }) {
-    if (gameweekId >= currentGameweekId) {
+    // Only the gameweek still open for changes comes from the private squad
+    // endpoint; once a deadline has passed the official picks are final.
+    if (gameweekId >= editableGameweekId) {
       return getMyTeam(
         session: session,
         entryId: entryId,

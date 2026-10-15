@@ -315,6 +315,18 @@ class FplBootstrap {
     return gameweeks.isEmpty ? 1 : gameweeks.last.id;
   }
 
+  /// The first gameweek whose deadline has not passed, so the only one whose
+  /// squad is still editable. Earlier gameweeks have official, final picks.
+  int get editableGameweekId {
+    for (final gameweek in gameweeks) {
+      if (gameweek.isNext) return gameweek.id;
+    }
+    for (final gameweek in gameweeks) {
+      if (!gameweek.isCurrent && !gameweek.finished) return gameweek.id;
+    }
+    return currentGameweekId;
+  }
+
   factory FplBootstrap.fromJson(Map<String, dynamic> json) {
     final rawEvents = (json['events'] as List<dynamic>? ?? const [])
         .whereType<Map<String, dynamic>>()
