@@ -403,7 +403,7 @@ class _FakeTeamRepository implements TeamRepository {
     required OfficialSession session,
     required int entryId,
     required int gameweekId,
-    required int currentGameweekId,
+    required int editableGameweekId,
   }) async {
     currentRequests.add(gameweekId);
     if (currentError != null) throw currentError!;

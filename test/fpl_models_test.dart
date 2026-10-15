@@ -283,4 +283,38 @@ void main() {
     expect(scoring.goals, {1: 10, 2: 6, 3: 5, 4: 4});
     expect(scoring.cleanSheets, {1: 4, 2: 4, 3: 1, 4: 0});
   });
+
+  test('only the gameweek still open for changes is editable', () {
+    Map<String, dynamic> event(
+      int id, {
+      bool finished = false,
+      bool current = false,
+      bool next = false,
+    }) => {
+      'id': id,
+      'name': 'Gameweek $id',
+      'deadline_time': '2026-10-10T10:00:00Z',
+      'finished': finished,
+      'is_current': current,
+      'is_next': next,
+    };
+
+    // Between deadlines the current gameweek is locked; its picks are final.
+    final midSeason = FplBootstrap.fromJson({
+      'events': [
+        event(5, finished: true),
+        event(6, finished: true, current: true),
+        event(7, next: true),
+      ],
+    });
+    expect(midSeason.currentGameweekId, 6);
+    expect(midSeason.editableGameweekId, 7);
+
+    // Before the first deadline nothing is current and the next one is open.
+    final preSeason = FplBootstrap.fromJson({
+      'events': [event(1, next: true), event(2)],
+    });
+    expect(preSeason.currentGameweekId, 1);
+    expect(preSeason.editableGameweekId, 1);
+  });
 }

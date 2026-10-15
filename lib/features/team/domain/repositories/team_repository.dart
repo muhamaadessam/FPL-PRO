@@ -19,7 +19,7 @@ abstract interface class TeamRepository {
     required OfficialSession session,
     required int entryId,
     required int gameweekId,
-    required int currentGameweekId,
+    required int editableGameweekId,
   });
 
   Future<MyTeam> getPublicTeam({required int entryId, required int gameweekId});

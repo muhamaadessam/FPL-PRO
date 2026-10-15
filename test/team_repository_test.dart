@@ -11,7 +11,7 @@ import 'package:fantasy_pl/features/team/data/repositories/team_repository.dart'
 
 void main() {
   test(
-    'uses private picks for the current and future gameweeks',
+    'uses private picks only for the gameweek still open for changes',
     () async {
       final api = _FakeFplApiClient();
       final repository = TeamRepositoryImpl(api);
@@ -21,23 +21,23 @@ void main() {
         session: session,
         entryId: 123,
         gameweekId: 4,
-        currentGameweekId: 4,
+        editableGameweekId: 5,
       );
       await repository.getTeamForGameweek(
         session: session,
         entryId: 123,
         gameweekId: 5,
-        currentGameweekId: 4,
+        editableGameweekId: 5,
       );
       await repository.getTeamForGameweek(
         session: session,
         entryId: 123,
         gameweekId: 3,
-        currentGameweekId: 4,
+        editableGameweekId: 5,
       );
 
-      expect(api.privateRequests, [4, 5]);
-      expect(api.publicRequests, [3]);
+      expect(api.privateRequests, [5]);
+      expect(api.publicRequests, [4, 3]);
     },
   );
 

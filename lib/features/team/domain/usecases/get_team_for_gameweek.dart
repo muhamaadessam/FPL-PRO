@@ -11,13 +11,13 @@ class GetTeamForGameweek {
     required OfficialSession session,
     required int entryId,
     required int gameweekId,
-    required int currentGameweekId,
+    required int editableGameweekId,
   }) {
     return _repository.getTeamForGameweek(
       session: session,
       entryId: entryId,
       gameweekId: gameweekId,
-      currentGameweekId: currentGameweekId,
+      editableGameweekId: editableGameweekId,
     );
   }
 }
