@@ -26,15 +26,19 @@ class TeamRatings {
   /// Matches the league scoring prior is worth against this season's data.
   static const _leaguePriorMatches = 60.0;
 
-  /// Matches a team's prior rating is worth against its own results.
-  static const _teamPriorMatches = 6.0;
+  /// Matches a team's prior is worth against its own results: more when it
+  /// comes from the official ratings than when it is just the league average.
+  /// Backtested on 2025-26 (test/backtest/): 12 beat 6 with official ratings
+  /// (1X2 log-loss 1.0139 vs 1.0195), while without them 6 was as good as any.
+  static const defaultRatedTeamPriorMatches = 12.0;
+  static const defaultTeamPriorMatches = 6.0;
 
   /// Exponent that widens the official ratings' narrow spread.
   static const _strengthSensitivity = 2.0;
   static const _missingRating = 1000;
 
   /// xG is a steadier signal of quality than goals over a few matches.
-  static const _expectedGoalsWeight = 0.65;
+  static const defaultExpectedGoalsWeight = 0.65;
   static const _iterations = 5;
   static const _minRating = 0.4;
   static const _maxRating = 2.5;
@@ -75,6 +79,9 @@ class TeamRatings {
     required Map<int, FplTeam> teams,
     required List<FplFixture> fixtures,
     Map<int, FplPlayer> players = const {},
+    double ratedTeamPriorMatches = defaultRatedTeamPriorMatches,
+    double teamPriorMatches = defaultTeamPriorMatches,
+    double expectedGoalsWeight = defaultExpectedGoalsWeight,
   }) {
     final results = fixtures
         .where(
@@ -141,7 +148,7 @@ class TeamRatings {
         ? 0
         : expected == null || expected <= 0
         ? goals
-        : expected * _expectedGoalsWeight + goals * (1 - _expectedGoalsWeight);
+        : expected * expectedGoalsWeight + goals * (1 - expectedGoalsWeight);
 
     final ids = {...priors.keys, ...matches.keys};
     var attack = {for (final id in ids) id: priors[id]?.$1 ?? 1.0};
@@ -161,7 +168,11 @@ class TeamRatings {
               (home ? awayGoals : homeGoals) * (attack[opponent] ?? 1.0);
         }
         final prior = priors[id] ?? (1.0, 1.0);
-        final weight = _teamPriorMatches * averageGoals;
+        final weight =
+            (priors.containsKey(id)
+                ? ratedTeamPriorMatches
+                : teamPriorMatches) *
+            averageGoals;
         nextAttack[id] =
             ((observed(id, goalsFor[id] ?? 0, expectedFor[id]) +
                         prior.$1 * weight) /

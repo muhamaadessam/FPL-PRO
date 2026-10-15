@@ -57,10 +57,19 @@ class FixturePrediction {
 /// Player events split the team's expected goals by each player's
 /// shrunk xG (or xA) rate and expected share of the minutes.
 class FixturePredictionEngine {
-  const FixturePredictionEngine();
+  /// The defaults are the tuned values; overrides exist for the backtest in
+  /// test/backtest/.
+  const FixturePredictionEngine({
+    this.rho = defaultRho,
+    this.priorMinutes = defaultPriorMinutes,
+    this.absenceImpact = defaultAbsenceImpact,
+    this.ratedTeamPriorMatches = TeamRatings.defaultRatedTeamPriorMatches,
+    this.teamPriorMatches = TeamRatings.defaultTeamPriorMatches,
+    this.expectedGoalsWeight = TeamRatings.defaultExpectedGoalsWeight,
+  });
 
   /// Dixon-Coles low-score dependence; negative raises 0-0 and 1-1.
-  static const _rho = -0.08;
+  static const defaultRho = -0.08;
   static const _maxGoals = 10;
 
   /// Share of goals that are own goals, and that earn an FPL assist.
@@ -69,7 +78,7 @@ class FixturePredictionEngine {
 
   /// Minutes of position-average output added to each player's record, so a
   /// lucky 90 minutes does not outrank a season of evidence.
-  static const _priorMinutes = 450.0;
+  static const defaultPriorMinutes = 450.0;
 
   /// Position-average xG and xA per 90, by position id.
   static const _goalPrior = {1: 0.005, 2: 0.05, 3: 0.13, 4: 0.33};
@@ -79,7 +88,16 @@ class FixturePredictionEngine {
   static const _goalsWeight = 0.2;
 
   /// Part of a missing player's threat the rest of the side cannot replace.
-  static const _absenceImpact = 0.6;
+  static const defaultAbsenceImpact = 0.6;
+
+  final double rho;
+  final double priorMinutes;
+  final double absenceImpact;
+
+  /// See [TeamRatings.from].
+  final double ratedTeamPriorMatches;
+  final double teamPriorMatches;
+  final double expectedGoalsWeight;
 
   Map<int, FixturePrediction> predictNextGameweeks({
     required List<FplFixture> fixtures,
@@ -105,6 +123,9 @@ class FixturePredictionEngine {
       teams: teams,
       fixtures: fixtures,
       players: players,
+      ratedTeamPriorMatches: ratedTeamPriorMatches,
+      teamPriorMatches: teamPriorMatches,
+      expectedGoalsWeight: expectedGoalsWeight,
     );
 
     return Map.unmodifiable({
@@ -126,7 +147,14 @@ class FixturePredictionEngine {
     TeamRatings? ratings,
   }) {
     final teamRatings =
-        ratings ?? TeamRatings.from(teams: teams, fixtures: const []);
+        ratings ??
+        TeamRatings.from(
+          teams: teams,
+          fixtures: const [],
+          ratedTeamPriorMatches: ratedTeamPriorMatches,
+          teamPriorMatches: teamPriorMatches,
+          expectedGoalsWeight: expectedGoalsWeight,
+        );
     final (homeRate, awayRate) = _teamRates(fixture, teamRatings);
     final priceAverages = _averagePriceByPosition(players);
     final home = _squad(
@@ -225,10 +253,10 @@ class FixturePredictionEngine {
     final home = _poisson(homeLambda);
     final away = _poisson(awayLambda);
     double tau(int h, int a) => switch ((h, a)) {
-      (0, 0) => 1 - homeLambda * awayLambda * _rho,
-      (0, 1) => 1 + homeLambda * _rho,
-      (1, 0) => 1 + awayLambda * _rho,
-      (1, 1) => 1 - _rho,
+      (0, 0) => 1 - homeLambda * awayLambda * rho,
+      (0, 1) => 1 + homeLambda * rho,
+      (1, 0) => 1 + awayLambda * rho,
+      (1, 1) => 1 - rho,
       _ => 1.0,
     };
     final matrix = [
@@ -295,16 +323,16 @@ class FixturePredictionEngine {
         ),
       );
     }
-    return _Squad(members);
+    return _Squad(members, absenceImpact);
   }
 
-  /// Per-90 rate shrunk towards [prior] by [_priorMinutes] of average output.
+  /// Per-90 rate shrunk towards [prior] by [priorMinutes] of average output.
   double _rate(FplPlayer player, double expected, int actual, double prior) {
     final evidence = expected > 0 || actual > 0
         ? expected * (1 - _goalsWeight) + actual * _goalsWeight
         : 0.0;
-    return (evidence + prior * _priorMinutes / 90) /
-        ((player.minutes + _priorMinutes) / 90);
+    return (evidence + prior * priorMinutes / 90) /
+        ((player.minutes + priorMinutes) / 90);
   }
 
   /// Pricier players carry more attacking threat than their position average.
@@ -352,9 +380,10 @@ class _Member {
 }
 
 class _Squad {
-  const _Squad(this.members);
+  const _Squad(this.members, this.absenceImpact);
 
   final List<_Member> members;
+  final double absenceImpact;
 
   /// Share of the side's usual threat still available, softened because
   /// replacements cover part of an absence.
@@ -365,9 +394,7 @@ class _Squad {
       0.0,
       (sum, m) => sum + m.weight(true) * m.availability,
     );
-    return 1 -
-        FixturePredictionEngine._absenceImpact *
-            (1 - (available / full).clamp(0.0, 1.0));
+    return 1 - absenceImpact * (1 - (available / full).clamp(0.0, 1.0));
   }
 
   /// Top three outfield candidates to score ([goals]) or assist, splitting
