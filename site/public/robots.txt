@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://fpl-pro.muhammadessam.me/sitemap.xml
