@@ -405,6 +405,8 @@ class AppLocalizations {
   String get suspended => isArabic ? 'موقوف' : 'Suspended';
   String get doubtful => isArabic ? 'مشكوك في مشاركته' : 'Doubtful';
   String get unavailable => isArabic ? 'غير متاح' : 'Unavailable';
+  String get backSoon =>
+      isArabic ? 'غائب الآن ويعود قريبًا' : 'Out now, back soon';
   String chanceOfPlaying(int chance) =>
       isArabic ? '$chance٪ احتمال المشاركة' : '$chance% chance of playing';
   String get unknown => isArabic ? 'غير معروف' : 'Unknown';

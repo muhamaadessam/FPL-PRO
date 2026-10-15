@@ -447,6 +447,85 @@ void main() {
   });
 
   group('transfer plan', () {
+    final weeklyDeadlines = [
+      {'id': 4, 'name': 'Gameweek 4', 'is_current': true},
+      for (final (id, day) in [(5, 12), (6, 19), (7, 26)])
+        {
+          'id': id,
+          'name': 'Gameweek $id',
+          'is_next': id == 5,
+          'deadline_time': '2026-09-${day}T10:00:00Z',
+        },
+    ];
+    Map<String, dynamic> injured(int id, String name, int team, String news) =>
+        _player(
+          id,
+          name,
+          team,
+          3,
+          50,
+          6,
+          status: 'i',
+          stats: {'news': news, 'chance_of_playing_next_round': 0},
+        );
+
+    test(
+      'keeps a player due back next week and sells the long-term injury',
+      () {
+        final result = _build(
+          players: [
+            injured(
+              1,
+              'Back soon',
+              1,
+              'Hamstring injury - Expected back 19 Sep',
+            ),
+            injured(2, 'Long term', 2, 'Knee injury - Unknown return date'),
+            _player(3, 'Fit', 3, 3, 50, 5),
+          ],
+          picks: [_pick(1, 1, 3), _pick(2, 2, 3)],
+          transfers: {'bank': 0, 'limit': 1, 'made': 0},
+          fixtures: _fixturesFor(teams: [1, 2, 3]),
+          events: weeklyDeadlines,
+        );
+        final squad = {
+          for (final player in result.squadAnalysis.players)
+            player.projection.player.id: player.projection,
+        };
+
+        expect(squad[1]!.availabilityOutlook, [0, 0.9, 0.9]);
+        expect(squad[1]!.isShortTermAbsence, isTrue);
+        expect(squad[2]!.availabilityOutlook, [0, 0.1, 0.3]);
+        expect(squad[2]!.isShortTermAbsence, isFalse);
+        expect(
+          squad[1]!.horizonPoints,
+          greaterThan(squad[2]!.horizonPoints * 2),
+        );
+        expect(result.transfers.single.outPlayer.id, 2);
+        expect(result.transfers.single.inPlayer.id, 3);
+      },
+    );
+
+    test('expects suspended players back once the ban ends', () {
+      final result = _build(
+        players: [
+          {
+            ..._player(1, 'Banned', 1, 3, 50, 6, status: 's'),
+            'news': 'Suspended until 25 Sep',
+            'chance_of_playing_next_round': 0,
+          },
+        ],
+        picks: [_pick(1, 1, 3)],
+        fixtures: _fixturesFor(teams: [1]),
+        events: weeklyDeadlines,
+      );
+
+      expect(
+        result.squadAnalysis.players.single.projection.availabilityOutlook,
+        [0, 0, 0.9],
+      );
+    });
+
     test('charges a hit for every transfer beyond the free ones', () {
       final result = _build(
         players: [
@@ -914,12 +993,15 @@ FplBootstrap _bootstrap(
   List<Map<String, dynamic>> players, {
   List<Map<String, dynamic>>? teams,
   Map<String, dynamic>? scoring,
+  List<Map<String, dynamic>>? events,
 }) {
   return FplBootstrap.fromJson({
-    'events': [
-      {'id': 4, 'name': 'Gameweek 4', 'is_current': true},
-      {'id': 5, 'name': 'Gameweek 5', 'is_next': true},
-    ],
+    'events':
+        events ??
+        [
+          {'id': 4, 'name': 'Gameweek 4', 'is_current': true},
+          {'id': 5, 'name': 'Gameweek 5', 'is_next': true},
+        ],
     'teams':
         teams ??
         [
@@ -981,10 +1063,16 @@ RecommendationResult _build({
   List<Map<String, dynamic>>? teams,
   Map<int, FplPlayerSummary> playerSummaries = const {},
   Map<String, dynamic>? scoring,
+  List<Map<String, dynamic>>? events,
   int gameweekId = 5,
 }) {
   return const RecommendationEngine().build(
-    bootstrap: _bootstrap(players, teams: teams, scoring: scoring),
+    bootstrap: _bootstrap(
+      players,
+      teams: teams,
+      scoring: scoring,
+      events: events,
+    ),
     fixtures: fixtures,
     team: MyTeam.fromJson({
       'picks': picks,

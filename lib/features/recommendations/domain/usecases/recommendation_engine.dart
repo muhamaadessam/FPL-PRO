@@ -26,7 +26,9 @@ class PlayerProjection {
     required this.nextFixtureCount,
     required this.nextDifficulties,
     double? nextFixtureLoad,
-  }) : nextFixtureLoad = nextFixtureLoad ?? nextFixtureCount * 1.0;
+    List<double>? availabilityOutlook,
+  }) : nextFixtureLoad = nextFixtureLoad ?? nextFixtureCount * 1.0,
+       availabilityOutlook = availabilityOutlook ?? const [];
 
   final FplPlayer player;
   final double nextPoints;
@@ -38,6 +40,15 @@ class PlayerProjection {
   /// Sum of the next Gameweek's fixture multipliers: a per-match estimate
   /// times this gives the Gameweek, covering blanks, doubles and opponents.
   final double nextFixtureLoad;
+
+  /// Chance of being available in each of the next three Gameweeks, from the
+  /// injury or suspension news; empty when unknown.
+  final List<double> availabilityOutlook;
+
+  /// Out now but expected back within the projection horizon.
+  bool get isShortTermAbsence =>
+      availability < 0.5 &&
+      availabilityOutlook.skip(1).any((chance) => chance >= 0.75);
 
   /// Rough 80% band for the next Gameweek; see [likelyPointsRange].
   (double, double) get nextRange => likelyPointsRange(nextPoints);
@@ -202,6 +213,28 @@ class RecommendationEngine {
   static const _maxFreeTransfers = 5;
   static const _maxSuggestedTransfers = 3;
 
+  /// Gameweeks covered by the horizon projection.
+  static const _horizon = 3;
+
+  static final _returnDatePattern = RegExp(
+    r'(?:expected back|suspended until)\s+(\d{1,2})\s+([a-z]{3})',
+    caseSensitive: false,
+  );
+  static const _months = {
+    'jan': 1,
+    'feb': 2,
+    'mar': 3,
+    'apr': 4,
+    'may': 5,
+    'jun': 6,
+    'jul': 7,
+    'aug': 8,
+    'sep': 9,
+    'oct': 10,
+    'nov': 11,
+    'dec': 12,
+  };
+
   /// Option value of rolling a free transfer instead of using it.
   static const _rollTransferValue = 2.0;
 
@@ -257,6 +290,10 @@ class RecommendationEngine {
         players: bootstrap.players,
       ),
     );
+    final deadlines = {
+      for (final gameweek in bootstrap.gameweeks)
+        gameweek.id: gameweek.deadlineTime,
+    };
     final projections =
         bootstrap.players.values
             .map(
@@ -264,6 +301,7 @@ class RecommendationEngine {
                 player,
                 fixtures,
                 gameweekId,
+                deadlines,
                 strengths,
                 _recentMinutes(playerSummaries[player.id]),
                 bootstrap.scoring,
@@ -861,11 +899,18 @@ class RecommendationEngine {
     FplPlayer player,
     List<FplFixture> fixtures,
     int gameweekId,
+    Map<int, DateTime?> deadlines,
     _TeamStrengths? strengths,
     List<int>? recentMinutes,
     FplScoring scoring,
   ) {
     final availability = _availability(player);
+    final outlook = _availabilityOutlook(
+      player,
+      availability,
+      gameweekId,
+      deadlines,
+    );
     final reliability = _minutesShare(
       player,
       strengths?.matchesPlayed(player.teamId) ?? 0,
@@ -896,7 +941,7 @@ class RecommendationEngine {
     var nextDifficulties = const <int>[];
     var nextLoad = 0.0;
 
-    for (var offset = 0; offset < 3; offset++) {
+    for (var offset = 0; offset < _horizon; offset++) {
       final eventFixtures = fixtures
           .where(
             (fixture) =>
@@ -921,7 +966,7 @@ class RecommendationEngine {
               defenceShare: defenceShare,
             ),
       );
-      final recentScore = recent * availability * fixtureFactor;
+      final recentScore = recent * outlook[offset] * fixtureFactor;
       // `ep_next` already accounts for availability, fixture difficulty and
       // Double Gameweeks, so it must not be scaled by them again.
       // An unavailable player scores nothing, even if ep_next is stale.
@@ -943,6 +988,7 @@ class RecommendationEngine {
       nextPoints: next,
       horizonPoints: horizon,
       availability: availability,
+      availabilityOutlook: outlook,
       nextFixtureCount: nextCount,
       nextDifficulties: nextDifficulties,
       nextFixtureLoad: nextLoad,
@@ -1375,6 +1421,77 @@ class RecommendationEngine {
     return teamId == fixture.homeTeamId
         ? fixture.homeDifficulty ?? 3
         : fixture.awayDifficulty ?? 3;
+  }
+
+  /// Availability for each of the next [_horizon] Gameweeks. The first is
+  /// the official chance; later ones follow the news: a return or suspension
+  /// end date, an unknown return date, or a knock that usually clears.
+  List<double> _availabilityOutlook(
+    FplPlayer player,
+    double next,
+    int gameweekId,
+    Map<int, DateTime?> deadlines,
+  ) {
+    final status = player.status.toLowerCase();
+    if (!player.canSelect || status == 'u') {
+      return List.filled(_horizon, 0.0, growable: false);
+    }
+    if (status == 'a' && next >= 1) {
+      return List.filled(_horizon, 1.0, growable: false);
+    }
+    final firstDeadline = deadlines[gameweekId]?.toUtc();
+    final returnDate = firstDeadline == null
+        ? null
+        : _returnDate(player.news, firstDeadline);
+    return [
+      for (var offset = 0; offset < _horizon; offset++)
+        if (offset == 0)
+          next
+        else if (returnDate != null)
+          _availableBy(
+            returnDate,
+            deadlines[gameweekId + offset]?.toUtc() ??
+                firstDeadline!.add(Duration(days: 7 * offset)),
+          )
+        else
+          switch (status) {
+            // Unknown return date: usually several weeks out.
+            'i' when next == 0 => const [0.0, 0.1, 0.3][offset],
+            // Bans run one to three matches.
+            's' => const [0.0, 0.6, 1.0][offset],
+            // A one-off, such as a loanee facing the parent club.
+            'n' => 1.0,
+            // Knocks: each week clears most of the remaining doubt.
+            _ => 1 - (1 - next) * math.pow(0.25, offset),
+          },
+    ];
+  }
+
+  /// Chance of playing in a Gameweek whose deadline is [deadline] for a
+  /// player due back on [returnDate]; matches run a few days past it.
+  double _availableBy(DateTime returnDate, DateTime deadline) {
+    if (!returnDate.isAfter(deadline.add(const Duration(days: 1)))) {
+      return 0.9;
+    }
+    if (!returnDate.isAfter(deadline.add(const Duration(days: 4)))) {
+      return 0.4;
+    }
+    return 0;
+  }
+
+  /// Parses "Expected back 1 Nov" or "Suspended until 25 Oct" from the news.
+  DateTime? _returnDate(String news, DateTime reference) {
+    final match = _returnDatePattern.firstMatch(news);
+    if (match == null) return null;
+    final month = _months[match.group(2)!.toLowerCase()];
+    final day = int.tryParse(match.group(1)!);
+    if (month == null || day == null) return null;
+    var date = DateTime.utc(reference.year, month, day);
+    // News never looks months back, so an early date is next year's.
+    if (date.isBefore(reference.subtract(const Duration(days: 180)))) {
+      date = DateTime.utc(reference.year + 1, month, day);
+    }
+    return date;
   }
 
   double _availability(FplPlayer player) {
