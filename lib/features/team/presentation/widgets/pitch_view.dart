@@ -657,6 +657,7 @@ class _PitchPlayer extends StatelessWidget {
         : 'shirt_$code-66.webp';
     return Image.network(
       'https://fantasy.premierleague.com/dist/img/shirts/standard/$fileName',
+      webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
       fit: BoxFit.contain,
       errorBuilder: (_, _, _) => fallback,
     );
@@ -677,6 +678,7 @@ class _ClubLogo extends StatelessWidget {
     }
     return Image.network(
       'https://resources.premierleague.com/premierleague/badges/70/t$code.png',
+      webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
       width: 11,
       height: 11,
       fit: BoxFit.contain,

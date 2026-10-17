@@ -386,6 +386,7 @@ class _TeamBadge extends StatelessWidget {
     if (teamCode == null) return _FallbackShield(size: size);
     return Image.network(
       'https://resources.premierleague.com/premierleague/badges/70/t$teamCode.png',
+      webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
       width: size,
       height: size,
       errorBuilder: (context, error, stackTrace) => _FallbackShield(size: size),
