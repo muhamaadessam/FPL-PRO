@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../layout/responsive.dart';
+import '../themes/app_colors.dart';
 
 class PillTab {
   const PillTab({required this.icon, required this.label, this.badge});
@@ -12,9 +13,9 @@ class PillTab {
   final String? badge;
 }
 
-/// Segmented tab bar. Phones get equal-width tabs across the screen; wide
-/// screens get a compact group at the start, like tabs on a website, instead
-/// of a bar stretched across the whole window.
+/// Tab bar that adapts to the screen. Phones get a segmented control with
+/// equal-width tabs; wide screens get website-style tabs: labels at the start
+/// with an underline on the selected one, matching the top navigation.
 class PillTabBar extends StatelessWidget {
   const PillTabBar({
     super.key,
@@ -37,8 +38,9 @@ class PillTabBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final compact = Breakpoints.hasTopNav(context);
+    if (compact) return _buildUnderlined(context);
 
-    final bar = Container(
+    return Container(
       height: height,
       decoration: BoxDecoration(
         color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
@@ -46,11 +48,6 @@ class PillTabBar extends StatelessWidget {
       ),
       child: TabBar(
         controller: controller,
-        isScrollable: compact,
-        tabAlignment: compact ? TabAlignment.start : null,
-        labelPadding: compact
-            ? const EdgeInsets.symmetric(horizontal: 20)
-            : null,
         indicatorSize: TabBarIndicatorSize.tab,
         dividerColor: Colors.transparent,
         indicator: BoxDecoration(
@@ -64,50 +61,76 @@ class PillTabBar extends StatelessWidget {
           fontWeight: FontWeight.w600,
           fontSize: fontSize,
         ),
-        tabs: [
-          for (final tab in tabs)
-            Tab(
-              child: Row(
-                mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(tab.icon, size: 16),
-                  const SizedBox(width: 6),
-                  if (compact)
-                    Text(tab.label)
-                  else
-                    Flexible(
-                      child: Text(tab.label, overflow: TextOverflow.ellipsis),
-                    ),
-                  if (tab.badge != null) ...[
-                    const SizedBox(width: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 5,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colors.primary,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        tab.badge!,
-                        style: TextStyle(
-                          color: colors.onPrimary,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
+        tabs: [for (final tab in tabs) _tab(context, tab, compact: false)],
+      ),
+    );
+  }
+
+  Widget _buildUnderlined(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = isDark
+        ? AppColors.plMint
+        : Theme.of(context).colorScheme.primary;
+    return TabBar(
+      controller: controller,
+      isScrollable: true,
+      tabAlignment: TabAlignment.start,
+      labelPadding: const EdgeInsetsDirectional.only(end: 28),
+      indicatorSize: TabBarIndicatorSize.label,
+      indicator: UnderlineTabIndicator(
+        borderSide: BorderSide(color: accent, width: 2.5),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(2)),
+      ),
+      dividerColor: AppColors.cardBorder(isDark),
+      overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+      labelColor: AppColors.textPrimary(isDark),
+      unselectedLabelColor: AppColors.textSecondary(isDark),
+      labelStyle: TextStyle(
+        fontWeight: FontWeight.w800,
+        fontSize: fontSize + 1,
+      ),
+      unselectedLabelStyle: TextStyle(
+        fontWeight: FontWeight.w600,
+        fontSize: fontSize + 1,
+      ),
+      tabs: [for (final tab in tabs) _tab(context, tab, compact: true)],
+    );
+  }
+
+  Widget _tab(BuildContext context, PillTab tab, {required bool compact}) {
+    final colors = Theme.of(context).colorScheme;
+    return Tab(
+      height: compact ? 40 : null,
+      child: Row(
+        mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(tab.icon, size: 16),
+          const SizedBox(width: 6),
+          if (compact)
+            Text(tab.label)
+          else
+            Flexible(child: Text(tab.label, overflow: TextOverflow.ellipsis)),
+          if (tab.badge != null) ...[
+            const SizedBox(width: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              decoration: BoxDecoration(
+                color: colors.primary,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                tab.badge!,
+                style: TextStyle(
+                  color: colors.onPrimary,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
             ),
+          ],
         ],
       ),
     );
-
-    if (!compact) return bar;
-    return Align(alignment: AlignmentDirectional.centerStart, child: bar);
   }
 }
