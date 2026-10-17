@@ -5,5 +5,6 @@ library;
 export 'src/models/fpl_models.dart';
 export 'src/models/team_models.dart';
 export 'src/predict_fixtures.dart';
+export 'src/published_predictions.dart';
 export 'src/recommendation_engine.dart';
 export 'src/team_ratings.dart';

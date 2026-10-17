@@ -348,6 +348,16 @@ class _FakeFixturesRepository implements FixturesRepository {
   @override
   Future<FplPlayerSummary> getPlayerSummary(int playerId) async =>
       const FplPlayerSummary();
+
+  @override
+  Future<PublishedFixturePredictions?> getPublishedFixturePredictions(
+    Map<int, FplPlayer> players,
+  ) async => null;
+
+  @override
+  Future<PublishedPlayerProjections?> getPublishedPlayerProjections(
+    Map<int, FplPlayer> players,
+  ) async => null;
 }
 
 class _FakeTeamRepository implements TeamRepository {

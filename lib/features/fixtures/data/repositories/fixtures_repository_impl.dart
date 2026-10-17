@@ -1,11 +1,14 @@
 import '../../domain/repositories/fixtures_repository.dart';
 import '../datasources/fpl_api_client.dart';
+import '../datasources/published_predictions_client.dart';
 import 'package:fpl_engine/fpl_engine.dart';
 
 class FixturesRepositoryImpl implements FixturesRepository {
-  const FixturesRepositoryImpl(this._dataSource);
+  /// Without [published] the app always computes predictions on device.
+  const FixturesRepositoryImpl(this._dataSource, {this._published});
 
   final FplApiClient _dataSource;
+  final PublishedPredictionsClient? _published;
 
   @override
   Future<FplBootstrap> getBootstrap() => _dataSource.getBootstrap();
@@ -33,5 +36,29 @@ class FixturesRepositoryImpl implements FixturesRepository {
   @override
   Future<FplPlayerSummary> getPlayerSummary(int playerId) {
     return _dataSource.getPlayerSummary(playerId);
+  }
+
+  @override
+  Future<PublishedFixturePredictions?> getPublishedFixturePredictions(
+    Map<int, FplPlayer> players,
+  ) async {
+    final published = _published;
+    if (published == null) return null;
+    return PublishedFixturePredictions.fromJson(
+      await published.fixturePredictions(),
+      players,
+    );
+  }
+
+  @override
+  Future<PublishedPlayerProjections?> getPublishedPlayerProjections(
+    Map<int, FplPlayer> players,
+  ) async {
+    final published = _published;
+    if (published == null) return null;
+    return PublishedPlayerProjections.fromJson(
+      await published.playerProjections(),
+      players,
+    );
   }
 }

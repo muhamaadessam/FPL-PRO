@@ -33,7 +33,11 @@ class FixturesView extends StatelessWidget {
                 )
               : null,
         );
-        if (!hasPreload) cubit.load();
+        if (hasPreload) {
+          cubit.loadPredictions();
+        } else {
+          cubit.load();
+        }
         return cubit;
       },
       child: const _FixturesBody(),
@@ -65,6 +69,7 @@ class _FixturesBody extends StatelessWidget {
           fixtures: state.fixtures,
           teams: bootstrap.teams,
           players: bootstrap.players,
+          predictions: state.predictions ?? const {},
         );
       },
     );
@@ -78,6 +83,7 @@ class _FixtureList extends StatefulWidget {
     required this.fixtures,
     required this.teams,
     required this.players,
+    required this.predictions,
   });
 
   final int gameweekId;
@@ -86,6 +92,10 @@ class _FixtureList extends StatefulWidget {
   final Map<int, FplTeam> teams;
   final Map<int, FplPlayer> players;
 
+  /// Published by the server or computed on device; see
+  /// [FixturesCubit.loadPredictions].
+  final Map<int, FixturePrediction> predictions;
+
   @override
   State<_FixtureList> createState() => _FixtureListState();
 }
@@ -93,34 +103,15 @@ class _FixtureList extends StatefulWidget {
 class _FixtureListState extends State<_FixtureList> {
   late int _selectedGameweekId;
 
-  /// Rebuilt only when the data changes, not on every Gameweek switch.
-  late Map<int, FixturePrediction> _predictions;
-
   @override
   void initState() {
     super.initState();
     _selectedGameweekId = widget.gameweekId;
-    _predictions = _predict();
-  }
-
-  Map<int, FixturePrediction> _predict() {
-    return const FixturePredictionEngine().predictNextGameweeks(
-      fixtures: widget.fixtures,
-      teams: widget.teams,
-      players: widget.players,
-      fromGameweekId: widget.gameweekId,
-    );
   }
 
   @override
   void didUpdateWidget(covariant _FixtureList oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(widget.fixtures, oldWidget.fixtures) ||
-        !identical(widget.teams, oldWidget.teams) ||
-        !identical(widget.players, oldWidget.players) ||
-        widget.gameweekId != oldWidget.gameweekId) {
-      _predictions = _predict();
-    }
     if (!widget.gameweeks.any(
       (gameweek) => gameweek.id == _selectedGameweekId,
     )) {
@@ -163,7 +154,7 @@ class _FixtureListState extends State<_FixtureList> {
     final canGoNext =
         selectedGameweekIndex >= 0 &&
         selectedGameweekIndex < widget.gameweeks.length - 1;
-    final predictions = _predictions;
+    final predictions = widget.predictions;
 
     return RefreshIndicator(
       onRefresh: () async {

@@ -55,6 +55,9 @@ class RecommendationsCubit extends Cubit<RecommendationsState> {
       if (session == null || session.entryId == null) {
         throw const TeamAccessException(TeamAccessError.entryIdMissing);
       }
+      final publishedFuture = fixturesRepository.getPublishedPlayerProjections(
+        bootstrap.players,
+      );
       final fixtures = await fixturesRepository.getFixtures();
       final team = await teamRepository.getMyTeam(
         session: session,
@@ -76,13 +79,17 @@ class RecommendationsCubit extends Cubit<RecommendationsState> {
         ),
       );
       const engine = RecommendationEngine();
-      final projections = engine.buildPlayerProjections(
-        bootstrap: bootstrap,
-        fixtures: fixtures,
-        gameweekId: gameweek.id,
-        playerSummaries: playerSummaries,
-        recentGameweekMinutes: await _recentGameweekMinutes(bootstrap),
-      );
+      // The server's projections when current, so every user sees the same
+      // numbers; only the squad-specific advice below is computed here.
+      final projections =
+          (await publishedFuture)?.usableFor(gameweek.id) ??
+          engine.buildPlayerProjections(
+            bootstrap: bootstrap,
+            fixtures: fixtures,
+            gameweekId: gameweek.id,
+            playerSummaries: playerSummaries,
+            recentGameweekMinutes: await _recentGameweekMinutes(bootstrap),
+          );
       final result = engine.build(
         bootstrap: bootstrap,
         fixtures: fixtures,

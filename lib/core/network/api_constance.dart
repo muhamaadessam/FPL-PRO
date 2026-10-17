@@ -15,6 +15,18 @@ class ApiConstance {
     defaultValue: 'http://localhost:8787',
   );
 
+  /// The site that serves the precomputed predictions at `/data/v1/`
+  /// (`packages/fpl_engine/bin/publish_predictions.dart`). Web builds read
+  /// them from the proxy origin, which is the site in production.
+  static const _siteOrigin = String.fromEnvironment(
+    'SITE_ORIGIN',
+    defaultValue: 'https://fpl-pro.muhammadessam.me',
+  );
+
+  static const publishedPredictionsUrl = kIsWeb
+      ? '$_webProxyOrigin/data/v1'
+      : '$_siteOrigin/data/v1';
+
   static const baseUrl = kIsWeb
       ? '$_webProxyOrigin/api'
       : '$_fantasyOrigin/api';
