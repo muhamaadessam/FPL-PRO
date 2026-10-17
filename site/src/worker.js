@@ -12,9 +12,26 @@ const ROUTES = [
   },
 ];
 
+// Paths owned by the Flutter app (see lib/core/app/router.dart). They all
+// load the app's page, which then routes on the path itself.
+const APP_PATHS = [/^\/login\/?$/, /^\/login\/web\/?$/, /^\/home\/?$/, /^\/splash\/?$/, /^\/team\/\d+\/?$/];
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    // The app used to live at /app/#/...; send old links to its login page.
+    if (url.pathname === '/app' || url.pathname.startsWith('/app/')) {
+      return Response.redirect(new URL('/login', url), 301);
+    }
+    if (APP_PATHS.some((pattern) => pattern.test(url.pathname))) {
+      const page = await env.ASSETS.fetch(new Request(new URL('/app', url), request));
+      const headers = new Headers(page.headers);
+      // The page is tiny and must pick up new builds right away.
+      headers.set('Cache-Control', 'no-cache');
+      return new Response(page.body, { status: page.status, headers });
+    }
+
     const route = ROUTES.find((r) => url.pathname.startsWith(r.prefix));
     if (!route) {
       return env.ASSETS.fetch(request);

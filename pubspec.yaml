@@ -37,6 +37,8 @@ dependencies:
   shared_preferences: ^2.5.5
   flutter_localizations:
     sdk: flutter
+  flutter_web_plugins:
+    sdk: flutter
   flutter_web_auth_2: ^5.1.0
   crypto: ^3.0.7
   pretty_dio_logger: ^1.4.0

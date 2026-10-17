@@ -4,5 +4,5 @@
   X-Frame-Options: DENY
 /img/*
   Cache-Control: public, max-age=31536000, immutable
-/assets/*
+/static/*
   Cache-Control: public, max-age=3600

@@ -34,13 +34,10 @@ jobs:
           flutter-version: 3.47.6
           cache: true
 
-      - name: Build web app
+      - name: Build site and web app
         run: |
           flutter pub get
-          flutter build web --release --base-href /app/ \
-            --dart-define=WEB_PROXY_ORIGIN=https://fpl-pro.muhammadessam.me
-          rm -rf site/public/app
-          cp -R build/web site/public/app
+          site/build.sh
 
       - name: Deploy site
         uses: cloudflare/wrangler-action@v3
