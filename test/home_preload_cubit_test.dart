@@ -7,9 +7,8 @@ import 'package:fantasy_pl/features/auth/domain/repositories/auth_repository.dar
 import 'package:fantasy_pl/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:fantasy_pl/features/dashboard/presentation/cubit/home_preload_cubit.dart';
 import 'package:fantasy_pl/features/fixtures/data/datasources/fpl_api_client.dart';
-import 'package:fantasy_pl/features/fixtures/data/models/fpl_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 import 'package:fantasy_pl/features/fixtures/domain/repositories/fixtures_repository.dart';
-import 'package:fantasy_pl/features/team/data/models/team_models.dart';
 import 'package:fantasy_pl/features/team/domain/repositories/team_repository.dart';
 import 'package:fantasy_pl/features/team/presentation/screens/team_view.dart';
 import 'package:fantasy_pl/core/widgets/splash_page.dart';
@@ -274,6 +273,13 @@ class _FakeAuthRepository implements AuthRepository {
   }) async => session;
 
   @override
+  Future<int?> lastEntryId() async => null;
+
+  @override
+  Future<OfficialSession> continueWithEntryId(int entryId) async =>
+      OfficialSession.guest(entryId);
+
+  @override
   Future<void> logout() async {}
 }
 
@@ -342,6 +348,16 @@ class _FakeFixturesRepository implements FixturesRepository {
   @override
   Future<FplPlayerSummary> getPlayerSummary(int playerId) async =>
       const FplPlayerSummary();
+
+  @override
+  Future<PublishedFixturePredictions?> getPublishedFixturePredictions(
+    Map<int, FplPlayer> players,
+  ) async => null;
+
+  @override
+  Future<PublishedPlayerProjections?> getPublishedPlayerProjections(
+    Map<int, FplPlayer> players,
+  ) async => null;
 }
 
 class _FakeTeamRepository implements TeamRepository {

@@ -8,6 +8,10 @@ import '../../../../core/themes/cubit/theme_cubit.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
+import '../../../../core/layout/responsive.dart';
+import 'package:flutter/foundation.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/app/routes.dart';
 
 const _privacyPolicyUrl = 'https://fpl-pro-privacy.vercel.app';
 
@@ -20,6 +24,7 @@ class SettingsView extends StatelessWidget {
     final themeMode = context.watch<ThemeCubit>().state;
     final authState = context.watch<AuthCubit>().state;
     final entryId = authState.session?.entryId;
+    final isGuest = authState.session?.isGuest ?? false;
     HomePreloadState? preload;
     try {
       preload = context.watch<HomePreloadCubit>().state;
@@ -30,13 +35,21 @@ class SettingsView extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final cardBg = AppColors.card(isDark);
-    final cardBorder = isDark ? AppColors.darkCardBorder : const Color(0xfff0edf6);
+    final cardBorder = isDark
+        ? AppColors.darkCardBorder
+        : const Color(0xfff0edf6);
     final titleColor = AppColors.textPrimary(isDark);
     final subColor = AppColors.textSecondary(isDark);
-    final primaryIconColor = isDark ? AppColors.plMint : const Color(0xff37003c);
+    final primaryIconColor = isDark
+        ? AppColors.plMint
+        : const Color(0xff37003c);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      padding: contentInsets(
+        context,
+        const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        maxWidth: Breakpoints.narrow,
+      ),
       children: [
         // Title
         Padding(
@@ -74,8 +87,10 @@ class SettingsView extends StatelessWidget {
                 entry?.name.isNotEmpty == true
                     ? entry!.name
                     : (entry?.playerFullName.isNotEmpty == true
-                        ? entry!.playerFullName
-                        : (entryId != null ? 'Entry #$entryId' : 'FPL Manager')),
+                          ? entry!.playerFullName
+                          : (entryId != null
+                                ? 'Entry #$entryId'
+                                : 'FPL Manager')),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
@@ -84,7 +99,8 @@ class SettingsView extends StatelessWidget {
               ),
               const SizedBox(height: 3),
               Text(
-                entry?.playerFullName.isNotEmpty == true && entry?.name.isNotEmpty == true
+                entry?.playerFullName.isNotEmpty == true &&
+                        entry?.name.isNotEmpty == true
                     ? '${entry!.playerFullName} • Entry #${entry.id}'
                     : (entryId != null ? 'Entry #$entryId' : 'FPL Manager'),
                 style: TextStyle(
@@ -93,6 +109,28 @@ class SettingsView extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
+              if (isGuest) ...[
+                const SizedBox(height: 10),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.info_outline_rounded, size: 16, color: subColor),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        kIsWeb
+                            ? l10n.webTeamIdModeNotice
+                            : l10n.teamIdModeNotice,
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.4,
+                          color: subColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -121,9 +159,8 @@ class SettingsView extends StatelessWidget {
                 title: l10n.themeSystem,
                 isSelected: themeMode == ThemeMode.system,
                 isDark: isDark,
-                onTap: () => context
-                    .read<ThemeCubit>()
-                    .setThemeMode(ThemeMode.system),
+                onTap: () =>
+                    context.read<ThemeCubit>().setThemeMode(ThemeMode.system),
               ),
               Divider(height: 1, indent: 48, color: cardBorder),
               _ThemeOptionTile(
@@ -131,9 +168,8 @@ class SettingsView extends StatelessWidget {
                 title: l10n.themeLight,
                 isSelected: themeMode == ThemeMode.light,
                 isDark: isDark,
-                onTap: () => context
-                    .read<ThemeCubit>()
-                    .setThemeMode(ThemeMode.light),
+                onTap: () =>
+                    context.read<ThemeCubit>().setThemeMode(ThemeMode.light),
               ),
               Divider(height: 1, indent: 48, color: cardBorder),
               _ThemeOptionTile(
@@ -141,9 +177,8 @@ class SettingsView extends StatelessWidget {
                 title: l10n.themeDark,
                 isSelected: themeMode == ThemeMode.dark,
                 isDark: isDark,
-                onTap: () => context
-                    .read<ThemeCubit>()
-                    .setThemeMode(ThemeMode.dark),
+                onTap: () =>
+                    context.read<ThemeCubit>().setThemeMode(ThemeMode.dark),
               ),
             ],
           ),
@@ -211,11 +246,17 @@ class SettingsView extends StatelessWidget {
               style: TextStyle(fontWeight: FontWeight.w700, color: titleColor),
             ),
             trailing: Icon(Icons.chevron_right, color: subColor),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const _PrivacyPolicyPage(),
-              ),
-            ),
+            // The web build cannot host a WebView; open the site's own page.
+            onTap: () => kIsWeb
+                ? launchUrl(
+                    Uri.base.resolve('/privacy'),
+                    webOnlyWindowName: '_self',
+                  )
+                : pushPage<void>(
+                    context,
+                    AppRoutes.privacy,
+                    const PrivacyPolicyPage(),
+                  ),
           ),
         ),
         const SizedBox(height: 16),
@@ -225,21 +266,29 @@ class SettingsView extends StatelessWidget {
           onPressed: () => context.read<AuthCubit>().logout(),
           icon: Icon(
             Icons.logout_rounded,
-            color: isDark ? AppColors.darkAlertErrorText : const Color(0xffdc2626),
+            color: isDark
+                ? AppColors.darkAlertErrorText
+                : const Color(0xffdc2626),
           ),
           label: Text(
-            l10n.logout,
+            isGuest ? l10n.changeTeam : l10n.logout,
             style: TextStyle(
-              color: isDark ? AppColors.darkAlertErrorText : const Color(0xffdc2626),
+              color: isDark
+                  ? AppColors.darkAlertErrorText
+                  : const Color(0xffdc2626),
               fontWeight: FontWeight.w800,
             ),
           ),
           style: FilledButton.styleFrom(
-            backgroundColor: isDark ? AppColors.darkAlertErrorBg : const Color(0xfffee2e2),
+            backgroundColor: isDark
+                ? AppColors.darkAlertErrorBg
+                : const Color(0xfffee2e2),
             padding: const EdgeInsets.symmetric(vertical: 14),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
-              side: isDark ? const BorderSide(color: AppColors.darkAlertErrorBorder) : BorderSide.none,
+              side: isDark
+                  ? const BorderSide(color: AppColors.darkAlertErrorBorder)
+                  : BorderSide.none,
             ),
           ),
         ),
@@ -248,14 +297,14 @@ class SettingsView extends StatelessWidget {
   }
 }
 
-class _PrivacyPolicyPage extends StatefulWidget {
-  const _PrivacyPolicyPage();
+class PrivacyPolicyPage extends StatefulWidget {
+  const PrivacyPolicyPage({super.key});
 
   @override
-  State<_PrivacyPolicyPage> createState() => _PrivacyPolicyPageState();
+  State<PrivacyPolicyPage> createState() => _PrivacyPolicyPageState();
 }
 
-class _PrivacyPolicyPageState extends State<_PrivacyPolicyPage> {
+class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
   late final WebViewController _controller = WebViewController()
     ..setJavaScriptMode(JavaScriptMode.disabled)
     ..loadRequest(Uri.parse(_privacyPolicyUrl));
@@ -296,10 +345,7 @@ class _ThemeOptionTile extends StatelessWidget {
 
     return ListTile(
       onTap: onTap,
-      leading: Icon(
-        icon,
-        color: isSelected ? activeColor : inactiveColor,
-      ),
+      leading: Icon(icon, color: isSelected ? activeColor : inactiveColor),
       title: Text(
         title,
         style: TextStyle(

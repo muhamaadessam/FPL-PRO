@@ -1,6 +1,4 @@
 import 'dart:developer';
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:in_app_update/in_app_update.dart';
@@ -31,7 +29,10 @@ class _UpdateCheckerState extends State<UpdateChecker>
   bool _checking = false;
 
   // In-app updates only exist for builds installed from Google Play.
-  bool get _androidUpdatesEnabled => kReleaseMode && Platform.isAndroid;
+  bool get _androidUpdatesEnabled =>
+      kReleaseMode &&
+      !kIsWeb &&
+      defaultTargetPlatform == TargetPlatform.android;
 
   @override
   void initState() {
@@ -87,7 +88,7 @@ class _UpdateCheckerState extends State<UpdateChecker>
   @override
   Widget build(BuildContext context) {
     // The iOS alert re-checks the App Store itself when the app resumes.
-    if (Platform.isIOS) {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       return UpgradeAlert(
         upgrader: _upgrader,
         showIgnore: false,

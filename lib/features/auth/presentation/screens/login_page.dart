@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +7,9 @@ import '../../../../core/localization/cubit/locale_cubit.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/themes/cubit/theme_cubit.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../fixtures/data/datasources/fpl_api_client.dart';
+import '../../../team/domain/repositories/team_repository.dart';
+import '../cubit/auth_cubit.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -27,17 +31,15 @@ class _LoginPageState extends State<LoginPage>
       duration: const Duration(milliseconds: 2600),
     );
 
-    final isTest =
-        WidgetsBinding.instance.runtimeType.toString().contains('Test');
+    final isTest = WidgetsBinding.instance.runtimeType.toString().contains(
+      'Test',
+    );
     if (!isTest) {
       _glowController.repeat(reverse: true);
     }
 
     _pulseAnimation = Tween<double>(begin: 0.96, end: 1.04).animate(
-      CurvedAnimation(
-        parent: _glowController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
     );
   }
 
@@ -53,12 +55,16 @@ class _LoginPageState extends State<LoginPage>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final bgColor = isDark ? AppColors.darkBackground : AppColors.lightBackground;
-    final cardBg = isDark ? AppColors.darkCard : Colors.white;
-    final cardBorder = isDark ? AppColors.darkCardBorder : const Color(0xffeae6f3);
-    final textPrimary = isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
-    final textSecondary = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
-    final textMuted = isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
+    final bgColor = isDark
+        ? AppColors.darkBackground
+        : AppColors.lightBackground;
+    final textPrimary = AppColors.textPrimary(isDark);
+    final textMuted = isDark
+        ? AppColors.darkTextMuted
+        : AppColors.lightTextMuted;
+    final dividerColor = isDark
+        ? AppColors.darkCardBorder
+        : const Color(0xffe5e0f0);
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -123,7 +129,10 @@ class _LoginPageState extends State<LoginPage>
             child: Center(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 20,
+                ),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 480),
                   child: Column(
@@ -200,8 +209,9 @@ class _LoginPageState extends State<LoginPage>
                                 borderRadius: BorderRadius.circular(8),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xff00ff87)
-                                        .withValues(alpha: 0.4),
+                                    color: const Color(
+                                      0xff00ff87,
+                                    ).withValues(alpha: 0.4),
                                     blurRadius: 10,
                                     offset: const Offset(0, 2),
                                   ),
@@ -222,6 +232,8 @@ class _LoginPageState extends State<LoginPage>
                       ),
                       const SizedBox(height: 8),
 
+                      const SizedBox(height: 10),
+
                       // Main Title
                       Text(
                         l10n.loginTitle,
@@ -234,110 +246,45 @@ class _LoginPageState extends State<LoginPage>
                           height: 1.25,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 28),
 
-                      // Subtitle
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        child: Text(
-                          l10n.loginSubtitle,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            color: textSecondary,
-                            height: 1.45,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-
-                      // Features Highlights Card
-                      _FeaturesCard(
-                        isDark: isDark,
-                        cardBg: cardBg,
-                        cardBorder: cardBorder,
-                        textPrimary: textPrimary,
-                        textSecondary: textSecondary,
-                        l10n: l10n,
-                      ),
+                      // Primary: open the app from a team ID
+                      _TeamIdForm(isDark: isDark),
                       const SizedBox(height: 20),
 
-                      // Primary Call-To-Action: Official Premier League Sign In
-                      _OfficialSignInButton(
-                        onPressed: () => context.push('/login/web'),
-                        label: l10n.officialSignIn,
-                        hint: l10n.officialWebViewHint,
-                        isDark: isDark,
-                        isArabic: l10n.isArabic,
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Security & Trust Notice
-                      _SecurityBadge(
-                        isDark: isDark,
-                        badgeTitle: l10n.loginSecureBadge,
-                        badgeDetails: l10n.loginSecureDetails,
-                      ),
-                      const SizedBox(height: 18),
-
-                      // Divider with "OR"
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Divider(
-                              color: isDark
-                                  ? AppColors.darkCardBorder
-                                  : const Color(0xffe5e0f0),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 14),
-                            child: Text(
-                              l10n.isArabic ? 'أو' : 'OR',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: textMuted,
+                      // Official sign-in runs through a native WebView, so the
+                      // web build offers the team ID entry only.
+                      if (!kIsWeb) ...[
+                        // Divider with "OR"
+                        Row(
+                          children: [
+                            Expanded(child: Divider(color: dividerColor)),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                              ),
+                              child: Text(
+                                l10n.isArabic ? 'أو' : 'OR',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: textMuted,
+                                ),
                               ),
                             ),
-                          ),
-                          Expanded(
-                            child: Divider(
-                              color: isDark
-                                  ? AppColors.darkCardBorder
-                                  : const Color(0xffe5e0f0),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Secondary Option: Guest Public Matches Preview
-                      _GuestPreviewButton(
-                        onPressed: () => context.push('/preview'),
-                        label: l10n.publicPreview,
-                        subtitle: l10n.publicPreviewSubtitle,
-                        isDark: isDark,
-                        cardBg: cardBg,
-                        cardBorder: cardBorder,
-                        textPrimary: textPrimary,
-                        textSecondary: textSecondary,
-                        isArabic: l10n.isArabic,
-                      ),
-                      const SizedBox(height: 22),
-
-                      // Subtle Footer
-                      Center(
-                        child: Text(
-                          'FPL PRO • PREMIER LEAGUE COMPANION',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 1.2,
-                            color: textMuted.withValues(alpha: 0.7),
-                          ),
+                            Expanded(child: Divider(color: dividerColor)),
+                          ],
                         ),
-                      ),
+                        const SizedBox(height: 20),
+
+                        // Official sign-in for team management and transfers
+                        _OfficialSignInButton(
+                          onPressed: () => context.push('/login/web'),
+                          label: l10n.officialSignIn,
+                          isDark: isDark,
+                          isArabic: l10n.isArabic,
+                        ),
+                      ],
                       const SizedBox(height: 8),
                     ],
                   ),
@@ -420,10 +367,7 @@ class _LanguageToggle extends StatelessWidget {
 
 /// Interactive Theme mode switcher (Light / Dark)
 class _ThemeToggle extends StatelessWidget {
-  const _ThemeToggle({
-    required this.isDark,
-    required this.onToggle,
-  });
+  const _ThemeToggle({required this.isDark, required this.onToggle});
 
   final bool isDark;
   final VoidCallback onToggle;
@@ -490,12 +434,16 @@ class _HeroEmblem extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.plMint.withValues(alpha: isDark ? 0.35 : 0.22),
+                  color: AppColors.plMint.withValues(
+                    alpha: isDark ? 0.35 : 0.22,
+                  ),
                   blurRadius: 26,
                   spreadRadius: 2,
                 ),
                 BoxShadow(
-                  color: AppColors.plPurple.withValues(alpha: isDark ? 0.65 : 0.25),
+                  color: AppColors.plPurple.withValues(
+                    alpha: isDark ? 0.65 : 0.25,
+                  ),
                   blurRadius: 32,
                   offset: const Offset(0, 8),
                 ),
@@ -511,14 +459,8 @@ class _HeroEmblem extends StatelessWidget {
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: isDark
-                    ? const [
-                        Color(0xff2d174d),
-                        Color(0xff120824),
-                      ]
-                    : const [
-                        Color(0xff37003c),
-                        Color(0xff200024),
-                      ],
+                    ? const [Color(0xff2d174d), Color(0xff120824)]
+                    : const [Color(0xff37003c), Color(0xff200024)],
                 stops: const [0.3, 1.0],
               ),
               border: Border.all(
@@ -547,414 +489,167 @@ class _HeroEmblem extends StatelessWidget {
   }
 }
 
-/// Highlights card showing key benefits
-class _FeaturesCard extends StatelessWidget {
-  const _FeaturesCard({
-    required this.isDark,
-    required this.cardBg,
-    required this.cardBorder,
-    required this.textPrimary,
-    required this.textSecondary,
-    required this.l10n,
-  });
-
-  final bool isDark;
-  final Color cardBg;
-  final Color cardBorder;
-  final Color textPrimary;
-  final Color textSecondary;
-  final AppLocalizations l10n;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: cardBorder, width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-      child: Column(
-        children: [
-          _FeatureRow(
-            icon: Icons.bolt_rounded,
-            iconColor: const Color(0xff00ff87),
-            iconBg: const Color(0xff00ff87).withValues(alpha: isDark ? 0.15 : 0.12),
-            title: l10n.livePointsFeature,
-            subtitle: l10n.livePointsFeatureDesc,
-            textPrimary: textPrimary,
-            textSecondary: textSecondary,
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Divider(
-              color: isDark ? AppColors.darkCardBorder : const Color(0xfff0ebf7),
-              height: 1,
-            ),
-          ),
-          _FeatureRow(
-            icon: Icons.auto_awesome_rounded,
-            iconColor: const Color(0xff02efff),
-            iconBg: const Color(0xff02efff).withValues(alpha: isDark ? 0.15 : 0.12),
-            title: l10n.smartTransfersFeature,
-            subtitle: l10n.smartTransfersFeatureDesc,
-            textPrimary: textPrimary,
-            textSecondary: textSecondary,
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Divider(
-              color: isDark ? AppColors.darkCardBorder : const Color(0xfff0ebf7),
-              height: 1,
-            ),
-          ),
-          _FeatureRow(
-            icon: Icons.emoji_events_rounded,
-            iconColor: const Color(0xffff005a),
-            iconBg: const Color(0xffff005a).withValues(alpha: isDark ? 0.15 : 0.12),
-            title: l10n.miniLeaguesFeature,
-            subtitle: l10n.miniLeaguesFeatureDesc,
-            textPrimary: textPrimary,
-            textSecondary: textSecondary,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FeatureRow extends StatelessWidget {
-  const _FeatureRow({
-    required this.icon,
-    required this.iconColor,
-    required this.iconBg,
-    required this.title,
-    required this.subtitle,
-    required this.textPrimary,
-    required this.textSecondary,
-  });
-
-  final IconData icon;
-  final Color iconColor;
-  final Color iconBg;
-  final String title;
-  final String subtitle;
-  final Color textPrimary;
-  final Color textSecondary;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: iconBg,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: iconColor, size: 22),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: textPrimary,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: textSecondary,
-                  height: 1.3,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Official FPL Login Primary Button
+/// Official Premier League sign-in, needed for team management and transfers.
 class _OfficialSignInButton extends StatelessWidget {
   const _OfficialSignInButton({
     required this.onPressed,
     required this.label,
-    required this.hint,
     required this.isDark,
     required this.isArabic,
   });
 
   final VoidCallback onPressed;
   final String label;
-  final String hint;
   final bool isDark;
   final bool isArabic;
 
   @override
   Widget build(BuildContext context) {
+    final foreground = isDark ? AppColors.plMint : AppColors.plPurple;
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      icon: const Icon(Icons.login_rounded, size: 20),
+      label: Text(
+        label,
+        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+      ),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: foreground,
+        minimumSize: const Size.fromHeight(52),
+        side: BorderSide(color: foreground.withValues(alpha: 0.5), width: 1.2),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    );
+  }
+}
+
+/// Team ID field that opens the app in read-only mode for that team. It is
+/// filled in with the last team used, and the ID is checked against the
+/// public entry endpoint before continuing.
+class _TeamIdForm extends StatefulWidget {
+  const _TeamIdForm({required this.isDark});
+
+  final bool isDark;
+
+  @override
+  State<_TeamIdForm> createState() => _TeamIdFormState();
+}
+
+class _TeamIdFormState extends State<_TeamIdForm> {
+  final _controller = TextEditingController();
+  bool _submitting = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fillLastEntryId();
+  }
+
+  Future<void> _fillLastEntryId() async {
+    int? entryId;
+    try {
+      entryId = await context.read<AuthCubit>().lastEntryId();
+    } on Object {
+      // Prefilling is a convenience; an empty field still works.
+    }
+    if (!mounted || entryId == null || _controller.text.isNotEmpty) return;
+    _controller.text = '$entryId';
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context);
+    final entryId = int.tryParse(_controller.text.trim());
+    if (entryId == null || entryId <= 0) {
+      setState(() => _error = l10n.entryIdInvalid);
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+    try {
+      await context.read<TeamRepository>().getEntry(entryId);
+    } on FplApiException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _submitting = false;
+        _error = switch (error.kind) {
+          FplApiErrorKind.network => l10n.networkError,
+          FplApiErrorKind.rateLimited => l10n.rateLimited,
+          _ => error.statusCode == 404 ? l10n.entryNotFound : l10n.genericError,
+        };
+      });
+      return;
+    } on Object {
+      if (!mounted) return;
+      setState(() {
+        _submitting = false;
+        _error = l10n.genericError;
+      });
+      return;
+    }
+    if (!mounted) return;
+    await context.read<AuthCubit>().continueWithEntryId(entryId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final isDark = widget.isDark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(
-          height: 54,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: const LinearGradient(
-              colors: [
-                Color(0xff00ff87),
-                Color(0xff02efff),
-              ],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xff00ff87).withValues(alpha: 0.4),
-                blurRadius: 18,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onPressed,
-              borderRadius: BorderRadius.circular(16),
-              splashColor: Colors.white.withValues(alpha: 0.25),
-              highlightColor: Colors.white.withValues(alpha: 0.15),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.login_rounded,
-                      color: Color(0xff06030c),
-                      size: 22,
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xff06030c),
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Icon(
-                      isArabic
-                          ? Icons.arrow_back_rounded
-                          : Icons.arrow_forward_rounded,
-                      color: const Color(0xff06030c),
-                      size: 20,
-                    ),
-                  ],
-                ),
-              ),
-            ),
+        TextField(
+          controller: _controller,
+          keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.go,
+          enabled: !_submitting,
+          onSubmitted: (_) => _submit(),
+          decoration: InputDecoration(
+            labelText: l10n.entryId,
+            hintText: l10n.entryIdHint,
+            helperText: l10n.teamIdHelp,
+            helperMaxLines: 2,
+            errorText: _error,
+            errorMaxLines: 2,
+            prefixIcon: const Icon(Icons.tag_rounded),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
           ),
         ),
-        const SizedBox(height: 10),
-        Text(
-          hint,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 11,
-            color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
-            height: 1.4,
+        const SizedBox(height: 14),
+        FilledButton(
+          onPressed: _submitting ? null : _submit,
+          style: FilledButton.styleFrom(
+            backgroundColor: isDark ? AppColors.plMint : AppColors.plPurple,
+            foregroundColor: isDark ? AppColors.darkBackground : Colors.white,
+            minimumSize: const Size.fromHeight(54),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
           ),
+          child: _submitting
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text(
+                  l10n.openTeam,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
         ),
       ],
-    );
-  }
-}
-
-/// Official Security and privacy trust badge
-class _SecurityBadge extends StatelessWidget {
-  const _SecurityBadge({
-    required this.isDark,
-    required this.badgeTitle,
-    required this.badgeDetails,
-  });
-
-  final bool isDark;
-  final String badgeTitle;
-  final String badgeDetails;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.darkCard.withValues(alpha: 0.5)
-            : const Color(0xfff7f5fb),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDark
-              ? AppColors.darkCardBorder.withValues(alpha: 0.7)
-              : const Color(0xffece6f6),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.verified_user_rounded,
-            size: 20,
-            color: isDark ? AppColors.plMint : AppColors.plMintDark,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  badgeTitle,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? AppColors.plMint : AppColors.plMintDark,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  badgeDetails,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: isDark
-                        ? AppColors.darkTextSecondary
-                        : AppColors.lightTextSecondary,
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Guest matches and fixtures preview button
-class _GuestPreviewButton extends StatelessWidget {
-  const _GuestPreviewButton({
-    required this.onPressed,
-    required this.label,
-    required this.subtitle,
-    required this.isDark,
-    required this.cardBg,
-    required this.cardBorder,
-    required this.textPrimary,
-    required this.textSecondary,
-    required this.isArabic,
-  });
-
-  final VoidCallback onPressed;
-  final String label;
-  final String subtitle;
-  final bool isDark;
-  final Color cardBg;
-  final Color cardBorder;
-  final Color textPrimary;
-  final Color textSecondary;
-  final bool isArabic;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: cardBg,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: cardBorder, width: 1.2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.darkCardElevated
-                      : const Color(0xfff0ebf7),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.sports_soccer_rounded,
-                  color: isDark ? Colors.white : AppColors.plPurple,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                isArabic
-                    ? Icons.chevron_left_rounded
-                    : Icons.chevron_right_rounded,
-                color: isDark ? AppColors.darkIconMuted : const Color(0xff8e88a0),
-                size: 22,
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

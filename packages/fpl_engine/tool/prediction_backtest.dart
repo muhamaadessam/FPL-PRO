@@ -1,10 +1,10 @@
 // Dev-only backtest of the match predictor (FixturePredictionEngine and
-// TeamRatings). Not a unit test: `flutter test` ignores it because the file
-// name has no `_test` suffix, and it needs the network on first run.
+// TeamRatings). Not a unit test: `dart test` ignores it because it lives in
+// tool/, and it needs the network on first run.
 //
-//   dart run test/backtest/prediction_backtest.dart            # report
-//   dart run test/backtest/prediction_backtest.dart --tune     # + grid search
-//   dart run test/backtest/prediction_backtest.dart --refresh  # re-download
+//   dart run tool/prediction_backtest.dart            # report
+//   dart run tool/prediction_backtest.dart --tune     # + grid search
+//   dart run tool/prediction_backtest.dart --refresh  # re-download
 //
 // For every finished gameweek N it rebuilds TeamRatings from fixtures that
 // kicked off before N, rebuilds each player's stats from their per-fixture
@@ -31,9 +31,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:fantasy_pl/features/fixtures/data/models/fpl_models.dart';
-import 'package:fantasy_pl/features/fixtures/domain/usecases/predict_fixtures.dart';
-import 'package:fantasy_pl/features/fixtures/domain/usecases/team_ratings.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 
 const _cacheRoot = '.dart_tool/fpl_backtest';
 const _fplApi = 'https://fantasy.premierleague.com/api';

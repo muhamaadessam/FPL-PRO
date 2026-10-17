@@ -8,12 +8,23 @@ class OfficialSession {
     this.csrfToken,
   });
 
+  /// A read-only session opened with just a team ID: no official tokens, so
+  /// only public data for [entryId] can be loaded.
+  const OfficialSession.guest(int this.entryId)
+    : accessToken = '',
+      refreshToken = null,
+      expiresAt = null,
+      cookieHeader = null,
+      csrfToken = null;
+
   final String accessToken;
   final String? refreshToken;
   final DateTime? expiresAt;
   final int? entryId;
   final String? cookieHeader;
   final String? csrfToken;
+
+  bool get isGuest => accessToken.isEmpty && refreshToken == null;
 
   bool get isExpired {
     final expiry = expiresAt;

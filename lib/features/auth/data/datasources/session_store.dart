@@ -10,6 +10,8 @@ class SessionStore {
     : _storage = SecureStorageHelper(storage);
 
   static const _key = 'official_fpl_session';
+  // Kept after logout so the team ID field can be filled in next time.
+  static const _lastEntryIdKey = 'last_fpl_entry_id';
   final SecureStorageHelper _storage;
 
   Future<OfficialSession?> read() async {
@@ -27,6 +29,14 @@ class SessionStore {
 
   Future<void> write(OfficialSession session) async {
     await _storage.put(key: _key, value: jsonEncode(session.toJson()));
+    final entryId = session.entryId;
+    if (entryId != null) {
+      await _storage.put(key: _lastEntryIdKey, value: '$entryId');
+    }
+  }
+
+  Future<int?> readLastEntryId() async {
+    return int.tryParse(await _storage.get(key: _lastEntryIdKey) ?? '');
   }
 
   Future<void> clear() async {

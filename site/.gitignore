@@ -1,2 +1,4 @@
 .wrangler
 node_modules
+# Assembled by build.sh: the site plus the Flutter web build.
+dist

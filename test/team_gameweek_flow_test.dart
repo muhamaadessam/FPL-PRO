@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:fantasy_pl/features/fixtures/data/models/fpl_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 import 'package:fantasy_pl/features/fixtures/data/datasources/fpl_api_client.dart';
-import 'package:fantasy_pl/features/team/data/models/team_models.dart';
 import 'package:fantasy_pl/features/fixtures/data/repositories/fixtures_repository_impl.dart';
 import 'package:fantasy_pl/features/fixtures/domain/repositories/fixtures_repository.dart';
 import 'package:fantasy_pl/features/team/data/repositories/team_repository.dart';

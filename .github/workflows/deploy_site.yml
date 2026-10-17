@@ -5,7 +5,18 @@ on:
     branches: [development, main]
     paths:
       - 'site/**'
+      - 'lib/**'
+      - 'web/**'
+      - 'assets/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'packages/fpl_engine/**'
       - '.github/workflows/deploy_site.yml'
+  # Refreshes the precomputed predictions at /data/v1/ (see
+  # packages/fpl_engine/bin/publish_predictions.dart); the app ignores files
+  # older than 36 hours and computes on device instead.
+  schedule:
+    - cron: '17 */6 * * *'
   workflow_dispatch:
 
 concurrency:
@@ -19,11 +30,41 @@ jobs:
   deploy:
     name: Deploy to Cloudflare
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
+      # Scheduled runs use the default branch's workflow but must not roll the
+      # site back to it, so they build development, which deploys on push.
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'schedule' && 'development' || '' }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.6
+          cache: true
+
+      - name: Build site and web app
+        env:
+          ADSENSE_SLOT_BANNER: ${{ vars.ADSENSE_SLOT_BANNER }}
+          ADSENSE_SLOT_RAIL: ${{ vars.ADSENSE_SLOT_RAIL }}
+        run: |
+          flutter pub get
+          site/build.sh
+
+      # A code deploy still goes out without predictions (the app computes
+      # them on device), but a scheduled run that only exists to refresh them
+      # stops here rather than deploying without them.
+      - name: Publish predictions
+        id: predictions
+        continue-on-error: true
+        working-directory: packages/fpl_engine
+        run: |
+          dart pub get
+          dart run bin/publish_predictions.dart --out ../../site/dist/data
 
       - name: Deploy site
+        if: github.event_name != 'schedule' || steps.predictions.outcome == 'success'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}

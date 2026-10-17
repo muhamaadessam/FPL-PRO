@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:fantasy_pl/features/fixtures/data/models/fpl_models.dart';
-import 'package:fantasy_pl/features/recommendations/domain/usecases/recommendation_engine.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 import 'package:fantasy_pl/features/recommendations/domain/entities/recommendation_data.dart';
 import 'package:fantasy_pl/features/recommendations/presentation/screens/next_gameweek_analysis_page.dart';
 import 'package:fantasy_pl/features/team/presentation/widgets/pitch_view.dart';
-import 'package:fantasy_pl/features/team/data/models/team_models.dart';
 import 'package:fantasy_pl/l10n/app_localizations.dart';
 
 void main() {

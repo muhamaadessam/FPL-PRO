@@ -1,13 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../auth/presentation/cubit/auth_cubit.dart';
-import '../../../fixtures/data/models/fpl_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 import '../../../fixtures/domain/repositories/fixtures_repository.dart';
 import '../../../team/data/repositories/team_repository.dart';
-import '../../../team/data/models/team_models.dart';
 import '../../../team/domain/repositories/team_repository.dart';
 import '../../domain/entities/recommendation_data.dart';
-import '../../domain/usecases/recommendation_engine.dart';
 
 enum RecommendationsStatus { initial, loading, success, failure }
 
@@ -57,6 +55,9 @@ class RecommendationsCubit extends Cubit<RecommendationsState> {
       if (session == null || session.entryId == null) {
         throw const TeamAccessException(TeamAccessError.entryIdMissing);
       }
+      final publishedFuture = fixturesRepository.getPublishedPlayerProjections(
+        bootstrap.players,
+      );
       final fixtures = await fixturesRepository.getFixtures();
       final team = await teamRepository.getMyTeam(
         session: session,
@@ -78,13 +79,17 @@ class RecommendationsCubit extends Cubit<RecommendationsState> {
         ),
       );
       const engine = RecommendationEngine();
-      final projections = engine.buildPlayerProjections(
-        bootstrap: bootstrap,
-        fixtures: fixtures,
-        gameweekId: gameweek.id,
-        playerSummaries: playerSummaries,
-        recentGameweekMinutes: await _recentGameweekMinutes(bootstrap),
-      );
+      // The server's projections when current, so every user sees the same
+      // numbers; only the squad-specific advice below is computed here.
+      final projections =
+          (await publishedFuture)?.usableFor(gameweek.id) ??
+          engine.buildPlayerProjections(
+            bootstrap: bootstrap,
+            fixtures: fixtures,
+            gameweekId: gameweek.id,
+            playerSummaries: playerSummaries,
+            recentGameweekMinutes: await _recentGameweekMinutes(bootstrap),
+          );
       final result = engine.build(
         bootstrap: bootstrap,
         fixtures: fixtures,

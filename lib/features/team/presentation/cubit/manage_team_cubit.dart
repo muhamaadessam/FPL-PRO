@@ -2,9 +2,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../auth/domain/entities/official_session.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
-import '../../../fixtures/data/models/fpl_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 import '../../../fixtures/domain/repositories/fixtures_repository.dart';
-import '../../data/models/team_models.dart';
 import '../../data/repositories/team_repository.dart';
 import '../../domain/repositories/team_repository.dart';
 import '../../domain/usecases/squad_editor.dart';

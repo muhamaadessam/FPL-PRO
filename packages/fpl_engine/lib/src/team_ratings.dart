@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import '../../data/models/fpl_models.dart';
+import 'models/fpl_models.dart';
 
 /// Venue-neutral attack and defence ratings per team, as multipliers of the
 /// league scoring rate: 1.0 is average, attack above 1 scores more and

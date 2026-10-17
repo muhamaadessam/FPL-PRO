@@ -7,7 +7,9 @@ abstract final class AppColors {
   // -------------------------------------------------------------
   // Premier League Brand Accents
   // -------------------------------------------------------------
-  static const Color plMint = Color(0xff00ff87); // Iconic FPL electric neon mint
+  static const Color plMint = Color(
+    0xff00ff87,
+  ); // Iconic FPL electric neon mint
   static const Color plMintDark = Color(0xff098553); // Light mode mint contrast
   static const Color plPurple = Color(0xff37003c); // Iconic PL deep purple
   static const Color plCyan = Color(0xff02efff);
@@ -20,11 +22,15 @@ abstract final class AppColors {
   static const Color darkBackground = Color(0xff0a0716); // Deep midnight base
   static const Color darkSurface = Color(0xff120e24); // Elevated surface
   static const Color darkCard = Color(0xff18132e); // Card surface
-  static const Color darkCardElevated = Color(0xff201a3d); // Bottom sheets / dialogs
+  static const Color darkCardElevated = Color(
+    0xff201a3d,
+  ); // Bottom sheets / dialogs
   static const Color darkCardBorder = Color(0xff2c2350); // Subtle card border
   static const Color darkActiveTab = Color(0xff271f4b); // Active toggle/pill bg
   static const Color darkNavBg = Color(0xff0f0c20); // Bottom navigation bar bg
-  static const Color darkNavBorder = Color(0x1fffffff); // Top border for nav bar
+  static const Color darkNavBorder = Color(
+    0x1fffffff,
+  ); // Top border for nav bar
 
   // Dark Mode Typography & Icons
   static const Color darkTextPrimary = Color(0xffffffff);

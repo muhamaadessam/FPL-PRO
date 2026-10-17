@@ -3,11 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../l10n/app_localizations.dart';
 import '../../data/datasources/fpl_api_client.dart';
-import '../../data/models/fpl_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 import '../../domain/repositories/fixtures_repository.dart';
-import '../../domain/usecases/predict_fixtures.dart';
 import '../cubit/fixtures_cubit.dart';
 import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
+import '../../../../core/layout/responsive.dart';
+import '../../../../core/network/api_constance.dart';
+import '../../../../core/widgets/adaptive_modal.dart';
 
 class FixturesView extends StatelessWidget {
   const FixturesView({super.key});
@@ -31,7 +33,11 @@ class FixturesView extends StatelessWidget {
                 )
               : null,
         );
-        if (!hasPreload) cubit.load();
+        if (hasPreload) {
+          cubit.loadPredictions();
+        } else {
+          cubit.load();
+        }
         return cubit;
       },
       child: const _FixturesBody(),
@@ -63,6 +69,7 @@ class _FixturesBody extends StatelessWidget {
           fixtures: state.fixtures,
           teams: bootstrap.teams,
           players: bootstrap.players,
+          predictions: state.predictions ?? const {},
         );
       },
     );
@@ -76,6 +83,7 @@ class _FixtureList extends StatefulWidget {
     required this.fixtures,
     required this.teams,
     required this.players,
+    required this.predictions,
   });
 
   final int gameweekId;
@@ -84,6 +92,10 @@ class _FixtureList extends StatefulWidget {
   final Map<int, FplTeam> teams;
   final Map<int, FplPlayer> players;
 
+  /// Published by the server or computed on device; see
+  /// [FixturesCubit.loadPredictions].
+  final Map<int, FixturePrediction> predictions;
+
   @override
   State<_FixtureList> createState() => _FixtureListState();
 }
@@ -91,34 +103,15 @@ class _FixtureList extends StatefulWidget {
 class _FixtureListState extends State<_FixtureList> {
   late int _selectedGameweekId;
 
-  /// Rebuilt only when the data changes, not on every Gameweek switch.
-  late Map<int, FixturePrediction> _predictions;
-
   @override
   void initState() {
     super.initState();
     _selectedGameweekId = widget.gameweekId;
-    _predictions = _predict();
-  }
-
-  Map<int, FixturePrediction> _predict() {
-    return const FixturePredictionEngine().predictNextGameweeks(
-      fixtures: widget.fixtures,
-      teams: widget.teams,
-      players: widget.players,
-      fromGameweekId: widget.gameweekId,
-    );
   }
 
   @override
   void didUpdateWidget(covariant _FixtureList oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(widget.fixtures, oldWidget.fixtures) ||
-        !identical(widget.teams, oldWidget.teams) ||
-        !identical(widget.players, oldWidget.players) ||
-        widget.gameweekId != oldWidget.gameweekId) {
-      _predictions = _predict();
-    }
     if (!widget.gameweeks.any(
       (gameweek) => gameweek.id == _selectedGameweekId,
     )) {
@@ -129,17 +122,18 @@ class _FixtureListState extends State<_FixtureList> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final fixtures = widget.fixtures
-        .where((fixture) => fixture.gameweekId == _selectedGameweekId)
-        .toList()
-      ..sort((a, b) {
-        if (a.kickoffTime == null && b.kickoffTime == null) {
-          return a.id.compareTo(b.id);
-        }
-        if (a.kickoffTime == null) return 1;
-        if (b.kickoffTime == null) return -1;
-        return a.kickoffTime!.compareTo(b.kickoffTime!);
-      });
+    final fixtures =
+        widget.fixtures
+            .where((fixture) => fixture.gameweekId == _selectedGameweekId)
+            .toList()
+          ..sort((a, b) {
+            if (a.kickoffTime == null && b.kickoffTime == null) {
+              return a.id.compareTo(b.id);
+            }
+            if (a.kickoffTime == null) return 1;
+            if (b.kickoffTime == null) return -1;
+            return a.kickoffTime!.compareTo(b.kickoffTime!);
+          });
 
     final dayGroups = <DateTime?, List<FplFixture>>{};
     for (final fixture in fixtures) {
@@ -160,14 +154,17 @@ class _FixtureListState extends State<_FixtureList> {
     final canGoNext =
         selectedGameweekIndex >= 0 &&
         selectedGameweekIndex < widget.gameweeks.length - 1;
-    final predictions = _predictions;
+    final predictions = widget.predictions;
 
     return RefreshIndicator(
       onRefresh: () async {
         await context.read<FixturesCubit>().refresh();
       },
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        padding: contentInsets(
+          context,
+          const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        ),
         children: [
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
@@ -235,7 +232,12 @@ class _FixtureListState extends State<_FixtureList> {
           else
             for (final entry in dayGroups.entries) ...[
               Padding(
-                padding: const EdgeInsets.only(top: 14, bottom: 8, left: 4, right: 4),
+                padding: const EdgeInsets.only(
+                  top: 14,
+                  bottom: 8,
+                  left: 4,
+                  right: 4,
+                ),
                 child: Text(
                   l10n.matchDayHeader(entry.key),
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -244,18 +246,50 @@ class _FixtureListState extends State<_FixtureList> {
                   ),
                 ),
               ),
-              for (final fixture in entry.value) ...[
-                _FixtureCard(
-                  fixture: fixture,
-                  teams: widget.teams,
-                  players: widget.players,
-                  prediction: predictions[fixture.id],
-                ),
-                const SizedBox(height: 8),
-              ],
+              _FixtureGrid(
+                children: [
+                  for (final fixture in entry.value)
+                    _FixtureCard(
+                      fixture: fixture,
+                      teams: widget.teams,
+                      players: widget.players,
+                      prediction: predictions[fixture.id],
+                    ),
+                ],
+              ),
             ],
         ],
       ),
+    );
+  }
+}
+
+/// One card per row on phones; two side by side once there is room.
+class _FixtureGrid extends StatelessWidget {
+  const _FixtureGrid({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    const gap = 8.0;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 720 ? 2 : 1;
+        final itemWidth =
+            (constraints.maxWidth - gap * (columns - 1)) / columns;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: gap),
+          child: Wrap(
+            spacing: gap,
+            runSpacing: gap,
+            children: [
+              for (final child in children)
+                SizedBox(width: itemWidth, child: child),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -354,23 +388,29 @@ class _FixtureCard extends StatelessWidget {
   }
 
   void _showFixtureDetails(BuildContext context) {
-    showModalBottomSheet<void>(
+    showAdaptiveSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (_) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.75,
-        minChildSize: 0.2,
-        maxChildSize: 0.95,
-        builder: (context, scrollController) => _FixtureDetailsSheet(
-          fixture: fixture,
-          teams: teams,
-          players: players,
-          prediction: prediction,
-          scrollController: scrollController,
-        ),
-      ),
+      builder: (sheetContext) {
+        Widget details(ScrollController? scrollController) =>
+            _FixtureDetailsSheet(
+              fixture: fixture,
+              teams: teams,
+              players: players,
+              prediction: prediction,
+              scrollController: scrollController,
+            );
+        // A dialog already has a fixed height, so it scrolls normally.
+        if (AdaptiveModal.isDialog(sheetContext)) return details(null);
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.75,
+          minChildSize: 0.2,
+          maxChildSize: 0.95,
+          builder: (context, scrollController) => details(scrollController),
+        );
+      },
     );
   }
 }
@@ -385,7 +425,8 @@ class _TeamBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     if (teamCode == null) return _FallbackShield(size: size);
     return Image.network(
-      'https://resources.premierleague.com/premierleague/badges/70/t$teamCode.png',
+      '${ApiConstance.badgesBaseUrl}/t$teamCode.png',
+      webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
       width: size,
       height: size,
       errorBuilder: (context, error, stackTrace) => _FallbackShield(size: size),
@@ -470,8 +511,8 @@ class _ScoreArea extends StatelessWidget {
         fixture.isLive || fixture.isFinished
             ? '—'
             : (compact
-                ? l10n.kickoffTimeOnly(fixture.kickoffTime)
-                : l10n.kickoffLabel(fixture.kickoffTime)),
+                  ? l10n.kickoffTimeOnly(fixture.kickoffTime)
+                  : l10n.kickoffLabel(fixture.kickoffTime)),
         style: TextStyle(
           fontWeight: FontWeight.w800,
           fontSize: compact ? 13 : 14,
@@ -535,14 +576,14 @@ class _FixtureDetailsSheet extends StatelessWidget {
     required this.teams,
     required this.players,
     required this.prediction,
-    required this.scrollController,
+    this.scrollController,
   });
 
   final FplFixture fixture;
   final Map<int, FplTeam> teams;
   final Map<int, FplPlayer> players;
   final FixturePrediction? prediction;
-  final ScrollController scrollController;
+  final ScrollController? scrollController;
 
   @override
   Widget build(BuildContext context) {
@@ -728,17 +769,17 @@ class _FixturePredictionPanel extends StatelessWidget {
     var homeScorers = prediction.homeScorers.isNotEmpty
         ? prediction.homeScorers
         : (homeTeamId != null
-            ? prediction.scorers
-                .where((s) => s.player.teamId == homeTeamId)
-                .toList()
-            : <PlayerEventPrediction>[]);
+              ? prediction.scorers
+                    .where((s) => s.player.teamId == homeTeamId)
+                    .toList()
+              : <PlayerEventPrediction>[]);
     var awayScorers = prediction.awayScorers.isNotEmpty
         ? prediction.awayScorers
         : (awayTeamId != null
-            ? prediction.scorers
-                .where((s) => s.player.teamId == awayTeamId)
-                .toList()
-            : <PlayerEventPrediction>[]);
+              ? prediction.scorers
+                    .where((s) => s.player.teamId == awayTeamId)
+                    .toList()
+              : <PlayerEventPrediction>[]);
 
     if (homeScorers.isEmpty &&
         awayScorers.isEmpty &&
@@ -749,17 +790,17 @@ class _FixturePredictionPanel extends StatelessWidget {
     var homeAssists = prediction.homeAssists.isNotEmpty
         ? prediction.homeAssists
         : (homeTeamId != null
-            ? prediction.assists
-                .where((a) => a.player.teamId == homeTeamId)
-                .toList()
-            : <PlayerEventPrediction>[]);
+              ? prediction.assists
+                    .where((a) => a.player.teamId == homeTeamId)
+                    .toList()
+              : <PlayerEventPrediction>[]);
     var awayAssists = prediction.awayAssists.isNotEmpty
         ? prediction.awayAssists
         : (awayTeamId != null
-            ? prediction.assists
-                .where((a) => a.player.teamId == awayTeamId)
-                .toList()
-            : <PlayerEventPrediction>[]);
+              ? prediction.assists
+                    .where((a) => a.player.teamId == awayTeamId)
+                    .toList()
+              : <PlayerEventPrediction>[]);
 
     if (homeAssists.isEmpty &&
         awayAssists.isEmpty &&
@@ -827,9 +868,7 @@ class _PredictedScoreCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colors.outlineVariant.withValues(alpha: 0.4),
-        ),
+        border: Border.all(color: colors.outlineVariant.withValues(alpha: 0.4)),
       ),
       child: Column(
         children: [
@@ -840,9 +879,9 @@ class _PredictedScoreCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   l10n.matchPrediction,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w900,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
                 ),
               ),
               Container(
@@ -976,7 +1015,10 @@ class _OutcomeProbabilityBar extends StatelessWidget {
               children: [
                 for (final (_, chance, color) in outcomes)
                   if (chance > 0)
-                    Expanded(flex: chance, child: ColoredBox(color: color)),
+                    Expanded(
+                      flex: chance,
+                      child: ColoredBox(color: color),
+                    ),
               ],
             ),
           ),
@@ -1119,10 +1161,7 @@ class _PredictionCategorySection extends StatelessWidget {
 }
 
 class _PredictionPlayerRow extends StatelessWidget {
-  const _PredictionPlayerRow({
-    required this.candidate,
-    required this.isHome,
-  });
+  const _PredictionPlayerRow({required this.candidate, required this.isHome});
 
   final PlayerEventPrediction candidate;
   final bool isHome;
@@ -1164,16 +1203,8 @@ class _PredictionPlayerRow extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: isHome
-            ? [
-                playerText,
-                const SizedBox(width: 6),
-                badge,
-              ]
-            : [
-                badge,
-                const SizedBox(width: 6),
-                playerText,
-              ],
+            ? [playerText, const SizedBox(width: 6), badge]
+            : [badge, const SizedBox(width: 6), playerText],
       ),
     );
   }
@@ -1236,16 +1267,8 @@ class _PredictionCleanSheetSection extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: isHome
-              ? [
-                  label,
-                  const SizedBox(width: 6),
-                  badge,
-                ]
-              : [
-                  badge,
-                  const SizedBox(width: 6),
-                  label,
-                ],
+              ? [label, const SizedBox(width: 6), badge]
+              : [badge, const SizedBox(width: 6), label],
         ),
       );
     }
@@ -1629,7 +1652,10 @@ class _ShimmerSkeletonState extends State<_ShimmerSkeleton>
         );
       },
       child: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        padding: contentInsets(
+          context,
+          const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        ),
         itemCount: 6,
         separatorBuilder: (_, index) =>
             index == 0 ? const SizedBox.shrink() : const SizedBox(height: 12),

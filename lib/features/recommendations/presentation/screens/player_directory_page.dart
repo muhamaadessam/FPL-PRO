@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../l10n/app_localizations.dart';
-import '../../../fixtures/data/models/fpl_models.dart';
-import '../../domain/usecases/recommendation_engine.dart';
+import 'package:fpl_engine/fpl_engine.dart';
+import '../../../../core/app/routes.dart';
 
 class PlayerDirectoryPage extends StatefulWidget {
   const PlayerDirectoryPage({
@@ -101,13 +101,13 @@ class _PlayerDirectoryPageState extends State<PlayerDirectoryPage> {
           ),
         )
         .toList(growable: false);
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => PlayerComparisonPage(
-          left: selected[0],
-          right: selected[1],
-          bootstrap: widget.bootstrap,
-        ),
+    pushPage<void>(
+      context,
+      AppRoutes.compare,
+      PlayerComparisonPage(
+        left: selected[0],
+        right: selected[1],
+        bootstrap: widget.bootstrap,
       ),
     );
   }

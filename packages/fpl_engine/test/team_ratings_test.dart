@@ -1,6 +1,5 @@
-import 'package:fantasy_pl/features/fixtures/data/models/fpl_models.dart';
-import 'package:fantasy_pl/features/fixtures/domain/usecases/team_ratings.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:fpl_engine/fpl_engine.dart';
+import 'package:test/test.dart';
 
 void main() {
   const teams = {

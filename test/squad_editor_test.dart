@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:fantasy_pl/features/fixtures/data/models/fpl_models.dart';
-import 'package:fantasy_pl/features/team/data/models/team_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 import 'package:fantasy_pl/features/team/domain/usecases/squad_editor.dart';
 
 // 1-4-4-2 starters, bench: GK 12, DEF 13, MID 14, FWD 15.

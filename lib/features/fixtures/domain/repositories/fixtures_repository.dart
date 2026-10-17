@@ -1,4 +1,4 @@
-import '../../data/models/fpl_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 
 abstract interface class FixturesRepository {
   Future<FplBootstrap> getBootstrap();
@@ -13,4 +13,17 @@ abstract interface class FixturesRepository {
   Future<Map<int, int>> getEntryHistoryPoints(int entryId);
 
   Future<FplPlayerSummary> getPlayerSummary(int playerId);
+
+  /// Match predictions from the scheduled server job, with players taken from
+  /// [players]; null when unavailable. Check them with
+  /// [PublishedFixturePredictions.usableFor] before use.
+  Future<PublishedFixturePredictions?> getPublishedFixturePredictions(
+    Map<int, FplPlayer> players,
+  );
+
+  /// General player projections from the scheduled server job; null when
+  /// unavailable or missing any of [players].
+  Future<PublishedPlayerProjections?> getPublishedPlayerProjections(
+    Map<int, FplPlayer> players,
+  );
 }

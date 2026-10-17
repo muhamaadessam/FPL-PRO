@@ -5,8 +5,13 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
-import '../../../team/data/models/team_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 import '../../../team/domain/repositories/team_repository.dart';
+import '../../../../core/layout/responsive.dart';
+import '../../../../core/app/routes.dart';
+
+/// Content width of the leagues pages on wide screens.
+const leaguesMaxWidth = 1000.0;
 
 class LeaguesView extends StatelessWidget {
   const LeaguesView({super.key});
@@ -57,7 +62,11 @@ class LeaguesView extends StatelessWidget {
           color: Theme.of(context).colorScheme.primary,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+            padding: contentInsets(
+              context,
+              const EdgeInsets.fromLTRB(16, 20, 16, 32),
+              maxWidth: leaguesMaxWidth,
+            ),
             children: [
               _PageHeader(entry: entry, leagueCount: leagues.length),
               const SizedBox(height: 20),
@@ -123,7 +132,9 @@ class _PageHeader extends StatelessWidget {
                 : theme.colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isDark ? AppColors.darkCardBorder : theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
+              color: isDark
+                  ? AppColors.darkCardBorder
+                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
             ),
           ),
           child: Row(
@@ -174,7 +185,9 @@ class _LeagueSection extends StatelessWidget {
     final surface = isDark
         ? AppColors.darkCard
         : theme.colorScheme.surfaceContainerHighest;
-    final border = isDark ? AppColors.darkCardBorder : theme.colorScheme.outlineVariant.withValues(alpha: 0.45);
+    final border = isDark
+        ? AppColors.darkCardBorder
+        : theme.colorScheme.outlineVariant.withValues(alpha: 0.45);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 18),
@@ -213,7 +226,7 @@ class _LeagueSection extends StatelessWidget {
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 12, 10, 10),
+                  padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 16, 10),
                   child: _RankHeader(l10n: l10n),
                 ),
                 Divider(height: 1, color: border),
@@ -231,6 +244,19 @@ class _LeagueSection extends StatelessWidget {
   }
 }
 
+/// Rank column widths: compact on phones; a roomy, right-aligned numbers
+/// table on wide screens, with the movement spelled out.
+class _RankColumns {
+  _RankColumns.of(BuildContext context) : wide = Breakpoints.hasTopNav(context);
+
+  final bool wide;
+
+  double get current => wide ? 120 : 66;
+  double get last => wide ? 120 : 62;
+  double get change => wide ? 110 : 30;
+  TextAlign get align => wide ? TextAlign.end : TextAlign.center;
+}
+
 class _RankHeader extends StatelessWidget {
   const _RankHeader({required this.l10n});
 
@@ -242,12 +268,36 @@ class _RankHeader extends StatelessWidget {
       color: Theme.of(context).colorScheme.onSurfaceVariant,
       fontWeight: FontWeight.w800,
     );
+    final columns = _RankColumns.of(context);
     return Row(
       children: [
         Expanded(child: Text(l10n.league, style: style)),
-        SizedBox(width: 66, child: Text(l10n.currentRank, style: style)),
-        SizedBox(width: 62, child: Text(l10n.lastRank, style: style)),
-        const SizedBox(width: 30),
+        // Same widths and alignment as the rank cells of each row; long
+        // labels wrap instead of running into each other.
+        SizedBox(
+          width: columns.current,
+          child: Text(
+            l10n.currentRank,
+            style: style,
+            textAlign: columns.align,
+            maxLines: 2,
+          ),
+        ),
+        SizedBox(
+          width: columns.last,
+          child: Text(
+            l10n.lastRank,
+            style: style,
+            textAlign: columns.align,
+            maxLines: 2,
+          ),
+        ),
+        SizedBox(
+          width: columns.change,
+          child: columns.wide
+              ? Text(l10n.rankChange, style: style, textAlign: TextAlign.end)
+              : null,
+        ),
       ],
     );
   }
@@ -282,17 +332,22 @@ class _LeagueRow extends StatelessWidget {
         : rankChange > 0
         ? l10n.rankImproved
         : l10n.rankDropped;
+    final columns = _RankColumns.of(context);
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => LeagueDetailsPage(league: league)),
-        ),
+        onTap: () => GoRouter.maybeOf(context) != null
+            ? context.push(AppRoutes.league(league.id), extra: league)
+            : Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => LeagueDetailsPage(league: league),
+                ),
+              ),
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+              padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 16, 12),
               child: Row(
                 children: [
                   Expanded(
@@ -326,30 +381,49 @@ class _LeagueRow extends StatelessWidget {
                     ),
                   ),
                   SizedBox(
-                    width: 66,
+                    width: columns.current,
                     child: Text(
                       _rank(context, league.currentRank),
-                      textAlign: TextAlign.center,
+                      textAlign: columns.align,
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
                   SizedBox(
-                    width: 62,
+                    width: columns.last,
                     child: Text(
                       _rank(context, league.lastRank),
-                      textAlign: TextAlign.center,
+                      textAlign: columns.align,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: secondary,
                       ),
                     ),
                   ),
                   SizedBox(
-                    width: 30,
+                    width: columns.change,
                     child: Semantics(
                       label: changeLabel,
-                      child: Icon(changeIcon, size: 18, color: changeColor),
+                      child: Row(
+                        mainAxisAlignment: columns.wide
+                            ? MainAxisAlignment.end
+                            : MainAxisAlignment.center,
+                        children: [
+                          Icon(changeIcon, size: 18, color: changeColor),
+                          if (columns.wide &&
+                              rankChange != null &&
+                              rankChange != 0) ...[
+                            const SizedBox(width: 4),
+                            Text(
+                              _rank(context, rankChange.abs()),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: changeColor,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -389,7 +463,11 @@ class _MessageState extends StatelessWidget {
     final theme = Theme.of(context);
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(24),
+      padding: contentInsets(
+        context,
+        const EdgeInsets.all(24),
+        maxWidth: Breakpoints.narrow,
+      ),
       children: [
         const SizedBox(height: 96),
         Icon(icon, size: 48, color: theme.colorScheme.primary),
@@ -554,7 +632,11 @@ class _LeagueDetailsPageState extends State<LeagueDetailsPage> {
                 },
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                  padding: contentInsets(
+                    context,
+                    const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                    maxWidth: leaguesMaxWidth,
+                  ),
                   children: [
                     _LeagueDetailsHeader(details: _details!),
                     const SizedBox(height: 22),
@@ -773,7 +855,7 @@ class _StandingRow extends StatelessWidget {
           ? theme.colorScheme.primary.withValues(alpha: 0.1)
           : Colors.transparent,
       child: InkWell(
-        onTap: () => context.push('/team/${standing.entryId}'),
+        onTap: () => context.push(AppRoutes.team(standing.entryId)),
         child: Column(
           children: [
             Padding(

@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<url><loc>https://fpl-pro.muhammadessam.me/</loc></url>
-<url><loc>https://fpl-pro.muhammadessam.me/privacy</loc></url>
-<url><loc>https://fpl-pro.muhammadessam.me/terms</loc></url>
-<url><loc>https://fpl-pro.muhammadessam.me/account-deletion</loc></url>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<url><loc>https://fpl-pro.muhammadessam.me/</loc><xhtml:link rel="alternate" hreflang="en" href="https://fpl-pro.muhammadessam.me/"/><xhtml:link rel="alternate" hreflang="ar" href="https://fpl-pro.muhammadessam.me/?lang=ar"/><xhtml:link rel="alternate" hreflang="x-default" href="https://fpl-pro.muhammadessam.me/"/></url>
+<url><loc>https://fpl-pro.muhammadessam.me/?lang=ar</loc><xhtml:link rel="alternate" hreflang="en" href="https://fpl-pro.muhammadessam.me/"/><xhtml:link rel="alternate" hreflang="ar" href="https://fpl-pro.muhammadessam.me/?lang=ar"/><xhtml:link rel="alternate" hreflang="x-default" href="https://fpl-pro.muhammadessam.me/"/></url>
+<url><loc>https://fpl-pro.muhammadessam.me/login</loc></url>
+<url><loc>https://fpl-pro.muhammadessam.me/privacy</loc><xhtml:link rel="alternate" hreflang="en" href="https://fpl-pro.muhammadessam.me/privacy"/><xhtml:link rel="alternate" hreflang="ar" href="https://fpl-pro.muhammadessam.me/privacy?lang=ar"/><xhtml:link rel="alternate" hreflang="x-default" href="https://fpl-pro.muhammadessam.me/privacy"/></url>
+<url><loc>https://fpl-pro.muhammadessam.me/privacy?lang=ar</loc><xhtml:link rel="alternate" hreflang="en" href="https://fpl-pro.muhammadessam.me/privacy"/><xhtml:link rel="alternate" hreflang="ar" href="https://fpl-pro.muhammadessam.me/privacy?lang=ar"/><xhtml:link rel="alternate" hreflang="x-default" href="https://fpl-pro.muhammadessam.me/privacy"/></url>
+<url><loc>https://fpl-pro.muhammadessam.me/terms</loc><xhtml:link rel="alternate" hreflang="en" href="https://fpl-pro.muhammadessam.me/terms"/><xhtml:link rel="alternate" hreflang="ar" href="https://fpl-pro.muhammadessam.me/terms?lang=ar"/><xhtml:link rel="alternate" hreflang="x-default" href="https://fpl-pro.muhammadessam.me/terms"/></url>
+<url><loc>https://fpl-pro.muhammadessam.me/terms?lang=ar</loc><xhtml:link rel="alternate" hreflang="en" href="https://fpl-pro.muhammadessam.me/terms"/><xhtml:link rel="alternate" hreflang="ar" href="https://fpl-pro.muhammadessam.me/terms?lang=ar"/><xhtml:link rel="alternate" hreflang="x-default" href="https://fpl-pro.muhammadessam.me/terms"/></url>
+<url><loc>https://fpl-pro.muhammadessam.me/account-deletion</loc><xhtml:link rel="alternate" hreflang="en" href="https://fpl-pro.muhammadessam.me/account-deletion"/><xhtml:link rel="alternate" hreflang="ar" href="https://fpl-pro.muhammadessam.me/account-deletion?lang=ar"/><xhtml:link rel="alternate" hreflang="x-default" href="https://fpl-pro.muhammadessam.me/account-deletion"/></url>
+<url><loc>https://fpl-pro.muhammadessam.me/account-deletion?lang=ar</loc><xhtml:link rel="alternate" hreflang="en" href="https://fpl-pro.muhammadessam.me/account-deletion"/><xhtml:link rel="alternate" hreflang="ar" href="https://fpl-pro.muhammadessam.me/account-deletion?lang=ar"/><xhtml:link rel="alternate" hreflang="x-default" href="https://fpl-pro.muhammadessam.me/account-deletion"/></url>
 </urlset>

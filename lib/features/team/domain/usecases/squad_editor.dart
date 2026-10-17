@@ -1,5 +1,4 @@
-import '../../../fixtures/data/models/fpl_models.dart';
-import '../../data/models/team_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 
 /// Why a lineup or transfer edit was rejected before reaching the API.
 enum SquadEditError {

@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/themes/app_colors.dart';
 import '../../../../l10n/app_localizations.dart';
-import '../../../fixtures/data/models/fpl_models.dart';
-import '../../../team/data/models/team_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 import '../../../team/presentation/widgets/pitch_view.dart';
 import '../../domain/entities/recommendation_data.dart';
-import '../../domain/usecases/recommendation_engine.dart';
 import 'player_directory_page.dart';
+import '../../../../core/widgets/adaptive_modal.dart';
+import '../../../../core/app/routes.dart';
+import '../../../../core/layout/responsive.dart';
+import '../../../../core/widgets/pill_tab_bar.dart';
 
 class NextGameweekAnalysisPage extends StatefulWidget {
   const NextGameweekAnalysisPage({
@@ -195,7 +197,7 @@ class _NextGameweekAnalysisPageState extends State<NextGameweekAnalysisPage>
         .toList();
     projections.sort((a, b) => b.horizonPoints.compareTo(a.horizonPoints));
 
-    final candidate = await showModalBottomSheet<PlayerProjection>(
+    final candidate = await showAdaptiveSheet<PlayerProjection>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -219,10 +221,9 @@ class _NextGameweekAnalysisPageState extends State<NextGameweekAnalysisPage>
                       height: 4,
                       margin: const EdgeInsets.only(top: 12, bottom: 8),
                       decoration: BoxDecoration(
-                        color: Theme.of(sheetContext)
-                            .colorScheme
-                            .onSurfaceVariant
-                            .withValues(alpha: 0.3),
+                        color: Theme.of(
+                          sheetContext,
+                        ).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -284,8 +285,9 @@ class _NextGameweekAnalysisPageState extends State<NextGameweekAnalysisPage>
                                 borderRadius: BorderRadius.circular(14),
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(14),
-                                  onTap: () =>
-                                      Navigator.of(sheetContext).pop(projection),
+                                  onTap: () => Navigator.of(
+                                    sheetContext,
+                                  ).pop(projection),
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 14,
@@ -295,17 +297,17 @@ class _NextGameweekAnalysisPageState extends State<NextGameweekAnalysisPage>
                                       children: [
                                         CircleAvatar(
                                           radius: 18,
-                                          backgroundColor: Theme.of(context)
-                                              .colorScheme
-                                              .primaryContainer,
+                                          backgroundColor: Theme.of(
+                                            context,
+                                          ).colorScheme.primaryContainer,
                                           child: Text(
                                             team?.shortName ?? 'PL',
                                             style: TextStyle(
                                               fontSize: 11,
                                               fontWeight: FontWeight.w900,
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .onPrimaryContainer,
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.onPrimaryContainer,
                                             ),
                                           ),
                                         ),
@@ -329,9 +331,9 @@ class _NextGameweekAnalysisPageState extends State<NextGameweekAnalysisPage>
                                                 '${team?.name ?? l10n.unknown} • £${((player.nowCost ?? 0) / 10).toStringAsFixed(1)}m',
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodySmall,
+                                                style: Theme.of(
+                                                  context,
+                                                ).textTheme.bodySmall,
                                               ),
                                             ],
                                           ),
@@ -388,23 +390,23 @@ class _NextGameweekAnalysisPageState extends State<NextGameweekAnalysisPage>
       outgoing: current.projection,
       incoming: candidate,
     );
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute(
-        builder: (_) => PlayerComparisonPage(
-          left: current.projection,
-          right: candidate,
-          bootstrap: widget.data.bootstrap,
-          transfer: transfer,
-          onTransfer: transfer == null || widget.onTransfer == null
-              ? null
-              : widget.onTransfer,
-        ),
+    await pushPage<void>(
+      context,
+      AppRoutes.compare,
+      PlayerComparisonPage(
+        left: current.projection,
+        right: candidate,
+        bootstrap: widget.data.bootstrap,
+        transfer: transfer,
+        onTransfer: transfer == null || widget.onTransfer == null
+            ? null
+            : widget.onTransfer,
       ),
     );
   }
 
   void _showMethodologySheet() {
-    showModalBottomSheet<void>(
+    showAdaptiveSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -451,66 +453,25 @@ class _NextGameweekAnalysisPageState extends State<NextGameweekAnalysisPage>
           preferredSize: const Size.fromHeight(48),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-            child: Container(
+            child: PillTabBar(
+              controller: _tabController,
               height: 40,
-              decoration: BoxDecoration(
-                color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                indicatorSize: TabBarIndicatorSize.tab,
-                dividerColor: Colors.transparent,
-                indicator: BoxDecoration(
-                  color: isDark
-                      ? AppColors.darkActiveTab
-                      : colors.primaryContainer,
-                  borderRadius: BorderRadius.circular(10),
+              fontSize: 13,
+              indicatorColor: isDark
+                  ? AppColors.darkActiveTab
+                  : colors.primaryContainer,
+              labelColor: isDark ? Colors.white : colors.onPrimaryContainer,
+              tabs: [
+                PillTab(
+                  icon: Icons.sports_soccer_rounded,
+                  label: l10n.tabPitch,
                 ),
-                labelColor: isDark ? Colors.white : colors.onPrimaryContainer,
-                unselectedLabelColor: colors.onSurfaceVariant,
-                labelStyle: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 13,
+                PillTab(
+                  icon: Icons.format_list_bulleted_rounded,
+                  label:
+                      '${l10n.tabPlayerBreakdown} (${analysis.players.length})',
                 ),
-                unselectedLabelStyle: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
-                tabs: [
-                  Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.sports_soccer_rounded, size: 16),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            l10n.tabPitch,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.format_list_bulleted_rounded,
-                            size: 16),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            '${l10n.tabPlayerBreakdown} (${analysis.players.length})',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+              ],
             ),
           ),
         ),
@@ -590,7 +551,9 @@ class _HeroOverviewCard extends StatelessWidget {
         color: AppColors.card(isDark),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? AppColors.darkCardBorder : colors.outlineVariant.withValues(alpha: 0.5),
+          color: isDark
+              ? AppColors.darkCardBorder
+              : colors.outlineVariant.withValues(alpha: 0.5),
         ),
       ),
       child: Column(
@@ -603,8 +566,7 @@ class _HeroOverviewCard extends StatelessWidget {
             children: [
               // Gameweek Badge
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: colors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
@@ -635,7 +597,9 @@ class _HeroOverviewCard extends StatelessWidget {
               if (isSuggestedLineup)
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 4),
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: colors.tertiary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
@@ -654,8 +618,10 @@ class _HeroOverviewCard extends StatelessWidget {
                 onTap: onInfoTap,
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: ratingColor.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(10),
@@ -666,8 +632,7 @@ class _HeroOverviewCard extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.shield_outlined,
-                          size: 14, color: ratingColor),
+                      Icon(Icons.shield_outlined, size: 14, color: ratingColor),
                       const SizedBox(width: 5),
                       Text(
                         '${analysis.rating}/100 • ${l10n.ratingBand(analysis.rating)}',
@@ -786,9 +751,9 @@ class _HeroStatColumn extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                fontSize: 10,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+            fontSize: 10,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       ],
     );
@@ -852,7 +817,9 @@ class _PitchTab extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 3.5),
+                  horizontal: 8,
+                  vertical: 3.5,
+                ),
                 decoration: BoxDecoration(
                   color: colors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
@@ -869,7 +836,9 @@ class _PitchTab extends StatelessWidget {
               if (isSuggestedLineup)
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 7, vertical: 3.5),
+                    horizontal: 7,
+                    vertical: 3.5,
+                  ),
                   decoration: BoxDecoration(
                     color: colors.tertiary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
@@ -887,8 +856,10 @@ class _PitchTab extends StatelessWidget {
                 onTap: onInfoTap,
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3.5,
+                  ),
                   decoration: BoxDecoration(
                     color: ratingColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
@@ -899,8 +870,7 @@ class _PitchTab extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.shield_outlined,
-                          size: 12, color: ratingColor),
+                      Icon(Icons.shield_outlined, size: 12, color: ratingColor),
                       const SizedBox(width: 4),
                       Text(
                         '${analysis.rating}/100 • ${l10n.ratingBand(analysis.rating)}',
@@ -927,7 +897,9 @@ class _PitchTab extends StatelessWidget {
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 8),
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.card(isDark),
                     borderRadius: BorderRadius.circular(12),
@@ -980,7 +952,9 @@ class _PitchTab extends StatelessWidget {
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 8),
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.card(isDark),
                     borderRadius: BorderRadius.circular(12),
@@ -1033,10 +1007,13 @@ class _PitchTab extends StatelessWidget {
                           // Bench Boost total pill
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 5, vertical: 1.5),
+                              horizontal: 5,
+                              vertical: 1.5,
+                            ),
                             decoration: BoxDecoration(
-                              color: const Color(0xfff59e0b)
-                                  .withValues(alpha: 0.14),
+                              color: const Color(
+                                0xfff59e0b,
+                              ).withValues(alpha: 0.14),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -1060,19 +1037,22 @@ class _PitchTab extends StatelessWidget {
 
         const SizedBox(height: 4),
 
-        // Pitch View
-        PitchView(
-          starting: analysis.starters
-              .map((p) => p.pick)
-              .toList(growable: false),
-          bench: analysis.bench.map((p) => p.pick).toList(growable: false),
-          bootstrap: data.bootstrap,
-          gameweekPoints: {
-            for (final p in analysis.players)
-              p.pick.elementId: p.expectedPoints,
-          },
-          onSwap: onSwap,
-          onCompare: onCompare,
+        // Pitch View: capped on wide screens so the field keeps its shape.
+        MaxWidth(
+          maxWidth: 880,
+          child: PitchView(
+            starting: analysis.starters
+                .map((p) => p.pick)
+                .toList(growable: false),
+            bench: analysis.bench.map((p) => p.pick).toList(growable: false),
+            bootstrap: data.bootstrap,
+            gameweekPoints: {
+              for (final p in analysis.players)
+                p.pick.elementId: p.expectedPoints,
+            },
+            onSwap: onSwap,
+            onCompare: onCompare,
+          ),
         ),
 
         const SizedBox(height: 12),
@@ -1141,8 +1121,7 @@ class _NextGameweekAlerts extends StatelessWidget {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: isDark
                       ? const Color(0xff573815)
@@ -1177,16 +1156,14 @@ class _NextGameweekAlerts extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  ...picks.map(
-                    (pick) {
-                      final player = bootstrap.players[pick.elementId];
-                      if (player == null) return const SizedBox.shrink();
-                      return _AlertPlayerRow(
-                        player: player,
-                        team: bootstrap.teams[player.teamId],
-                      );
-                    },
-                  ),
+                  ...picks.map((pick) {
+                    final player = bootstrap.players[pick.elementId];
+                    if (player == null) return const SizedBox.shrink();
+                    return _AlertPlayerRow(
+                      player: player,
+                      team: bootstrap.teams[player.teamId],
+                    );
+                  }),
                 ],
               ),
             ),
@@ -1194,8 +1171,9 @@ class _NextGameweekAlerts extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child:
-                  Text(MaterialLocalizations.of(dialogContext).okButtonLabel),
+              child: Text(
+                MaterialLocalizations.of(dialogContext).okButtonLabel,
+              ),
             ),
           ],
         );
@@ -1262,7 +1240,9 @@ class _NextGameweekAlerts extends StatelessWidget {
                         const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 1),
+                            horizontal: 6,
+                            vertical: 1,
+                          ),
                           decoration: BoxDecoration(
                             color: isDark
                                 ? const Color(0xff573815)
@@ -1337,8 +1317,8 @@ class _AlertPlayerRow extends StatelessWidget {
     final details = player.news.trim().isNotEmpty
         ? l10n.playerNews(player.news)
         : chance != null
-            ? l10n.chanceOfPlaying(chance)
-            : status;
+        ? l10n.chanceOfPlaying(chance)
+        : status;
 
     return Padding(
       padding: const EdgeInsets.only(top: 6),
@@ -1416,8 +1396,9 @@ class _LineupInsightsCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final captain = analysis.players.where((p) => p.pick.isCaptain).firstOrNull;
-    final viceCaptain =
-        analysis.players.where((p) => p.pick.isViceCaptain).firstOrNull;
+    final viceCaptain = analysis.players
+        .where((p) => p.pick.isViceCaptain)
+        .firstOrNull;
 
     final hasLineupGain =
         analysis.bestLegalLineupPoints > analysis.expectedStartingPoints + 0.1;
@@ -1428,7 +1409,9 @@ class _LineupInsightsCard extends StatelessWidget {
         color: AppColors.card(isDark),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? AppColors.darkCardBorder : colors.outlineVariant.withValues(alpha: 0.5),
+          color: isDark
+              ? AppColors.darkCardBorder
+              : colors.outlineVariant.withValues(alpha: 0.5),
         ),
       ),
       child: Column(
@@ -1461,8 +1444,10 @@ class _LineupInsightsCard extends StatelessWidget {
                     title: l10n.captain,
                     badge: 'C',
                     name: captain.projection.player.webName,
-                    team: bootstrap
-                            .teams[captain.projection.player.teamId]?.shortName ??
+                    team:
+                        bootstrap
+                            .teams[captain.projection.player.teamId]
+                            ?.shortName ??
                         'PL',
                     expectedPoints: captain.expectedPoints * 2,
                     isDoubled: true,
@@ -1475,7 +1460,8 @@ class _LineupInsightsCard extends StatelessWidget {
                     title: l10n.viceCaptain,
                     badge: 'V',
                     name: viceCaptain.projection.player.webName,
-                    team: bootstrap
+                    team:
+                        bootstrap
                             .teams[viceCaptain.projection.player.teamId]
                             ?.shortName ??
                         'PL',
@@ -1491,12 +1477,10 @@ class _LineupInsightsCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: hasLineupGain
-                  ? (isDark
-                      ? const Color(0xff2a2312)
-                      : const Color(0xfffef9c3))
+                  ? (isDark ? const Color(0xff2a2312) : const Color(0xfffef9c3))
                   : (isDark
-                      ? const Color(0xff12281e)
-                      : const Color(0xffecfdf5)),
+                        ? const Color(0xff12281e)
+                        : const Color(0xffecfdf5)),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: hasLineupGain
@@ -1529,8 +1513,12 @@ class _LineupInsightsCard extends StatelessWidget {
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: hasLineupGain
-                          ? (isDark ? const Color(0xfffcd34d) : const Color(0xffb45309))
-                          : (isDark ? const Color(0xff6ee7b7) : const Color(0xff047857)),
+                          ? (isDark
+                                ? const Color(0xfffcd34d)
+                                : const Color(0xffb45309))
+                          : (isDark
+                                ? const Color(0xff6ee7b7)
+                                : const Color(0xff047857)),
                     ),
                   ),
                 ),
@@ -1616,10 +1604,7 @@ class _LeaderTile extends StatelessWidget {
             name,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w900,
-            ),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 2),
           Row(
@@ -1630,7 +1615,9 @@ class _LeaderTile extends StatelessWidget {
                   team,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(fontSize: 11),
                 ),
               ),
               const SizedBox(width: 4),
@@ -1702,8 +1689,9 @@ class _PlayerBreakdownTab extends StatelessWidget {
       return switch (sortOption) {
         'rating' => b.rating.compareTo(a.rating),
         'form' => b.recentPoints.compareTo(a.recentPoints),
-        'price' => (b.projection.player.nowCost ?? 0)
-            .compareTo(a.projection.player.nowCost ?? 0),
+        'price' => (b.projection.player.nowCost ?? 0).compareTo(
+          a.projection.player.nowCost ?? 0,
+        ),
         _ => b.expectedPoints.compareTo(a.expectedPoints),
       };
     });
@@ -1778,15 +1766,18 @@ class _PlayerBreakdownTab extends StatelessWidget {
           children: [
             Text(
               '${filtered.length} ${l10n.playerDirectory}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
             ),
             PopupMenuButton<String>(
               initialValue: sortOption,
               onSelected: onSortChanged,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(8),
@@ -1814,18 +1805,9 @@ class _PlayerBreakdownTab extends StatelessWidget {
                   value: 'forecast',
                   child: Text(l10n.sortByForecast),
                 ),
-                PopupMenuItem(
-                  value: 'rating',
-                  child: Text(l10n.sortByRating),
-                ),
-                PopupMenuItem(
-                  value: 'form',
-                  child: Text(l10n.sortByForm),
-                ),
-                PopupMenuItem(
-                  value: 'price',
-                  child: Text(l10n.playerPrice),
-                ),
+                PopupMenuItem(value: 'rating', child: Text(l10n.sortByRating)),
+                PopupMenuItem(value: 'form', child: Text(l10n.sortByForm)),
+                PopupMenuItem(value: 'price', child: Text(l10n.playerPrice)),
               ],
             ),
           ],
@@ -1847,8 +1829,7 @@ class _PlayerBreakdownTab extends StatelessWidget {
               player: player,
               data: data,
               isExpanded: expandedIds.contains(player.projection.player.id),
-              onToggleExpand: () =>
-                  onToggleExpand(player.projection.player.id),
+              onToggleExpand: () => onToggleExpand(player.projection.player.id),
               onCompare: () => onCompare(player.projection.player.id),
             ),
             const SizedBox(height: 8),
@@ -1870,10 +1851,9 @@ class _PlayerBreakdownTab extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           l10n.analysisDisclaimer,
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(fontStyle: FontStyle.italic),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
         ),
       ],
     );
@@ -1942,7 +1922,9 @@ class _PositionFilterChip extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
-                  color: isSelected ? colors.onPrimary : colors.onSurfaceVariant,
+                  color: isSelected
+                      ? colors.onPrimary
+                      : colors.onSurfaceVariant,
                 ),
               ),
             ),
@@ -1986,7 +1968,9 @@ class _PlayerAnalysisCard extends StatelessWidget {
         color: AppColors.card(isDark),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isDark ? AppColors.darkCardBorder : colors.outlineVariant.withValues(alpha: 0.5),
+          color: isDark
+              ? AppColors.darkCardBorder
+              : colors.outlineVariant.withValues(alpha: 0.5),
         ),
       ),
       child: Column(
@@ -2005,7 +1989,9 @@ class _PlayerAnalysisCard extends StatelessWidget {
                     height: 36,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: _positionColor(footballer.positionId).withValues(alpha: 0.16),
+                      color: _positionColor(
+                        footballer.positionId,
+                      ).withValues(alpha: 0.16),
                       borderRadius: BorderRadius.circular(9),
                     ),
                     child: Text(
@@ -2051,18 +2037,28 @@ class _PlayerAnalysisCard extends StatelessWidget {
                               ),
                               decoration: BoxDecoration(
                                 color: player.isStarter
-                                    ? (isDark ? const Color(0xff12281e) : const Color(0xffecfdf5))
-                                    : (isDark ? const Color(0xff1e1a30) : Colors.grey.shade100),
+                                    ? (isDark
+                                          ? const Color(0xff12281e)
+                                          : const Color(0xffecfdf5))
+                                    : (isDark
+                                          ? const Color(0xff1e1a30)
+                                          : Colors.grey.shade100),
                                 borderRadius: BorderRadius.circular(5),
                               ),
                               child: Text(
-                                player.isStarter ? l10n.starterBadge : l10n.benchBadge,
+                                player.isStarter
+                                    ? l10n.starterBadge
+                                    : l10n.benchBadge,
                                 style: TextStyle(
                                   fontSize: 9,
                                   fontWeight: FontWeight.w700,
                                   color: player.isStarter
-                                      ? (isDark ? const Color(0xff6ee7b7) : const Color(0xff059669))
-                                      : (isDark ? AppColors.darkTextSecondary : Colors.grey.shade600),
+                                      ? (isDark
+                                            ? const Color(0xff6ee7b7)
+                                            : const Color(0xff059669))
+                                      : (isDark
+                                            ? AppColors.darkTextSecondary
+                                            : Colors.grey.shade600),
                                 ),
                               ),
                             ),
@@ -2073,7 +2069,9 @@ class _PlayerAnalysisCard extends StatelessWidget {
                           '$team • £${((footballer.nowCost ?? 0) / 10).toStringAsFixed(1)}m • ${_fixturesLabel(l10n)}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodySmall?.copyWith(fontSize: 11),
                         ),
                       ],
                     ),
@@ -2093,7 +2091,10 @@ class _PlayerAnalysisCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 1.5,
+                        ),
                         decoration: BoxDecoration(
                           color: ratingColor.withValues(alpha: 0.14),
                           borderRadius: BorderRadius.circular(6),
@@ -2143,7 +2144,8 @@ class _PlayerAnalysisCard extends StatelessWidget {
                       ),
                       _DetailMetric(
                         label: l10n.previousSeason,
-                        value: player.previousSeasonPoints?.toStringAsFixed(1) ??
+                        value:
+                            player.previousSeasonPoints?.toStringAsFixed(1) ??
                             l10n.noPreviousSeason,
                       ),
                       _DetailMetric(
@@ -2152,7 +2154,8 @@ class _PlayerAnalysisCard extends StatelessWidget {
                       ),
                       _DetailMetric(
                         label: l10n.availability,
-                        value: '${(player.projection.availability * 100).round()}%',
+                        value:
+                            '${(player.projection.availability * 100).round()}%',
                       ),
                       _DetailMetric(
                         label: l10n.reliability,
@@ -2173,10 +2176,16 @@ class _PlayerAnalysisCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        icon: const Icon(Icons.compare_arrows_rounded, size: 16),
+                        icon: const Icon(
+                          Icons.compare_arrows_rounded,
+                          size: 16,
+                        ),
                         label: Text(
                           l10n.comparePlayers,
-                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ],
@@ -2195,7 +2204,7 @@ class _PlayerAnalysisCard extends StatelessWidget {
     return List.generate(player.nextOpponentTeamIds.length, (index) {
       final opponent =
           data.bootstrap.teams[player.nextOpponentTeamIds[index]]?.shortName ??
-              '—';
+          '—';
       final venue = player.nextFixturesAtHome[index]
           ? l10n.homeShort
           : l10n.awayShort;
@@ -2239,10 +2248,9 @@ class _MethodologyBottomSheet extends StatelessWidget {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurfaceVariant
-                        .withValues(alpha: 0.3),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -2272,10 +2280,9 @@ class _MethodologyBottomSheet extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .surfaceContainerHighest
-                      .withValues(alpha: 0.4),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -2292,10 +2299,9 @@ class _MethodologyBottomSheet extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       l10n.analysisDisclaimer,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(fontStyle: FontStyle.italic),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
                   ],
                 ),
@@ -2386,7 +2392,9 @@ class _DetailMetric extends StatelessWidget {
           const SizedBox(height: 1),
           Text(
             label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 10),
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(fontSize: 10),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

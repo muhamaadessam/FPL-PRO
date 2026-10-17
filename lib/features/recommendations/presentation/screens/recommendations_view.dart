@@ -4,17 +4,23 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../fixtures/data/datasources/fpl_api_client.dart';
-import '../../../fixtures/data/models/fpl_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 import '../../../fixtures/domain/repositories/fixtures_repository.dart';
 import '../../../team/data/repositories/team_repository.dart';
 import '../../../team/domain/repositories/team_repository.dart';
 import '../../domain/entities/recommendation_data.dart';
-import '../../domain/usecases/recommendation_engine.dart';
 import '../cubit/recommendations_cubit.dart';
 import 'next_gameweek_analysis_page.dart';
 import 'player_directory_page.dart';
+import '../../../../core/layout/responsive.dart';
+import '../../../../core/app/routes.dart';
+import '../../../../core/widgets/adaptive_modal.dart';
+import '../../../../core/widgets/pill_tab_bar.dart';
 
 export '../../domain/entities/recommendation_data.dart';
+
+/// Tips read best as a focused column, narrower than the default content.
+const _recommendationsMaxWidth = 1040.0;
 
 class RecommendationsView extends StatelessWidget {
   const RecommendationsView({super.key});
@@ -66,7 +72,7 @@ class _RecommendationsBodyState extends State<_RecommendationsBody>
       builder: (context, state) {
         if (state.status == RecommendationsStatus.initial ||
             state.status == RecommendationsStatus.loading) {
-          return const Center(child: CircularProgressIndicator());
+          return const _RecommendationsSkeleton();
         }
         if (state.status == RecommendationsStatus.failure) {
           final l10n = AppLocalizations.of(context);
@@ -100,6 +106,205 @@ class _RecommendationsBodyState extends State<_RecommendationsBody>
           onChip: context.read<RecommendationsCubit>().saveChip,
         );
       },
+    );
+  }
+}
+
+/// Placeholder in the shape of the loaded page: header, tab bar, the weekly
+/// plan card and the captain and chip cards.
+class _RecommendationsSkeleton extends StatefulWidget {
+  const _RecommendationsSkeleton();
+
+  @override
+  State<_RecommendationsSkeleton> createState() =>
+      _RecommendationsSkeletonState();
+}
+
+class _RecommendationsSkeletonState extends State<_RecommendationsSkeleton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final block = colors.onSurface.withValues(alpha: 0.10);
+    final card = colors.surfaceContainerHighest.withValues(alpha: 0.5);
+
+    Widget bar(double width, double height, {double radius = 6}) {
+      return Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: block,
+          borderRadius: BorderRadius.circular(radius),
+        ),
+      );
+    }
+
+    Widget panel({required double height, required List<Widget> children}) {
+      return Container(
+        height: height,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: card,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: children,
+        ),
+      );
+    }
+
+    return Semantics(
+      label: AppLocalizations.of(context).recommendations,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return ShaderMask(
+            blendMode: BlendMode.modulate,
+            shaderCallback: (bounds) {
+              return LinearGradient(
+                colors: const [
+                  Color(0xff8a8a8a),
+                  Color(0xfff5f5f5),
+                  Color(0xff8a8a8a),
+                ],
+                stops: const [0.0, 0.5, 1.0],
+                begin: Alignment(-2.0 + (_controller.value * 4), 0),
+                end: Alignment(-1.0 + (_controller.value * 4), 0),
+              ).createShader(bounds);
+            },
+            child: child,
+          );
+        },
+        child: ListView(
+          padding: contentInsets(
+            context,
+            const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            maxWidth: _recommendationsMaxWidth,
+          ),
+          physics: const NeverScrollableScrollPhysics(),
+          children: [
+            Row(
+              children: [
+                Flexible(child: bar(190, 26, radius: 8)),
+                const SizedBox(width: 10),
+                Flexible(child: bar(96, 22, radius: 8)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            bar(120, 14),
+            const SizedBox(height: 16),
+            Container(
+              height: 42,
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: card,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: block,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const Expanded(child: SizedBox()),
+                  const Expanded(child: SizedBox()),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            panel(
+              height: 340,
+              children: [
+                Row(
+                  children: [
+                    bar(56, 56, radius: 14),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          bar(170, 18),
+                          const SizedBox(height: 8),
+                          bar(80, 14),
+                          const SizedBox(height: 8),
+                          bar(130, 12),
+                        ],
+                      ),
+                    ),
+                    bar(72, 32, radius: 10),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                bar(double.infinity, 40, radius: 10),
+                const SizedBox(height: 14),
+                bar(double.infinity, 12),
+                const SizedBox(height: 8),
+                bar(220, 12),
+                const SizedBox(height: 14),
+                bar(double.infinity, 70, radius: 12),
+                const Spacer(),
+                bar(double.infinity, 46, radius: 23),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: panel(
+                    height: 150,
+                    children: [
+                      bar(110, 16),
+                      const SizedBox(height: 16),
+                      bar(90, 20),
+                      const SizedBox(height: 8),
+                      bar(60, 12),
+                      const Spacer(),
+                      bar(double.infinity, 26, radius: 8),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: panel(
+                    height: 150,
+                    children: [
+                      bar(110, 16),
+                      const SizedBox(height: 16),
+                      bar(100, 20),
+                      const SizedBox(height: 8),
+                      bar(double.infinity, 12),
+                      const SizedBox(height: 6),
+                      bar(80, 12),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -163,7 +368,7 @@ class _RecommendationContentState extends State<_RecommendationContent>
 
   Future<void> _showTransferComparison(TransferSuggestion transfer) async {
     final l10n = AppLocalizations.of(context);
-    final selected = await showModalBottomSheet<bool>(
+    final selected = await showAdaptiveSheet<bool>(
       context: context,
       isScrollControlled: true,
       builder: (sheetContext) {
@@ -173,17 +378,18 @@ class _RecommendationContentState extends State<_RecommendationContent>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(2),
+                if (!AdaptiveModal.isDialog(sheetContext))
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
-                ),
                 Text(
                   l10n.compareTransfer,
                   style: Theme.of(
@@ -205,9 +411,9 @@ class _RecommendationContentState extends State<_RecommendationContent>
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.swap_horiz_rounded, size: 20),
@@ -279,7 +485,7 @@ class _RecommendationContentState extends State<_RecommendationContent>
 
   Future<void> _showChipSelection(SuggestedChip chip) async {
     final l10n = AppLocalizations.of(context);
-    final selected = await showModalBottomSheet<bool>(
+    final selected = await showAdaptiveSheet<bool>(
       context: context,
       builder: (sheetContext) {
         return SafeArea(
@@ -289,17 +495,18 @@ class _RecommendationContentState extends State<_RecommendationContent>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(2),
+                if (!AdaptiveModal.isDialog(sheetContext))
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
-                ),
                 Text(
                   l10n.chipSelection(l10n.chipName(chip.name)),
                   style: Theme.of(
@@ -363,7 +570,11 @@ class _RecommendationContentState extends State<_RecommendationContent>
             children: [
               // Top Header Section: Gameweek & Hero Squad Rating
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                padding: contentInsets(
+                  context,
+                  const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  maxWidth: _recommendationsMaxWidth,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -373,9 +584,7 @@ class _RecommendationContentState extends State<_RecommendationContent>
                       children: [
                         Text(
                           l10n.recommendations,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge
+                          style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(fontWeight: FontWeight.w900),
                         ),
                         const SizedBox(width: 8),
@@ -415,9 +624,7 @@ class _RecommendationContentState extends State<_RecommendationContent>
                           Flexible(
                             child: Text(
                               l10n.kickoffLabel(data.gameweek.deadlineTime!),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
+                              style: Theme.of(context).textTheme.labelSmall
                                   ?.copyWith(fontWeight: FontWeight.w700),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -431,100 +638,29 @@ class _RecommendationContentState extends State<_RecommendationContent>
 
               // Segmented TabBar
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Container(
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: TabBar(
-                    controller: _tabController,
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    dividerColor: Colors.transparent,
-                    indicator: BoxDecoration(
-                      color: colors.primaryContainer,
-                      borderRadius: BorderRadius.circular(10),
+                padding: contentInsets(
+                  context,
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  maxWidth: _recommendationsMaxWidth,
+                ),
+                child: PillTabBar(
+                  controller: _tabController,
+                  indicatorColor: colors.primaryContainer,
+                  labelColor: colors.onPrimaryContainer,
+                  tabs: [
+                    PillTab(icon: Icons.tune_rounded, label: l10n.tabPlan),
+                    PillTab(
+                      icon: Icons.swap_horiz_rounded,
+                      label: l10n.tabTransfers,
+                      badge: result.transfers.isEmpty
+                          ? null
+                          : '${result.transfers.length}',
                     ),
-                    labelColor: colors.onPrimaryContainer,
-                    unselectedLabelColor: colors.onSurfaceVariant,
-                    labelStyle: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
+                    PillTab(
+                      icon: Icons.star_outline_rounded,
+                      label: l10n.tabTopPicks,
                     ),
-                    unselectedLabelStyle: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                    tabs: [
-                      Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.tune_rounded, size: 15),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                l10n.tabPlan,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.swap_horiz_rounded, size: 16),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                l10n.tabTransfers,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            if (result.transfers.isNotEmpty) ...[
-                              const SizedBox(width: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 5,
-                                  vertical: 1,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: colors.primary,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  '${result.transfers.length}',
-                                  style: TextStyle(
-                                    color: colors.onPrimary,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.star_outline_rounded, size: 15),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                l10n.tabTopPicks,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                  ],
                 ),
               ),
 
@@ -598,13 +734,14 @@ class _PlanTab extends StatelessWidget {
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: contentInsets(
+        context,
+        const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        maxWidth: _recommendationsMaxWidth,
+      ),
       children: [
         // Unified Gameweek Plan & Squad Rating Hero Card
-        _WeeklyPlanCard(
-          data: data,
-          onTransfer: onTransfer,
-        ),
+        _WeeklyPlanCard(data: data, onTransfer: onTransfer),
         const SizedBox(height: 14),
 
         // Quick Decisions Grid: Captain + Chip Advice
@@ -684,7 +821,11 @@ class _TransfersTab extends StatelessWidget {
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: contentInsets(
+        context,
+        const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        maxWidth: _recommendationsMaxWidth,
+      ),
       children: [
         // Budget & Free Transfers Bar
         Container(
@@ -881,7 +1022,11 @@ class _TopPicksTab extends StatelessWidget {
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: contentInsets(
+        context,
+        const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        maxWidth: _recommendationsMaxWidth,
+      ),
       children: [
         // Player Directory Action Card
         Material(
@@ -889,14 +1034,14 @@ class _TopPicksTab extends StatelessWidget {
           color: colors.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(14),
           child: InkWell(
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => PlayerDirectoryPage(
-                  bootstrap: data.bootstrap,
-                  fixtures: data.fixtures,
-                  gameweekId: data.result.gameweekId,
-                  projections: data.projections,
-                ),
+            onTap: () => pushPage<void>(
+              context,
+              AppRoutes.players,
+              PlayerDirectoryPage(
+                bootstrap: data.bootstrap,
+                fixtures: data.fixtures,
+                gameweekId: data.result.gameweekId,
+                projections: data.projections,
               ),
             ),
             borderRadius: BorderRadius.circular(14),
@@ -1008,10 +1153,7 @@ class _TopPicksTab extends StatelessWidget {
 // Weekly Plan Card
 // -----------------------------------------------------------------------------
 class _WeeklyPlanCard extends StatelessWidget {
-  const _WeeklyPlanCard({
-    required this.data,
-    this.onTransfer,
-  });
+  const _WeeklyPlanCard({required this.data, this.onTransfer});
 
   final RecommendationData data;
   final Future<void> Function(TransferSuggestion transfer)? onTransfer;
@@ -1023,8 +1165,7 @@ class _WeeklyPlanCard extends StatelessWidget {
     final analysis = data.result.squadAnalysis;
     final lineup = data.result.suggestedLineup;
     final gain =
-        lineup.expectedStartingPoints -
-        analysis.expectedStartingPoints;
+        lineup.expectedStartingPoints - analysis.expectedStartingPoints;
     final hasFullSquad =
         lineup.players.length == 15 && lineup.suggestedStartingIds.length == 11;
     final formation = [
@@ -1056,9 +1197,7 @@ class _WeeklyPlanCard extends StatelessWidget {
       color: colors.surfaceContainerHigh,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: colors.outlineVariant.withValues(alpha: 0.4),
-        ),
+        side: BorderSide(color: colors.outlineVariant.withValues(alpha: 0.4)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -1070,13 +1209,10 @@ class _WeeklyPlanCard extends StatelessWidget {
               color: Colors.transparent,
               child: InkWell(
                 key: const ValueKey('next-gameweek-analysis'),
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => NextGameweekAnalysisPage(
-                      data: data,
-                      onTransfer: onTransfer,
-                    ),
-                  ),
+                onTap: () => pushPage<void>(
+                  context,
+                  AppRoutes.analysis,
+                  NextGameweekAnalysisPage(data: data, onTransfer: onTransfer),
                 ),
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
@@ -1153,7 +1289,9 @@ class _WeeklyPlanCard extends StatelessWidget {
                                 Icon(
                                   Icons.arrow_forward_ios_rounded,
                                   size: 11,
-                                  color: colors.onSurfaceVariant.withValues(alpha: 0.7),
+                                  color: colors.onSurfaceVariant.withValues(
+                                    alpha: 0.7,
+                                  ),
                                 ),
                               ],
                             ),
@@ -1216,7 +1354,9 @@ class _WeeklyPlanCard extends StatelessWidget {
                           '${(hasFullSquad ? lineup.expectedStartingPoints : analysis.expectedStartingPoints).toStringAsFixed(1)} ${l10n.ptsCue}',
                           style: TextStyle(
                             fontWeight: FontWeight.w900,
-                            color: gain > 0.05 ? colors.primary : colors.onSurface,
+                            color: gain > 0.05
+                                ? colors.primary
+                                : colors.onSurface,
                             fontSize: 12,
                           ),
                         ),
@@ -1237,7 +1377,9 @@ class _WeeklyPlanCard extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
+                    color: colors.surfaceContainerHighest.withValues(
+                      alpha: 0.5,
+                    ),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -1245,7 +1387,8 @@ class _WeeklyPlanCard extends StatelessWidget {
                       Expanded(
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
-                          alignment: Directionality.of(context) == TextDirection.rtl
+                          alignment:
+                              Directionality.of(context) == TextDirection.rtl
                               ? Alignment.centerRight
                               : Alignment.centerLeft,
                           child: Row(
@@ -1260,7 +1403,9 @@ class _WeeklyPlanCard extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                analysis.expectedStartingPoints.toStringAsFixed(1),
+                                analysis.expectedStartingPoints.toStringAsFixed(
+                                  1,
+                                ),
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: colors.onSurface,
@@ -1268,7 +1413,9 @@ class _WeeklyPlanCard extends StatelessWidget {
                                 ),
                               ),
                               Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                ),
                                 child: Icon(
                                   Icons.arrow_forward_rounded,
                                   size: 13,
@@ -1313,18 +1460,18 @@ class _WeeklyPlanCard extends StatelessWidget {
                 Text(
                   l10n.lineupGain(gain),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colors.onSurfaceVariant,
-                        fontSize: 12,
-                      ),
+                    color: colors.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
                 ),
               ] else ...[
                 const SizedBox(height: 8),
                 Text(
                   l10n.lineupAlreadyBest,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colors.onSurfaceVariant,
-                        fontSize: 12,
-                      ),
+                    color: colors.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
                 ),
               ],
               if (promoted.isNotEmpty) ...[
@@ -1332,7 +1479,9 @@ class _WeeklyPlanCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: colors.surfaceContainerHighest.withValues(alpha: 0.6),
+                    color: colors.surfaceContainerHighest.withValues(
+                      alpha: 0.6,
+                    ),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -1387,9 +1536,9 @@ class _WeeklyPlanCard extends StatelessWidget {
                 Text(
                   '${l10n.benchOrder}: ${names(lineup.bench)}',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colors.onSurfaceVariant,
-                        fontSize: 11,
-                      ),
+                    color: colors.onSurfaceVariant,
+                    fontSize: 11,
+                  ),
                 ),
               ],
               const SizedBox(height: 12),
@@ -1397,13 +1546,13 @@ class _WeeklyPlanCard extends StatelessWidget {
                 width: double.infinity,
                 child: FilledButton.tonalIcon(
                   key: const ValueKey('suggested-lineup-preview'),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => NextGameweekAnalysisPage(
-                        data: data,
-                        onTransfer: onTransfer,
-                        useSuggestedLineup: true,
-                      ),
+                  onPressed: () => pushPage<void>(
+                    context,
+                    AppRoutes.analysis,
+                    NextGameweekAnalysisPage(
+                      data: data,
+                      onTransfer: onTransfer,
+                      useSuggestedLineup: true,
                     ),
                   ),
                   icon: const Icon(Icons.groups_outlined, size: 18),
@@ -1416,12 +1565,12 @@ class _WeeklyPlanCard extends StatelessWidget {
                 width: double.infinity,
                 child: FilledButton.tonalIcon(
                   key: const ValueKey('suggested-lineup-preview'),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => NextGameweekAnalysisPage(
-                        data: data,
-                        onTransfer: onTransfer,
-                      ),
+                  onPressed: () => pushPage<void>(
+                    context,
+                    AppRoutes.analysis,
+                    NextGameweekAnalysisPage(
+                      data: data,
+                      onTransfer: onTransfer,
                     ),
                   ),
                   icon: const Icon(Icons.insights_rounded, size: 18),
@@ -1455,9 +1604,7 @@ class _CaptainCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.primaryContainer,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colors.primary.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: colors.primary.withValues(alpha: 0.3)),
       ),
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -1512,7 +1659,8 @@ class _CaptainCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        bootstrap.teams[captain.player.teamId]?.shortName ?? '—',
+                        bootstrap.teams[captain.player.teamId]?.shortName ??
+                            '—',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                       Builder(
@@ -1621,9 +1769,7 @@ class _ChipCard extends StatelessWidget {
     final isNone = result.chip == SuggestedChip.none;
 
     return Material(
-      color: isSelected
-          ? colors.primaryContainer
-          : colors.surfaceContainerHigh,
+      color: isSelected ? colors.primaryContainer : colors.surfaceContainerHigh,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
@@ -1675,7 +1821,9 @@ class _ChipCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isNone ? l10n.holdChips : l10n.chipName(result.chip.name),
+                          isNone
+                              ? l10n.holdChips
+                              : l10n.chipName(result.chip.name),
                           style: TextStyle(
                             fontWeight: FontWeight.w900,
                             fontSize: 14,
@@ -1685,7 +1833,8 @@ class _ChipCard extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           l10n.chipReason(result.chipReason.name),
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
                                 fontSize: 11,
                                 color: colors.onSurfaceVariant,
                               ),
@@ -1806,9 +1955,9 @@ class _TransferCard extends StatelessWidget {
                           ),
                           Text(
                             '$outTeam • £${_price(transfer.outPlayer.nowCost)}m',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  fontSize: 11,
-                                ),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(fontSize: 11),
                           ),
                         ],
                       ),
@@ -1849,9 +1998,9 @@ class _TransferCard extends StatelessWidget {
                           ),
                           Text(
                             '$inTeam • £${_price(transfer.inPlayer.nowCost)}m',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  fontSize: 11,
-                                ),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(fontSize: 11),
                           ),
                         ],
                       ),
