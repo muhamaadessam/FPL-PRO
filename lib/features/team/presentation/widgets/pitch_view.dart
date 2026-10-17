@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../fixtures/data/models/fpl_models.dart';
@@ -64,11 +65,11 @@ class PitchView extends StatelessWidget {
         Stack(
           children: [
             const Positioned.fill(child: _PitchSurface()),
-            Column(
+            _PitchRowsLayout(
               children: [
-                for (var index = 0; index < rows.length; index++) ...[
+                for (final picks in rows)
                   _PitchRow(
-                    picks: rows[index],
+                    picks: picks,
                     bootstrap: bootstrap,
                     gameweekPoints: gameweekPoints,
                     onSwap: onSwap,
@@ -76,8 +77,6 @@ class PitchView extends StatelessWidget {
                     onPlayerTap: onPlayerTap,
                     metric: metric,
                   ),
-                  if (index != rows.length - 1) const SizedBox(height: 14),
-                ],
               ],
             ),
           ],
@@ -111,6 +110,157 @@ class PitchView extends StatelessWidget {
         )
         .toList(growable: false);
   }
+}
+
+/// From this width the field's perspective shows, so rows are pulled in to
+/// stay inside the touchlines. Narrower pitches keep full-width rows.
+const _perspectiveMinWidth = 600.0;
+const _pitchRowGap = 14.0;
+const _touchlineMargin = 12.0;
+
+/// Pitch graphic geometry in SVG units (see `pitch-graphic.svg`): the left
+/// touchline runs from ([_touchlineTopX], [_touchlineTopY]) near the far goal
+/// to ([_touchlineBottomX], [_touchlineBottomY]) at the near corner.
+const _svgWidth = 1417.0;
+const _svgHeight = 788.0;
+const _touchlineTopX = 361.0;
+const _touchlineTopY = 88.0;
+const _touchlineBottomX = 20.0;
+const _touchlineBottomY = 740.0;
+
+/// Horizontal padding that keeps a row whose top edge sits at [rowTop]
+/// inside the field that [_PitchSurface] draws in a [width] x [height] box.
+double _touchlineInset({
+  required double width,
+  required double height,
+  required double rowTop,
+}) {
+  // On wide boxes _PitchSurface covers the box with the graphic, centred
+  // horizontally and anchored to the top.
+  final scale = math.max(width / _svgWidth, height / _svgHeight);
+  final cropLeft = (_svgWidth * scale - width) / 2;
+  final svgY = (rowTop / scale).clamp(_touchlineTopY, _touchlineBottomY);
+  final progress =
+      (svgY - _touchlineTopY) / (_touchlineBottomY - _touchlineTopY);
+  final touchlineX =
+      _touchlineTopX + (_touchlineBottomX - _touchlineTopX) * progress;
+  return math.max(0.0, touchlineX * scale - cropLeft) + _touchlineMargin;
+}
+
+/// Stacks the pitch rows like a column, narrowing each row on wide pitches
+/// so players never stand outside the field. Unlike a LayoutBuilder it
+/// reports intrinsic sizes, which SliverFillRemaining relies on.
+class _PitchRowsLayout extends MultiChildRenderObjectWidget {
+  const _PitchRowsLayout({required super.children});
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderPitchRows();
+}
+
+class _PitchRowsParentData extends ContainerBoxParentData<RenderBox> {}
+
+class _RenderPitchRows extends RenderBox
+    with
+        ContainerRenderObjectMixin<RenderBox, _PitchRowsParentData>,
+        RenderBoxContainerDefaultsMixin<RenderBox, _PitchRowsParentData> {
+  @override
+  void setupParentData(RenderBox child) {
+    if (child.parentData is! _PitchRowsParentData) {
+      child.parentData = _PitchRowsParentData();
+    }
+  }
+
+  double _stackedHeight(double Function(RenderBox child) heightOf) {
+    var height = 0.0;
+    var child = firstChild;
+    while (child != null) {
+      height += heightOf(child);
+      child = childAfter(child);
+      if (child != null) height += _pitchRowGap;
+    }
+    return height;
+  }
+
+  double _widestChild(double Function(RenderBox child) widthOf) {
+    var width = 0.0;
+    var child = firstChild;
+    while (child != null) {
+      width = math.max(width, widthOf(child));
+      child = childAfter(child);
+    }
+    return width;
+  }
+
+  @override
+  double computeMinIntrinsicWidth(double height) =>
+      _widestChild((child) => child.getMinIntrinsicWidth(height));
+
+  @override
+  double computeMaxIntrinsicWidth(double height) =>
+      _widestChild((child) => child.getMaxIntrinsicWidth(height));
+
+  @override
+  double computeMinIntrinsicHeight(double width) =>
+      _stackedHeight((child) => child.getMinIntrinsicHeight(width));
+
+  @override
+  double computeMaxIntrinsicHeight(double width) =>
+      _stackedHeight((child) => child.getMaxIntrinsicHeight(width));
+
+  @override
+  Size computeDryLayout(covariant BoxConstraints constraints) {
+    final width = constraints.maxWidth;
+    final height = _stackedHeight(
+      (child) => child
+          .getDryLayout(BoxConstraints(maxWidth: width))
+          .height,
+    );
+    return constraints.constrain(Size(width, height));
+  }
+
+  @override
+  void performLayout() {
+    final width = constraints.maxWidth;
+    final rowConstraints = BoxConstraints(maxWidth: width);
+    // Row heights do not depend on their width, so the first pass fixes
+    // where each row sits and how tall the pitch is.
+    final height = _stackedHeight((child) {
+      child.layout(rowConstraints, parentUsesSize: true);
+      return child.size.height;
+    });
+    final usePerspective = width.isFinite && width >= _perspectiveMinWidth;
+
+    var top = 0.0;
+    var child = firstChild;
+    while (child != null) {
+      final parentData = child.parentData! as _PitchRowsParentData;
+      var inset = 0.0;
+      if (usePerspective) {
+        inset = math.min(
+          _touchlineInset(width: width, height: height, rowTop: top),
+          // Never squeeze a row below its natural width.
+          math.max(0.0, (width - child.getMinIntrinsicWidth(double.infinity)) / 2),
+        );
+        child.layout(
+          BoxConstraints.tightFor(width: width - inset * 2),
+          parentUsesSize: true,
+        );
+      }
+      parentData.offset = Offset(inset, top);
+      top += child.size.height + _pitchRowGap;
+      child = childAfter(child);
+    }
+    size = constraints.constrain(Size(width, height));
+  }
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) =>
+      defaultHitTestChildren(result, position: position);
+
+  @override
+  void paint(PaintingContext context, Offset offset) =>
+      defaultPaint(context, offset);
 }
 
 class _PitchSurface extends StatelessWidget {
