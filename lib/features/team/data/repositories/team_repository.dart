@@ -27,11 +27,28 @@ class TeamRepositoryImpl implements TeamRepository {
     required int entryId,
     required int gameweekId,
   }) {
+    if (session.isGuest) {
+      return _getLatestPublicTeam(entryId: entryId, gameweekId: gameweekId);
+    }
     return _dataSource.getMyTeam(
       session: session,
       entryId: entryId,
       gameweekId: gameweekId,
     );
+  }
+
+  /// Without a sign-in the upcoming squad is private, so a team-ID session
+  /// uses the picks published at the last deadline instead.
+  Future<MyTeam> _getLatestPublicTeam({
+    required int entryId,
+    required int gameweekId,
+  }) async {
+    try {
+      return await getPublicTeam(entryId: entryId, gameweekId: gameweekId);
+    } on FplApiException catch (error) {
+      if (error.statusCode != 404 || gameweekId <= 1) rethrow;
+      return getPublicTeam(entryId: entryId, gameweekId: gameweekId - 1);
+    }
   }
 
   @override

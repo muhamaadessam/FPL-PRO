@@ -224,7 +224,14 @@ class _TeamContentState extends State<_TeamContent> {
                               bootstrap: widget.bootstrap,
                               firstGameweekId: widget.entry?.startedEvent,
                               onGameweekChanged: widget.onGameweekChanged,
-                              onManage: widget.entryId == null
+                              onManage:
+                                  widget.entryId == null &&
+                                      !(context
+                                              .read<AuthCubit>()
+                                              .state
+                                              .session
+                                              ?.isGuest ??
+                                          false)
                                   ? () => _openManageTeam(context)
                                   : null,
                             );

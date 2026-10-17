@@ -41,6 +41,24 @@ void main() {
     },
   );
 
+  test('a team-ID session reads the latest published picks', () async {
+    final api = _FakeFplApiClient()..missingPublicGameweeks.add(6);
+    final repository = TeamRepositoryImpl(api);
+    const session = OfficialSession.guest(123);
+
+    await repository.getMyTeam(session: session, entryId: 123, gameweekId: 6);
+    await repository.getTeamForGameweek(
+      session: session,
+      entryId: 123,
+      gameweekId: 5,
+      editableGameweekId: 5,
+    );
+
+    expect(api.privateRequests, isEmpty);
+    // Gameweek 6 has no picks before its deadline, so gameweek 5 is used.
+    expect(api.publicRequests, [6, 5, 5]);
+  });
+
   test('delegates getEntry to api client', () async {
     final api = _FakeFplApiClient();
     final repository = TeamRepositoryImpl(api);
@@ -312,6 +330,7 @@ class _FakeFplApiClient extends FplApiClient {
   final privateRequests = <int>[];
   final publicRequests = <int>[];
   final entryRequests = <int>[];
+  final missingPublicGameweeks = <int>{};
 
   @override
   Future<FplEntry> getEntry(int entryId) async {
@@ -335,6 +354,13 @@ class _FakeFplApiClient extends FplApiClient {
     required int gameweekId,
   }) async {
     publicRequests.add(gameweekId);
+    if (missingPublicGameweeks.contains(gameweekId)) {
+      throw const FplApiException(
+        kind: FplApiErrorKind.unknown,
+        message: 'Not found.',
+        statusCode: 404,
+      );
+    }
     return MyTeam.fromJson(const {'entry_history': {}});
   }
 

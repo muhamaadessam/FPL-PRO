@@ -40,7 +40,43 @@ void main() {
     expect(find.text('Open my team'), findsNothing);
     expect(find.byType(TextField), findsNothing);
     expect(find.text('Browse public matches'), findsOneWidget);
+    expect(find.text('Continue with team ID'), findsOneWidget);
   });
+
+  test('restores a team-ID session without signing in', () async {
+    final store = _MemorySessionStore()
+      ..stored = const OfficialSession.guest(8634589);
+    final session = await OfficialAuthClient(store).restoreSession();
+
+    expect(session?.entryId, 8634589);
+    expect(session?.isGuest, isTrue);
+    expect(session?.requestHeaders, isEmpty);
+    expect(store.stored, isNotNull);
+  });
+
+  test('continuing with a team ID stores a read-only session', () async {
+    final store = _MemorySessionStore();
+    final session = await OfficialAuthClient(
+      store,
+    ).continueWithEntryId(8634589);
+
+    expect(session.isGuest, isTrue);
+    expect(store.stored?.entryId, 8634589);
+    expect(store.stored?.isGuest, isTrue);
+  });
+}
+
+class _MemorySessionStore extends SessionStore {
+  OfficialSession? stored;
+
+  @override
+  Future<OfficialSession?> read() async => stored;
+
+  @override
+  Future<void> write(OfficialSession session) async => stored = session;
+
+  @override
+  Future<void> clear() async => stored = null;
 }
 
 class _FakeAuthClient extends OfficialAuthClient {

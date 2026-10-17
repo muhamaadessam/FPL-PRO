@@ -22,5 +22,9 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<OfficialSession> continueWithEntryId(int entryId) =>
+      _client.continueWithEntryId(entryId);
+
+  @override
   Future<void> logout() => _client.logout();
 }

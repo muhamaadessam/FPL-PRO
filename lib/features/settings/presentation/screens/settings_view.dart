@@ -20,6 +20,7 @@ class SettingsView extends StatelessWidget {
     final themeMode = context.watch<ThemeCubit>().state;
     final authState = context.watch<AuthCubit>().state;
     final entryId = authState.session?.entryId;
+    final isGuest = authState.session?.isGuest ?? false;
     HomePreloadState? preload;
     try {
       preload = context.watch<HomePreloadCubit>().state;
@@ -93,6 +94,26 @@ class SettingsView extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
+              if (isGuest) ...[
+                const SizedBox(height: 10),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.info_outline_rounded, size: 16, color: subColor),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        l10n.teamIdModeNotice,
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.4,
+                          color: subColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -228,7 +249,7 @@ class SettingsView extends StatelessWidget {
             color: isDark ? AppColors.darkAlertErrorText : const Color(0xffdc2626),
           ),
           label: Text(
-            l10n.logout,
+            isGuest ? l10n.changeTeam : l10n.logout,
             style: TextStyle(
               color: isDark ? AppColors.darkAlertErrorText : const Color(0xffdc2626),
               fontWeight: FontWeight.w800,

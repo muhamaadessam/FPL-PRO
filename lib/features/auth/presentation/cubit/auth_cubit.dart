@@ -78,6 +78,15 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  Future<void> continueWithEntryId(int entryId) async {
+    emit(const AuthLoading());
+    try {
+      emit(AuthAuthenticated(await _repository.continueWithEntryId(entryId)));
+    } on Object catch (error, stackTrace) {
+      emit(AuthFailure(error, stackTrace));
+    }
+  }
+
   Future<void> logout() async {
     await _repository.logout();
     emit(const AuthUnauthenticated());

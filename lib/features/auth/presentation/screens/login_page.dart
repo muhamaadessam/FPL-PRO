@@ -6,6 +6,9 @@ import '../../../../core/localization/cubit/locale_cubit.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/themes/cubit/theme_cubit.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../fixtures/data/datasources/fpl_api_client.dart';
+import '../../../team/domain/repositories/team_repository.dart';
+import '../cubit/auth_cubit.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -312,7 +315,22 @@ class _LoginPageState extends State<LoginPage>
                       ),
                       const SizedBox(height: 14),
 
-                      // Secondary Option: Guest Public Matches Preview
+                      // Secondary Option: Full app from a team ID, read-only
+                      _GuestPreviewButton(
+                        onPressed: () => _showTeamIdSheet(context),
+                        label: l10n.continueWithTeamId,
+                        subtitle: l10n.continueWithTeamIdSubtitle,
+                        icon: Icons.tag_rounded,
+                        isDark: isDark,
+                        cardBg: cardBg,
+                        cardBorder: cardBorder,
+                        textPrimary: textPrimary,
+                        textSecondary: textSecondary,
+                        isArabic: l10n.isArabic,
+                      ),
+                      const SizedBox(height: 10),
+
+                      // Guest Public Matches Preview
                       _GuestPreviewButton(
                         onPressed: () => context.push('/preview'),
                         label: l10n.publicPreview,
@@ -870,11 +888,13 @@ class _GuestPreviewButton extends StatelessWidget {
     required this.textPrimary,
     required this.textSecondary,
     required this.isArabic,
+    this.icon = Icons.sports_soccer_rounded,
   });
 
   final VoidCallback onPressed;
   final String label;
   final String subtitle;
+  final IconData icon;
   final bool isDark;
   final Color cardBg;
   final Color cardBorder;
@@ -915,7 +935,7 @@ class _GuestPreviewButton extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
-                  Icons.sports_soccer_rounded,
+                  icon,
                   color: isDark ? Colors.white : AppColors.plPurple,
                   size: 20,
                 ),
@@ -950,6 +970,145 @@ class _GuestPreviewButton extends StatelessWidget {
                     : Icons.chevron_right_rounded,
                 color: isDark ? AppColors.darkIconMuted : const Color(0xff8e88a0),
                 size: 22,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> _showTeamIdSheet(BuildContext context) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    builder: (_) => const _TeamIdSheet(),
+  );
+}
+
+/// Asks for a team ID, checks it against the public entry endpoint, then
+/// opens the app in read-only mode for that team.
+class _TeamIdSheet extends StatefulWidget {
+  const _TeamIdSheet();
+
+  @override
+  State<_TeamIdSheet> createState() => _TeamIdSheetState();
+}
+
+class _TeamIdSheetState extends State<_TeamIdSheet> {
+  final _controller = TextEditingController();
+  bool _submitting = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context);
+    final entryId = int.tryParse(_controller.text.trim());
+    if (entryId == null || entryId <= 0) {
+      setState(() => _error = l10n.entryIdInvalid);
+      return;
+    }
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+    try {
+      await context.read<TeamRepository>().getEntry(entryId);
+    } on FplApiException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _submitting = false;
+        _error = switch (error.kind) {
+          FplApiErrorKind.network => l10n.networkError,
+          FplApiErrorKind.rateLimited => l10n.rateLimited,
+          _ => error.statusCode == 404 ? l10n.entryNotFound : l10n.genericError,
+        };
+      });
+      return;
+    } on Object {
+      if (!mounted) return;
+      setState(() {
+        _submitting = false;
+        _error = l10n.genericError;
+      });
+      return;
+    }
+    if (!mounted) return;
+    final authCubit = context.read<AuthCubit>();
+    Navigator.of(context).pop();
+    await authCubit.continueWithEntryId(entryId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.continueWithTeamId,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                l10n.teamIdHelp,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  height: 1.45,
+                  color: AppColors.textSecondary(isDark),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _controller,
+                autofocus: true,
+                keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.done,
+                enabled: !_submitting,
+                onSubmitted: (_) => _submit(),
+                decoration: InputDecoration(
+                  labelText: l10n.entryId,
+                  hintText: l10n.entryIdHint,
+                  errorText: _error,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: _submitting ? null : _submit,
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: _submitting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(
+                        l10n.openTeam,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
               ),
             ],
           ),

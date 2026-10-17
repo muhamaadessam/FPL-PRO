@@ -45,6 +45,9 @@ class OfficialAuthClient {
 
   Future<OfficialSession?> restoreSession() async {
     final stored = await _sessionStore.read();
+    if (stored != null && stored.isGuest) {
+      return stored.entryId == null ? null : stored;
+    }
     if (stored == null || !stored.isExpired) return stored;
     if (stored.refreshToken == null) {
       await _sessionStore.clear();
@@ -226,6 +229,12 @@ class OfficialAuthClient {
       ),
     );
     return findEntryId(response.data);
+  }
+
+  Future<OfficialSession> continueWithEntryId(int entryId) async {
+    final session = OfficialSession.guest(entryId);
+    await _sessionStore.write(session);
+    return session;
   }
 
   Future<void> logout() async {

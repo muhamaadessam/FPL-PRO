@@ -65,6 +65,20 @@ class AppLocalizations {
   String get entryIdInvalid =>
       isArabic ? 'اكتب رقم فريق صحيحًا.' : 'Enter a valid team entry ID.';
   String get openTeam => isArabic ? 'فتح فريقي' : 'Open my team';
+  String get continueWithTeamId =>
+      isArabic ? 'الدخول برقم الفريق' : 'Continue with team ID';
+  String get continueWithTeamIdSubtitle => isArabic
+      ? 'فريقك، النصائح، المباريات والليجات بدون تسجيل دخول.'
+      : 'Your team, tips, matches and leagues without signing in.';
+  String get teamIdHelp => isArabic
+      ? 'هتلاقي رقم الفريق في رابط صفحة النقاط على موقع الفانتازي: fantasy.premierleague.com/entry/رقم_الفريق. التعديل والتبديلات محتاجة تسجيل دخول.'
+      : 'Find it in your Points page link on the FPL website: fantasy.premierleague.com/entry/YOUR_ID. Editing and transfers need a sign-in.';
+  String get entryNotFound =>
+      isArabic ? 'مفيش فريق بالرقم ده.' : 'No team was found with that ID.';
+  String get teamIdModeNotice => isArabic
+      ? 'أنت داخل برقم الفريق. التشكيلة المعروضة للجولة الجاية هي آخر تشكيلة منشورة، ولتعديل الفريق أو عمل تبديلات سجّل دخولك.'
+      : 'You are viewing by team ID. The upcoming squad shown is your last published one; sign in to edit your team or make transfers.';
+  String get changeTeam => isArabic ? 'تغيير الفريق' : 'Change team';
   String get loginCancelled =>
       isArabic ? 'تم إلغاء تسجيل الدخول.' : 'Sign-in was cancelled.';
   String get invalidCallback => isArabic
