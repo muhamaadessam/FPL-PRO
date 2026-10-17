@@ -14,6 +14,10 @@ void main() {
   test('links to the Play Store listing', () {
     expect(playStoreUri.host, 'play.google.com');
     expect(playStoreUri.queryParameters['id'], 'me.muhammadessam.FPLpro');
+    expect(
+      testersGroupUri.toString(),
+      'https://groups.google.com/g/essam-apps',
+    );
   });
 
   testWidgets('explains team management lives in the app', (tester) async {
@@ -22,6 +26,10 @@ void main() {
 
     expect(find.textContaining('get the FPL Pro app'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'Get the app'), findsOneWidget);
+    expect(
+      find.widgetWithText(TextButton, 'Join the testers group'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('shows the Arabic message', (tester) async {
@@ -30,5 +38,6 @@ void main() {
 
     expect(find.textContaining('لإدارة فريقك'), findsOneWidget);
     expect(find.text('حمّل التطبيق'), findsOneWidget);
+    expect(find.text('انضم لجروب التجربة'), findsOneWidget);
   });
 }

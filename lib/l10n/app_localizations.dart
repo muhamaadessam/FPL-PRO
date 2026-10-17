@@ -53,6 +53,11 @@ class AppLocalizations {
       ? 'لإدارة فريقك من تشكيلة وكابتن وتبديلات وكروت، حمّل التطبيق.'
       : 'To manage your team (lineup, captain, transfers and chips), get the FPL Pro app.';
   String get getAppAction => isArabic ? 'حمّل التطبيق' : 'Get the app';
+  String get joinTestersFirst => isArabic
+      ? 'التطبيق في مرحلة التجربة، فانضم لجروب المختبرين الأول بنفس حساب جوجل اللي على موبايلك.'
+      : 'The app is in testing, so first join the testers group with the Google account on your phone.';
+  String get joinTestersAction =>
+      isArabic ? 'انضم لجروب التجربة' : 'Join the testers group';
   String get changeTeam => isArabic ? 'تغيير الفريق' : 'Change team';
   String get loginCancelled =>
       isArabic ? 'تم إلغاء تسجيل الدخول.' : 'Sign-in was cancelled.';
