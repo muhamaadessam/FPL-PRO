@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../features/dashboard/presentation/cubit/home_preload_cubit.dart';
 import '../../l10n/app_localizations.dart';
+import '../app/router.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -72,7 +73,7 @@ class _SplashPageState extends State<SplashPage>
             if (state.status == PreloadStatus.success &&
                 state.entryId ==
                     context.read<AuthCubit>().state.session?.entryId) {
-              context.go('/home');
+              context.go(splashDestination(GoRouterState.of(context).uri));
             }
           },
         ),

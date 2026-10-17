@@ -10,6 +10,7 @@ import '../../data/models/team_models.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../core/network/api_constance.dart';
+import '../../../../core/widgets/adaptive_modal.dart';
 
 enum PlayerCardMetric { points, price, form, selectedPercent, totalPoints }
 
@@ -764,7 +765,7 @@ class _PitchPlayer extends StatelessWidget {
   }
 
   void _showPlayerDetailsSheet(BuildContext context) {
-    showModalBottomSheet(
+    showAdaptiveSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -959,10 +960,11 @@ class _PlayerDetailBottomSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Drag handle
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
+          if (!AdaptiveModal.isDialog(context))
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
               decoration: BoxDecoration(
                 color: handleColor,
                 borderRadius: BorderRadius.circular(2),

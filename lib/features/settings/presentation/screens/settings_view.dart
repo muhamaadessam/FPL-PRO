@@ -9,6 +9,9 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
 import '../../../../core/layout/responsive.dart';
+import 'package:flutter/foundation.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/app/routes.dart';
 
 const _privacyPolicyUrl = 'https://fpl-pro-privacy.vercel.app';
 
@@ -237,11 +240,17 @@ class SettingsView extends StatelessWidget {
               style: TextStyle(fontWeight: FontWeight.w700, color: titleColor),
             ),
             trailing: Icon(Icons.chevron_right, color: subColor),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const _PrivacyPolicyPage(),
-              ),
-            ),
+            // The web build cannot host a WebView; open the site's own page.
+            onTap: () => kIsWeb
+                ? launchUrl(
+                    Uri.base.resolve('/privacy'),
+                    webOnlyWindowName: '_self',
+                  )
+                : pushPage<void>(
+                    context,
+                    AppRoutes.privacy,
+                    const PrivacyPolicyPage(),
+                  ),
           ),
         ),
         const SizedBox(height: 16),
@@ -274,14 +283,14 @@ class SettingsView extends StatelessWidget {
   }
 }
 
-class _PrivacyPolicyPage extends StatefulWidget {
-  const _PrivacyPolicyPage();
+class PrivacyPolicyPage extends StatefulWidget {
+  const PrivacyPolicyPage({super.key});
 
   @override
-  State<_PrivacyPolicyPage> createState() => _PrivacyPolicyPageState();
+  State<PrivacyPolicyPage> createState() => _PrivacyPolicyPageState();
 }
 
-class _PrivacyPolicyPageState extends State<_PrivacyPolicyPage> {
+class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
   late final WebViewController _controller = WebViewController()
     ..setJavaScriptMode(JavaScriptMode.disabled)
     ..loadRequest(Uri.parse(_privacyPolicyUrl));

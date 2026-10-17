@@ -7,7 +7,7 @@
     "binding": "ASSETS",
     "html_handling": "auto-trailing-slash",
     "not_found_handling": "404-page",
-    "run_worker_first": ["/api/*", "/fpl/*", "/pl-resources/*", "/login", "/login/*", "/home", "/splash", "/team/*", "/app", "/app/*"]
+    "run_worker_first": ["/api/*", "/fpl/*", "/pl-resources/*", "/login", "/login/*", "/splash", "/team/*", "/home", "/home/*", "/tips", "/tips/*", "/matches", "/matches/*", "/leagues", "/leagues/*", "/settings", "/settings/*", "/app", "/app/*"]
   },
   "routes": [
     { "pattern": "fpl-pro.muhammadessam.me", "custom_domain": true }

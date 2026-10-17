@@ -12,6 +12,7 @@ import '../../domain/repositories/team_repository.dart';
 import '../../domain/usecases/squad_editor.dart';
 import '../cubit/manage_team_cubit.dart';
 import '../widgets/pitch_view.dart';
+import '../../../../core/widgets/adaptive_modal.dart';
 
 /// Pick team, armbands, chips and transfers for the next deadline, written
 /// through the official FPL endpoints.
@@ -174,7 +175,7 @@ class _PickTeamTabState extends State<_PickTeamTab> {
     final cubit = context.read<ManageTeamCubit>();
     final pick = cubit.state.lineup.firstWhere((p) => p.elementId == elementId);
     final player = cubit.state.bootstrap!.players[elementId];
-    final action = await showModalBottomSheet<_PlayerAction>(
+    final action = await showAdaptiveSheet<_PlayerAction>(
       context: context,
       showDragHandle: true,
       builder: (sheetContext) => _PlayerActionSheet(pick: pick, player: player),
@@ -471,7 +472,7 @@ Future<void> _pickReplacement(BuildContext context, int outElementId) async {
   final bootstrap = state.bootstrap!;
   final outPlayer = bootstrap.players[outElementId];
   if (outPlayer == null) return;
-  final incoming = await showModalBottomSheet<FplPlayer>(
+  final incoming = await showAdaptiveSheet<FplPlayer>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,

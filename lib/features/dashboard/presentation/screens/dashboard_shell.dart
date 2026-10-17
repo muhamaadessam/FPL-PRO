@@ -1,39 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/layout/responsive.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../l10n/app_localizations.dart';
-import '../../../fixtures/presentation/screens/fixtures_view.dart';
-import '../../../leagues/presentation/screens/leagues_view.dart';
-import '../../../recommendations/presentation/screens/recommendations_view.dart';
-import '../../../settings/presentation/screens/settings_view.dart';
-import '../../../team/presentation/screens/team_view.dart';
 
-class DashboardShell extends StatefulWidget {
-  const DashboardShell({super.key});
+/// Frame around the dashboard tabs: a top navigation bar on wide screens and
+/// a bottom bar on phones. Each tab keeps its own page stack and URL.
+class DashboardShell extends StatelessWidget {
+  const DashboardShell({super.key, required this.navigationShell});
 
-  @override
-  State<DashboardShell> createState() => _DashboardShellState();
-}
-
-class _DashboardShellState extends State<DashboardShell> {
   static const _settingsIndex = 4;
 
-  int _selectedIndex = 0;
+  final StatefulNavigationShell navigationShell;
 
-  void _select(int index) => setState(() => _selectedIndex = index);
+  /// Tapping the current tab again returns it to its first page.
+  void _select(int index) => navigationShell.goBranch(
+    index,
+    initialLocation: index == navigationShell.currentIndex,
+  );
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final pages = [
-      const TeamView(),
-      const RecommendationsView(),
-      const FixturesView(),
-      const LeaguesView(),
-      const SettingsView(),
-    ];
+    final selectedIndex = navigationShell.currentIndex;
     final destinations = [
       _Destination(Icons.groups_outlined, Icons.groups_rounded, l10n.myTeam),
       _Destination(
@@ -65,11 +56,11 @@ class _DashboardShellState extends State<DashboardShell> {
             children: [
               _TopNavBar(
                 destinations: destinations,
-                selectedIndex: _selectedIndex,
+                selectedIndex: selectedIndex,
                 settingsIndex: _settingsIndex,
                 onSelected: _select,
               ),
-              Expanded(child: pages[_selectedIndex]),
+              Expanded(child: navigationShell),
             ],
           ),
         ),
@@ -77,7 +68,7 @@ class _DashboardShellState extends State<DashboardShell> {
     }
 
     return Scaffold(
-      body: SafeArea(child: pages[_selectedIndex]),
+      body: SafeArea(child: navigationShell),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: isDark ? AppColors.darkNavBg : Colors.white,
@@ -96,7 +87,7 @@ class _DashboardShellState extends State<DashboardShell> {
           ],
         ),
         child: NavigationBar(
-          selectedIndex: _selectedIndex,
+          selectedIndex: selectedIndex,
           onDestinationSelected: _select,
           destinations: [
             for (final destination in destinations)

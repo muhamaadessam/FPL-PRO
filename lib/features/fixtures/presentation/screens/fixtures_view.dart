@@ -10,6 +10,7 @@ import '../cubit/fixtures_cubit.dart';
 import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
 import '../../../../core/layout/responsive.dart';
 import '../../../../core/network/api_constance.dart';
+import '../../../../core/widgets/adaptive_modal.dart';
 
 class FixturesView extends StatelessWidget {
   const FixturesView({super.key});
@@ -391,23 +392,29 @@ class _FixtureCard extends StatelessWidget {
   }
 
   void _showFixtureDetails(BuildContext context) {
-    showModalBottomSheet<void>(
+    showAdaptiveSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (_) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.75,
-        minChildSize: 0.2,
-        maxChildSize: 0.95,
-        builder: (context, scrollController) => _FixtureDetailsSheet(
-          fixture: fixture,
-          teams: teams,
-          players: players,
-          prediction: prediction,
-          scrollController: scrollController,
-        ),
-      ),
+      builder: (sheetContext) {
+        Widget details(ScrollController? scrollController) =>
+            _FixtureDetailsSheet(
+              fixture: fixture,
+              teams: teams,
+              players: players,
+              prediction: prediction,
+              scrollController: scrollController,
+            );
+        // A dialog already has a fixed height, so it scrolls normally.
+        if (AdaptiveModal.isDialog(sheetContext)) return details(null);
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.75,
+          minChildSize: 0.2,
+          maxChildSize: 0.95,
+          builder: (context, scrollController) => details(scrollController),
+        );
+      },
     );
   }
 }
@@ -573,14 +580,14 @@ class _FixtureDetailsSheet extends StatelessWidget {
     required this.teams,
     required this.players,
     required this.prediction,
-    required this.scrollController,
+    this.scrollController,
   });
 
   final FplFixture fixture;
   final Map<int, FplTeam> teams;
   final Map<int, FplPlayer> players;
   final FixturePrediction? prediction;
-  final ScrollController scrollController;
+  final ScrollController? scrollController;
 
   @override
   Widget build(BuildContext context) {

@@ -14,6 +14,8 @@ import '../cubit/recommendations_cubit.dart';
 import 'next_gameweek_analysis_page.dart';
 import 'player_directory_page.dart';
 import '../../../../core/layout/responsive.dart';
+import '../../../../core/app/routes.dart';
+import '../../../../core/widgets/adaptive_modal.dart';
 
 export '../../domain/entities/recommendation_data.dart';
 
@@ -366,7 +368,7 @@ class _RecommendationContentState extends State<_RecommendationContent>
 
   Future<void> _showTransferComparison(TransferSuggestion transfer) async {
     final l10n = AppLocalizations.of(context);
-    final selected = await showModalBottomSheet<bool>(
+    final selected = await showAdaptiveSheet<bool>(
       context: context,
       isScrollControlled: true,
       builder: (sheetContext) {
@@ -376,10 +378,11 @@ class _RecommendationContentState extends State<_RecommendationContent>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
+                if (!AdaptiveModal.isDialog(sheetContext))
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.outlineVariant,
@@ -482,7 +485,7 @@ class _RecommendationContentState extends State<_RecommendationContent>
 
   Future<void> _showChipSelection(SuggestedChip chip) async {
     final l10n = AppLocalizations.of(context);
-    final selected = await showModalBottomSheet<bool>(
+    final selected = await showAdaptiveSheet<bool>(
       context: context,
       builder: (sheetContext) {
         return SafeArea(
@@ -492,10 +495,11 @@ class _RecommendationContentState extends State<_RecommendationContent>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
+                if (!AdaptiveModal.isDialog(sheetContext))
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.outlineVariant,
@@ -1112,15 +1116,15 @@ class _TopPicksTab extends StatelessWidget {
           color: colors.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(14),
           child: InkWell(
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => PlayerDirectoryPage(
+            onTap: () => pushPage<void>(
+              context,
+              AppRoutes.players,
+              PlayerDirectoryPage(
                   bootstrap: data.bootstrap,
                   fixtures: data.fixtures,
                   gameweekId: data.result.gameweekId,
                   projections: data.projections,
                 ),
-              ),
             ),
             borderRadius: BorderRadius.circular(14),
             child: Padding(
@@ -1293,13 +1297,13 @@ class _WeeklyPlanCard extends StatelessWidget {
               color: Colors.transparent,
               child: InkWell(
                 key: const ValueKey('next-gameweek-analysis'),
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => NextGameweekAnalysisPage(
+                onTap: () => pushPage<void>(
+                  context,
+                  AppRoutes.analysis,
+                  NextGameweekAnalysisPage(
                       data: data,
                       onTransfer: onTransfer,
                     ),
-                  ),
                 ),
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
@@ -1620,14 +1624,14 @@ class _WeeklyPlanCard extends StatelessWidget {
                 width: double.infinity,
                 child: FilledButton.tonalIcon(
                   key: const ValueKey('suggested-lineup-preview'),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => NextGameweekAnalysisPage(
+                  onPressed: () => pushPage<void>(
+                    context,
+                    AppRoutes.analysis,
+                    NextGameweekAnalysisPage(
                         data: data,
                         onTransfer: onTransfer,
                         useSuggestedLineup: true,
                       ),
-                    ),
                   ),
                   icon: const Icon(Icons.groups_outlined, size: 18),
                   label: Text(l10n.suggestedLineup),
@@ -1639,13 +1643,13 @@ class _WeeklyPlanCard extends StatelessWidget {
                 width: double.infinity,
                 child: FilledButton.tonalIcon(
                   key: const ValueKey('suggested-lineup-preview'),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => NextGameweekAnalysisPage(
+                  onPressed: () => pushPage<void>(
+                    context,
+                    AppRoutes.analysis,
+                    NextGameweekAnalysisPage(
                         data: data,
                         onTransfer: onTransfer,
                       ),
-                    ),
                   ),
                   icon: const Icon(Icons.insights_rounded, size: 18),
                   label: Text(l10n.nextGameweekAnalysis),

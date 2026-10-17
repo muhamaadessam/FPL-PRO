@@ -17,6 +17,8 @@ import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
 import '../widgets/pitch_view.dart';
 import 'manage_team_page.dart';
 import '../../../../core/layout/responsive.dart';
+import '../../../../core/widgets/adaptive_modal.dart';
+import '../../../../core/app/routes.dart';
 
 class TeamView extends StatelessWidget {
   const TeamView({super.key, this.entryId});
@@ -367,8 +369,10 @@ class _TeamContentState extends State<_TeamContent> {
   }
 
   Future<void> _openManageTeam(BuildContext context) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const ManageTeamPage()),
+    await pushPage<void>(
+      context,
+      AppRoutes.manageTeam,
+      const ManageTeamPage(),
     );
     // Lineup and transfer changes made there show up here after a refresh.
     await widget.onRefresh();
@@ -665,14 +669,16 @@ class _StatsSummaryCards extends StatelessWidget {
   final Gameweek gameweek;
   final String? activeChip;
 
+  void _openTeam(BuildContext context, int entryId) => pushPage<void>(
+    context,
+    AppRoutes.team(entryId),
+    TeamLookupPage(entryId: entryId),
+  );
+
   void _openHighestTeam(BuildContext context) {
     if (gameweek.highestScoringEntry != null &&
         gameweek.highestScoringEntry! > 0) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => TeamLookupPage(entryId: gameweek.highestScoringEntry),
-        ),
-      );
+      _openTeam(context, gameweek.highestScoringEntry!);
     } else {
       _showHighestPlanDetails(context);
     }
@@ -892,6 +898,7 @@ class _StatsSummaryCards extends StatelessWidget {
   }
 
   void _showHighestPlanDetails(BuildContext context) {
+    final pageContext = context;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final sheetBg = AppColors.cardElevated(isDark);
     final handleColor = isDark ? AppColors.darkCardBorder : Colors.grey[300]!;
@@ -899,7 +906,7 @@ class _StatsSummaryCards extends StatelessWidget {
     final subColor = AppColors.textSecondary(isDark);
     final scoreColor = isDark ? AppColors.plMint : const Color(0xff37003c);
 
-    showModalBottomSheet(
+    showAdaptiveSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
@@ -912,10 +919,11 @@ class _StatsSummaryCards extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
+            if (!AdaptiveModal.isDialog(context))
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
                 decoration: BoxDecoration(
                   color: handleColor,
                   borderRadius: BorderRadius.circular(2),
@@ -963,13 +971,7 @@ class _StatsSummaryCards extends StatelessWidget {
                 child: FilledButton.icon(
                   onPressed: () {
                     Navigator.of(context).pop();
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => TeamLookupPage(
-                          entryId: gameweek.highestScoringEntry,
-                        ),
-                      ),
-                    );
+                    _openTeam(pageContext, gameweek.highestScoringEntry!);
                   },
                   icon: const Icon(Icons.groups_rounded),
                   label: const Text(

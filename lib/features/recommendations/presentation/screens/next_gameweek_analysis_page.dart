@@ -8,6 +8,9 @@ import '../../../team/presentation/widgets/pitch_view.dart';
 import '../../domain/entities/recommendation_data.dart';
 import '../../domain/usecases/recommendation_engine.dart';
 import 'player_directory_page.dart';
+import '../../../../core/widgets/adaptive_modal.dart';
+import '../../../../core/app/routes.dart';
+import '../../../../core/layout/responsive.dart';
 
 class NextGameweekAnalysisPage extends StatefulWidget {
   const NextGameweekAnalysisPage({
@@ -195,7 +198,7 @@ class _NextGameweekAnalysisPageState extends State<NextGameweekAnalysisPage>
         .toList();
     projections.sort((a, b) => b.horizonPoints.compareTo(a.horizonPoints));
 
-    final candidate = await showModalBottomSheet<PlayerProjection>(
+    final candidate = await showAdaptiveSheet<PlayerProjection>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -388,23 +391,23 @@ class _NextGameweekAnalysisPageState extends State<NextGameweekAnalysisPage>
       outgoing: current.projection,
       incoming: candidate,
     );
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute(
-        builder: (_) => PlayerComparisonPage(
-          left: current.projection,
-          right: candidate,
-          bootstrap: widget.data.bootstrap,
-          transfer: transfer,
-          onTransfer: transfer == null || widget.onTransfer == null
-              ? null
-              : widget.onTransfer,
-        ),
+    await pushPage<void>(
+      context,
+      AppRoutes.compare,
+      PlayerComparisonPage(
+        left: current.projection,
+        right: candidate,
+        bootstrap: widget.data.bootstrap,
+        transfer: transfer,
+        onTransfer: transfer == null || widget.onTransfer == null
+            ? null
+            : widget.onTransfer,
       ),
     );
   }
 
   void _showMethodologySheet() {
-    showModalBottomSheet<void>(
+    showAdaptiveSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -1060,8 +1063,10 @@ class _PitchTab extends StatelessWidget {
 
         const SizedBox(height: 4),
 
-        // Pitch View
-        PitchView(
+        // Pitch View: capped on wide screens so the field keeps its shape.
+        MaxWidth(
+          maxWidth: 880,
+          child: PitchView(
           starting: analysis.starters
               .map((p) => p.pick)
               .toList(growable: false),
@@ -1073,6 +1078,7 @@ class _PitchTab extends StatelessWidget {
           },
           onSwap: onSwap,
           onCompare: onCompare,
+        ),
         ),
 
         const SizedBox(height: 12),

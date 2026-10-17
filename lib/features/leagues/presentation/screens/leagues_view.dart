@@ -8,6 +8,10 @@ import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
 import '../../../team/data/models/team_models.dart';
 import '../../../team/domain/repositories/team_repository.dart';
 import '../../../../core/layout/responsive.dart';
+import '../../../../core/app/routes.dart';
+
+/// Content width of the leagues pages on wide screens.
+const leaguesMaxWidth = 1000.0;
 
 class LeaguesView extends StatelessWidget {
   const LeaguesView({super.key});
@@ -61,7 +65,7 @@ class LeaguesView extends StatelessWidget {
             padding: contentInsets(
               context,
               const EdgeInsets.fromLTRB(16, 20, 16, 32),
-              maxWidth: 1000,
+              maxWidth: leaguesMaxWidth,
             ),
             children: [
               _PageHeader(entry: entry, leagueCount: leagues.length),
@@ -250,8 +254,26 @@ class _RankHeader extends StatelessWidget {
     return Row(
       children: [
         Expanded(child: Text(l10n.league, style: style)),
-        SizedBox(width: 66, child: Text(l10n.currentRank, style: style)),
-        SizedBox(width: 62, child: Text(l10n.lastRank, style: style)),
+        // Same widths and alignment as the rank cells of each row; long
+        // labels wrap instead of running into each other.
+        SizedBox(
+          width: 66,
+          child: Text(
+            l10n.currentRank,
+            style: style,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+          ),
+        ),
+        SizedBox(
+          width: 62,
+          child: Text(
+            l10n.lastRank,
+            style: style,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+          ),
+        ),
         const SizedBox(width: 30),
       ],
     );
@@ -291,9 +313,13 @@ class _LeagueRow extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => LeagueDetailsPage(league: league)),
-        ),
+        onTap: () => GoRouter.maybeOf(context) != null
+            ? context.push(AppRoutes.league(league.id), extra: league)
+            : Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => LeagueDetailsPage(league: league),
+                ),
+              ),
         child: Column(
           children: [
             Padding(
@@ -566,7 +592,7 @@ class _LeagueDetailsPageState extends State<LeagueDetailsPage> {
                   padding: contentInsets(
                     context,
                     const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                    maxWidth: 1000,
+                    maxWidth: leaguesMaxWidth,
                   ),
                   children: [
                     _LeagueDetailsHeader(details: _details!),
@@ -786,7 +812,7 @@ class _StandingRow extends StatelessWidget {
           ? theme.colorScheme.primary.withValues(alpha: 0.1)
           : Colors.transparent,
       child: InkWell(
-        onTap: () => context.push('/team/${standing.entryId}'),
+        onTap: () => context.push(AppRoutes.team(standing.entryId)),
         child: Column(
           children: [
             Padding(

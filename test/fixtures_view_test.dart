@@ -432,8 +432,7 @@ void main() {
   });
 
   testWidgets('prediction panel fits a narrow Arabic screen', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(320, 800));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+    usePhoneScreen(tester, width: 320);
     final apiClient = FakeFplApiClient();
     await tester.pumpWidget(
       createWidgetUnderTest(apiClient, locale: const Locale('ar')),
@@ -458,6 +457,7 @@ void main() {
   testWidgets('long match details can be dismissed after scrolling', (
     tester,
   ) async {
+    usePhoneScreen(tester);
     final apiClient = FakeFplApiClient()..includeLongDetailsFixture = true;
     await tester.pumpWidget(createWidgetUnderTest(apiClient));
     await tester.pumpAndSettle();
@@ -479,4 +479,26 @@ void main() {
 
     expect(find.text('Match details'), findsNothing);
   });
+
+  testWidgets('match details open in a dialog on wide screens', (tester) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(createWidgetUnderTest(FakeFplApiClient()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('fixture-card-1')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Dialog), findsOneWidget);
+    expect(find.byType(BottomSheet), findsNothing);
+    expect(find.text('Match details'), findsOneWidget);
+  });
+}
+
+/// Sizes the test view like a phone, so adaptive modals use bottom sheets.
+void usePhoneScreen(WidgetTester tester, {double width = 390}) {
+  tester.view.physicalSize = Size(width, 800);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
 }

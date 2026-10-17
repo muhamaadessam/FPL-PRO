@@ -12,9 +12,13 @@ const ROUTES = [
   },
 ];
 
-// Paths owned by the Flutter app (see lib/core/app/router.dart). They all
+// Paths owned by the Flutter app (see lib/core/app/routes.dart). They all
 // load the app's page, which then routes on the path itself.
-const APP_PATHS = [/^\/login\/?$/, /^\/login\/web\/?$/, /^\/home\/?$/, /^\/splash\/?$/, /^\/team\/\d+\/?$/];
+const APP_PATHS = [
+  /^\/(login|login\/web|splash)\/?$/,
+  /^\/team\/\d+\/?$/,
+  /^\/(home|tips|matches|leagues|settings)(\/[\w-]+)*\/?$/,
+];
 
 export default {
   async fetch(request, env) {
