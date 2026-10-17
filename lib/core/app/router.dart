@@ -7,7 +7,6 @@ import '../../features/auth/presentation/screens/login_page.dart';
 import '../../features/auth/presentation/screens/official_web_login_page.dart';
 import '../../features/dashboard/presentation/screens/dashboard_shell.dart';
 import '../../features/dashboard/presentation/cubit/home_preload_cubit.dart';
-import '../../features/fixtures/presentation/screens/public_matches_page.dart';
 import '../../features/team/presentation/screens/team_view.dart';
 import '../widgets/splash_page.dart';
 import '../widgets/update_checker.dart';
@@ -47,7 +46,6 @@ GoRouter createRouter(AuthCubit authCubit, HomePreloadCubit preloadCubit) {
         path: '/login/web',
         builder: (_, _) => const OfficialWebLoginPage(),
       ),
-      GoRoute(path: '/preview', builder: (_, _) => const PublicMatchesPage()),
       GoRoute(
         path: '/team/:entryId',
         builder: (_, state) => TeamLookupPage(
@@ -66,17 +64,14 @@ String? authRedirect(AuthState auth, String location) {
   final isSplash = location == '/splash';
   final isLogin = location == '/login';
   final isWebLogin = location == '/login/web';
-  final isPreview = location == '/preview';
   final isPublicTeam = location.startsWith('/team/');
 
   if (auth is AuthInitial || auth.isLoading) {
-    return isSplash || isLogin || isWebLogin || isPreview || isPublicTeam
-        ? null
-        : '/splash';
+    return isSplash || isLogin || isWebLogin || isPublicTeam ? null : '/splash';
   }
 
   if (auth.session == null) {
-    return isLogin || isWebLogin || isPreview || isPublicTeam ? null : '/login';
+    return isLogin || isWebLogin || isPublicTeam ? null : '/login';
   }
   return isLogin || isWebLogin ? '/splash' : null;
 }

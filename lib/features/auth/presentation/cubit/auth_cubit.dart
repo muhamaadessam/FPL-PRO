@@ -78,6 +78,8 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  Future<int?> lastEntryId() => _repository.lastEntryId();
+
   Future<void> continueWithEntryId(int entryId) async {
     emit(const AuthLoading());
     try {

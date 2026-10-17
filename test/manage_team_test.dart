@@ -298,6 +298,9 @@ class _FakeAuthRepository implements AuthRepository {
   }) async => _session;
 
   @override
+  Future<int?> lastEntryId() async => null;
+
+  @override
   Future<OfficialSession> continueWithEntryId(int entryId) async =>
       OfficialSession.guest(entryId);
 

@@ -25,38 +25,12 @@ class AppLocalizations {
   String get appName => isArabic ? 'FPL Pro' : 'FPL Pro';
   String get loginTitle =>
       isArabic ? 'تحكم بفريقك كالمحترفين' : 'Master Your Fantasy Team';
-  String get loginSubtitle => isArabic
-      ? 'سجّل دخولك بحسابك الرسمي في الفانتازي لمتابعة التشكيلة، النقاط المباشرة، الترتيب اللحظي، والترشيحات الذكية.'
-      : 'Sign in with your official FPL account for live gameweek ranks, squad management, and smart transfer insights.';
-  String get loginSecureBadge =>
-      isArabic ? 'دخول رسمي ومشفر 100%' : '100% Official & Secure Login';
-  String get loginSecureDetails => isArabic
-      ? 'يتم تسجيل الدخول مباشرة عبر بوابة Premier League الرسمية وبأمان تام، دون تخزين كلمات المرور.'
-      : 'Authentication happens directly on the official Premier League portal with zero password storage.';
-  String get livePointsFeature =>
-      isArabic ? 'نقاط وترتيب لايف' : 'Live Points & Rank';
-  String get livePointsFeatureDesc => isArabic
-      ? 'متابعة لحظية للنقاط والترتيب أثناء سير المباريات'
-      : 'Real-time points & provisional rank tracking';
-  String get smartTransfersFeature =>
-      isArabic ? 'ترشيحات انتقالات ذكية' : 'AI Transfer Insights';
-  String get smartTransfersFeatureDesc => isArabic
-      ? 'تحليل الصعوبة والفورمة لاختيار أفضل تشكيلة وكابتن'
-      : 'Difficulty & form analytics for optimal transfers';
-  String get miniLeaguesFeature =>
-      isArabic ? 'الدوريات والمنافسين' : 'Mini-Leagues & Rivalries';
-  String get miniLeaguesFeatureDesc => isArabic
-      ? 'متابعة حية لجميع دورياتك الكلاسيك والمواجهات'
-      : 'Live standings & score gaps across all your leagues';
   String get seasonBadge =>
       isArabic ? 'موسم 2024/2025' : '2024/25 Season';
   String get guestBrowseAction =>
       isArabic ? 'تصفح كزائر بدون تسجيل' : 'Explore as Guest';
   String get officialSignIn =>
       isArabic ? 'تسجيل الدخول الرسمي' : 'Sign in officially';
-  String get officialWebViewHint => isArabic
-      ? 'ستفتح صفحة Premier League الرسمية داخل التطبيق لإدخال بياناتك بأمان.'
-      : 'The official Premier League sign-in page opens inside the app.';
   String get configurationRequired => isArabic
       ? 'يلزم تسجيل OAuth رسمي للتطبيق قبل تفعيل الدخول.'
       : 'An approved OAuth client and mobile redirect URI are required first.';
@@ -65,14 +39,9 @@ class AppLocalizations {
   String get entryIdInvalid =>
       isArabic ? 'اكتب رقم فريق صحيحًا.' : 'Enter a valid team entry ID.';
   String get openTeam => isArabic ? 'فتح فريقي' : 'Open my team';
-  String get continueWithTeamId =>
-      isArabic ? 'الدخول برقم الفريق' : 'Continue with team ID';
-  String get continueWithTeamIdSubtitle => isArabic
-      ? 'فريقك، النصائح، المباريات والليجات بدون تسجيل دخول.'
-      : 'Your team, tips, matches and leagues without signing in.';
   String get teamIdHelp => isArabic
-      ? 'هتلاقي رقم الفريق في رابط صفحة النقاط على موقع الفانتازي: fantasy.premierleague.com/entry/رقم_الفريق. التعديل والتبديلات محتاجة تسجيل دخول.'
-      : 'Find it in your Points page link on the FPL website: fantasy.premierleague.com/entry/YOUR_ID. Editing and transfers need a sign-in.';
+      ? 'موجود في رابط صفحة النقاط: fantasy.premierleague.com/entry/رقم_الفريق'
+      : 'In your Points page link: fantasy.premierleague.com/entry/ID';
   String get entryNotFound =>
       isArabic ? 'مفيش فريق بالرقم ده.' : 'No team was found with that ID.';
   String get teamIdModeNotice => isArabic
@@ -93,11 +62,6 @@ class AppLocalizations {
   String get sessionMissing => isArabic
       ? 'تم الدخول لكن لم يتم استلام جلسة صالحة.'
       : 'Login succeeded without a usable session.';
-  String get publicPreview =>
-      isArabic ? 'تصفح المباريات العامة' : 'Browse public matches';
-  String get publicPreviewSubtitle => isArabic
-      ? 'اعرض بيانات المباريات الرسمية بدون تسجيل دخول.'
-      : 'View official fixture data without signing in.';
   String get matches => isArabic ? 'المباريات' : 'Matches';
   String get leagues => isArabic ? 'الليجات' : 'Leagues';
   String get leaguesSubtitle => isArabic

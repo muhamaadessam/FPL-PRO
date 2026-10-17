@@ -231,6 +231,8 @@ class OfficialAuthClient {
     return findEntryId(response.data);
   }
 
+  Future<int?> lastEntryId() => _sessionStore.readLastEntryId();
+
   Future<OfficialSession> continueWithEntryId(int entryId) async {
     final session = OfficialSession.guest(entryId);
     await _sessionStore.write(session);

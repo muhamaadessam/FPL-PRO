@@ -8,6 +8,9 @@ abstract interface class AuthRepository {
     Future<Map<String, String>> Function()? webSessionProvider,
   });
 
+  /// The team ID last used to sign in or continue, kept after logout.
+  Future<int?> lastEntryId();
+
   /// Opens a read-only session for [entryId] without signing in.
   Future<OfficialSession> continueWithEntryId(int entryId);
 
