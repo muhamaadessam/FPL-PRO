@@ -66,7 +66,7 @@ class _RecommendationsBodyState extends State<_RecommendationsBody>
       builder: (context, state) {
         if (state.status == RecommendationsStatus.initial ||
             state.status == RecommendationsStatus.loading) {
-          return const Center(child: CircularProgressIndicator());
+          return const _RecommendationsSkeleton();
         }
         if (state.status == RecommendationsStatus.failure) {
           final l10n = AppLocalizations.of(context);
@@ -100,6 +100,201 @@ class _RecommendationsBodyState extends State<_RecommendationsBody>
           onChip: context.read<RecommendationsCubit>().saveChip,
         );
       },
+    );
+  }
+}
+
+/// Placeholder in the shape of the loaded page: header, tab bar, the weekly
+/// plan card and the captain and chip cards.
+class _RecommendationsSkeleton extends StatefulWidget {
+  const _RecommendationsSkeleton();
+
+  @override
+  State<_RecommendationsSkeleton> createState() =>
+      _RecommendationsSkeletonState();
+}
+
+class _RecommendationsSkeletonState extends State<_RecommendationsSkeleton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final block = colors.onSurface.withValues(alpha: 0.10);
+    final card = colors.surfaceContainerHighest.withValues(alpha: 0.5);
+
+    Widget bar(double width, double height, {double radius = 6}) {
+      return Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: block,
+          borderRadius: BorderRadius.circular(radius),
+        ),
+      );
+    }
+
+    Widget panel({required double height, required List<Widget> children}) {
+      return Container(
+        height: height,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: card,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: children,
+        ),
+      );
+    }
+
+    return Semantics(
+      label: AppLocalizations.of(context).recommendations,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return ShaderMask(
+            blendMode: BlendMode.modulate,
+            shaderCallback: (bounds) {
+              return LinearGradient(
+                colors: const [
+                  Color(0xff8a8a8a),
+                  Color(0xfff5f5f5),
+                  Color(0xff8a8a8a),
+                ],
+                stops: const [0.0, 0.5, 1.0],
+                begin: Alignment(-2.0 + (_controller.value * 4), 0),
+                end: Alignment(-1.0 + (_controller.value * 4), 0),
+              ).createShader(bounds);
+            },
+            child: child,
+          );
+        },
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          physics: const NeverScrollableScrollPhysics(),
+          children: [
+            Row(
+              children: [
+                Flexible(child: bar(190, 26, radius: 8)),
+                const SizedBox(width: 10),
+                Flexible(child: bar(96, 22, radius: 8)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            bar(120, 14),
+            const SizedBox(height: 16),
+            Container(
+              height: 42,
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: card,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: block,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const Expanded(child: SizedBox()),
+                  const Expanded(child: SizedBox()),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            panel(
+              height: 340,
+              children: [
+                Row(
+                  children: [
+                    bar(56, 56, radius: 14),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          bar(170, 18),
+                          const SizedBox(height: 8),
+                          bar(80, 14),
+                          const SizedBox(height: 8),
+                          bar(130, 12),
+                        ],
+                      ),
+                    ),
+                    bar(72, 32, radius: 10),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                bar(double.infinity, 40, radius: 10),
+                const SizedBox(height: 14),
+                bar(double.infinity, 12),
+                const SizedBox(height: 8),
+                bar(220, 12),
+                const SizedBox(height: 14),
+                bar(double.infinity, 70, radius: 12),
+                const Spacer(),
+                bar(double.infinity, 46, radius: 23),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: panel(
+                    height: 150,
+                    children: [
+                      bar(110, 16),
+                      const SizedBox(height: 16),
+                      bar(90, 20),
+                      const SizedBox(height: 8),
+                      bar(60, 12),
+                      const Spacer(),
+                      bar(double.infinity, 26, radius: 8),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: panel(
+                    height: 150,
+                    children: [
+                      bar(110, 16),
+                      const SizedBox(height: 16),
+                      bar(100, 20),
+                      const SizedBox(height: 8),
+                      bar(double.infinity, 12),
+                      const SizedBox(height: 6),
+                      bar(80, 12),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
