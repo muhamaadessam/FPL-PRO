@@ -35,6 +35,9 @@ jobs:
           cache: true
 
       - name: Build site and web app
+        env:
+          ADSENSE_SLOT_BANNER: ${{ vars.ADSENSE_SLOT_BANNER }}
+          ADSENSE_SLOT_RAIL: ${{ vars.ADSENSE_SLOT_RAIL }}
         run: |
           flutter pub get
           site/build.sh

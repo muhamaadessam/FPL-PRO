@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/ads/ad_banner.dart';
 import '../../../../core/layout/responsive.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -50,6 +51,9 @@ class DashboardShell extends StatelessWidget {
     ];
 
     if (Breakpoints.hasTopNav(context)) {
+      final showRail =
+          Breakpoints.widthOf(context) >= Breakpoints.adRail &&
+          AdBanner.isAvailable(AdSize.halfPage);
       return Scaffold(
         body: SafeArea(
           child: Column(
@@ -60,7 +64,30 @@ class DashboardShell extends StatelessWidget {
                 settingsIndex: _settingsIndex,
                 onSelected: _select,
               ),
-              Expanded(child: navigationShell),
+              Expanded(
+                child: showRail
+                    ? Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: navigationShell),
+                          const AdBanner(
+                            size: AdSize.halfPage,
+                            padding: EdgeInsetsDirectional.fromSTEB(
+                              0,
+                              20,
+                              20,
+                              20,
+                            ),
+                          ),
+                        ],
+                      )
+                    : navigationShell,
+              ),
+              if (!showRail)
+                const AdBanner(
+                  size: AdSize.leaderboard,
+                  padding: EdgeInsets.symmetric(vertical: 6),
+                ),
             ],
           ),
         ),
@@ -86,16 +113,25 @@ class DashboardShell extends StatelessWidget {
             ),
           ],
         ),
-        child: NavigationBar(
-          selectedIndex: selectedIndex,
-          onDestinationSelected: _select,
-          destinations: [
-            for (final destination in destinations)
-              NavigationDestination(
-                icon: Icon(destination.icon),
-                selectedIcon: Icon(destination.selectedIcon),
-                label: destination.label,
-              ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const AdBanner(
+              size: AdSize.mobileBanner,
+              padding: EdgeInsets.only(top: 6),
+            ),
+            NavigationBar(
+              selectedIndex: selectedIndex,
+              onDestinationSelected: _select,
+              destinations: [
+                for (final destination in destinations)
+                  NavigationDestination(
+                    icon: Icon(destination.icon),
+                    selectedIcon: Icon(destination.selectedIcon),
+                    label: destination.label,
+                  ),
+              ],
+            ),
           ],
         ),
       ),

@@ -22,6 +22,9 @@ abstract final class Breakpoints {
 
   static bool hasTopNav(BuildContext context) => widthOf(context) >= topNav;
 
+  /// From here the shell has room for an ad rail beside the content.
+  static const double adRail = 1560;
+
   static bool isWide(BuildContext context) => widthOf(context) >= wide;
 }
 
