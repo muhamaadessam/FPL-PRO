@@ -1,5 +1,5 @@
 import '../../../auth/domain/entities/official_session.dart';
-import '../../data/models/team_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 import '../repositories/team_repository.dart';
 
 class GetTeamForGameweek {

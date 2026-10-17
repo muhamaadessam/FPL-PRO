@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../l10n/app_localizations.dart';
-import '../../../fixtures/data/models/fpl_models.dart';
-import '../../domain/usecases/recommendation_engine.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 import '../../../../core/app/routes.dart';
 
 class PlayerDirectoryPage extends StatefulWidget {

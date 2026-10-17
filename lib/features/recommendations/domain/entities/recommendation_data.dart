@@ -1,6 +1,4 @@
-import '../../../fixtures/data/models/fpl_models.dart';
-import '../../../team/data/models/team_models.dart';
-import '../usecases/recommendation_engine.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 
 class RecommendationData {
   const RecommendationData({

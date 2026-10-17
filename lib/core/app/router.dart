@@ -13,7 +13,7 @@ import '../../features/leagues/presentation/screens/leagues_view.dart';
 import '../../features/recommendations/presentation/screens/recommendations_view.dart';
 import '../../features/settings/presentation/screens/settings_view.dart';
 import '../../features/team/presentation/screens/manage_team_page.dart';
-import '../../features/team/data/models/team_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 import '../../features/team/presentation/screens/team_view.dart';
 import '../widgets/splash_page.dart';
 import '../widgets/update_checker.dart';
@@ -80,8 +80,9 @@ GoRouter createRouter(AuthCubit authCubit, HomePreloadCubit preloadCubit) {
         ),
       ),
       StatefulShellRoute.indexedStack(
-        builder: (_, _, navigationShell) =>
-            UpdateChecker(child: DashboardShell(navigationShell: navigationShell)),
+        builder: (_, _, navigationShell) => UpdateChecker(
+          child: DashboardShell(navigationShell: navigationShell),
+        ),
         branches: [
           StatefulShellBranch(
             routes: [

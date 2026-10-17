@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:fantasy_pl/features/fixtures/data/models/fpl_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 import 'package:fantasy_pl/features/fixtures/data/datasources/fpl_api_client.dart';
 import 'package:fantasy_pl/features/fixtures/data/repositories/fixtures_repository_impl.dart';
 import 'package:fantasy_pl/features/fixtures/presentation/screens/fixtures_view.dart';

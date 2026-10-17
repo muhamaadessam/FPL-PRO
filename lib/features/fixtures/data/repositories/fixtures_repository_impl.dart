@@ -1,6 +1,6 @@
 import '../../domain/repositories/fixtures_repository.dart';
 import '../datasources/fpl_api_client.dart';
-import '../models/fpl_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 
 class FixturesRepositoryImpl implements FixturesRepository {
   const FixturesRepositoryImpl(this._dataSource);

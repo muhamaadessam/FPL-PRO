@@ -25,8 +25,7 @@ class AppLocalizations {
   String get appName => isArabic ? 'FPL Pro' : 'FPL Pro';
   String get loginTitle =>
       isArabic ? 'تحكم بفريقك كالمحترفين' : 'Master Your Fantasy Team';
-  String get seasonBadge =>
-      isArabic ? 'موسم 2024/2025' : '2024/25 Season';
+  String get seasonBadge => isArabic ? 'موسم 2024/2025' : '2024/25 Season';
   String get guestBrowseAction =>
       isArabic ? 'تصفح كزائر بدون تسجيل' : 'Explore as Guest';
   String get officialSignIn =>
@@ -310,13 +309,13 @@ class AppLocalizations {
   }
 
   String get tabPitch => isArabic ? 'الملعب والتشكيلة' : 'Lineup & Pitch';
-  String get tabPlayerBreakdown => isArabic ? 'تقييم اللاعبين' : 'Player Ratings';
+  String get tabPlayerBreakdown =>
+      isArabic ? 'تقييم اللاعبين' : 'Player Ratings';
   String get dragToSwapHint => isArabic
       ? 'اسحب للتبديل بين الأساسيين والدكة • اضغط للمقارنة'
       : 'Drag to swap • Tap to compare';
   String get resetLineup => isArabic ? 'إعادة التشكيلة' : 'Reset Lineup';
-  String get sortByForecast =>
-      isArabic ? 'الأعلى توقعًا' : 'Highest Forecast';
+  String get sortByForecast => isArabic ? 'الأعلى توقعًا' : 'Highest Forecast';
   String get sortByRating => isArabic ? 'الأعلى تقييمًا' : 'Highest Rating';
   String get sortByForm => isArabic ? 'أفضل مستوى' : 'Best Form';
   String get starterBadge => isArabic ? 'أساسي' : 'Starter';
@@ -384,6 +383,7 @@ class AppLocalizations {
   String get suspended => isArabic ? 'موقوف' : 'Suspended';
   String get doubtful => isArabic ? 'مشكوك في مشاركته' : 'Doubtful';
   String get unavailable => isArabic ? 'غير متاح' : 'Unavailable';
+
   /// FPL news comes in English with a few fixed shapes; in Arabic those are
   /// translated and anything else is shown as published.
   String playerNews(String news) {
@@ -641,6 +641,7 @@ class AppLocalizations {
         ? '$count انتقال • خصم $cost نقطة$chipText. العملية دي نهائية على موقع FPL.'
         : '$count transfer(s) • $cost point cost$chipText. This is final on the FPL site.';
   }
+
   String get transfersConfirmed =>
       isArabic ? 'تم تأكيد الانتقالات على FPL.' : 'Transfers confirmed on FPL.';
   String get resetChanges => isArabic ? 'تراجع' : 'Reset';
@@ -650,26 +651,31 @@ class AppLocalizations {
       ? 'FPL رفض التعديل. حدّث الصفحة وحاول تاني.'
       : 'FPL rejected the change. Refresh and try again.';
   String squadEditError(String error) => switch (error) {
-    'benchedRole' => isArabic
-        ? 'القائد ونائبه لازم يكونوا من الأساسيين.'
-        : 'The captain and vice-captain must both start.',
-    'goalkeeperSwap' => isArabic
-        ? 'الحارس يتبدل مع حارس بس.'
-        : 'A goalkeeper can only swap with a goalkeeper.',
+    'benchedRole' =>
+      isArabic
+          ? 'القائد ونائبه لازم يكونوا من الأساسيين.'
+          : 'The captain and vice-captain must both start.',
+    'goalkeeperSwap' =>
+      isArabic
+          ? 'الحارس يتبدل مع حارس بس.'
+          : 'A goalkeeper can only swap with a goalkeeper.',
     'invalidFormation' => invalidFormation,
-    'differentPosition' => isArabic
-        ? 'البديل لازم يكون في نفس المركز.'
-        : 'The replacement must play in the same position.',
+    'differentPosition' =>
+      isArabic
+          ? 'البديل لازم يكون في نفس المركز.'
+          : 'The replacement must play in the same position.',
     'alreadyInSquad' =>
       isArabic ? 'اللاعب موجود في فريقك بالفعل.' : 'Already in your squad.',
-    'clubLimit' => isArabic
-        ? 'مسموح بـ3 لاعبين بحد أقصى من نفس النادي.'
-        : 'Maximum of 3 players per club.',
+    'clubLimit' =>
+      isArabic
+          ? 'مسموح بـ3 لاعبين بحد أقصى من نفس النادي.'
+          : 'Maximum of 3 players per club.',
     'insufficientFunds' =>
       isArabic ? 'الميزانية مش كفاية.' : 'Not enough money in the bank.',
-    'unavailable' => isArabic
-        ? 'اللاعب ده غير متاح للاختيار.'
-        : 'This player cannot be selected.',
+    'unavailable' =>
+      isArabic
+          ? 'اللاعب ده غير متاح للاختيار.'
+          : 'This player cannot be selected.',
     _ => genericError,
   };
 

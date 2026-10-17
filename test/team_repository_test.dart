@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fantasy_pl/features/fixtures/data/datasources/fpl_api_client.dart';
 import 'package:fantasy_pl/features/auth/domain/entities/official_session.dart';
-import 'package:fantasy_pl/features/team/data/models/team_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 import 'package:fantasy_pl/features/team/data/repositories/team_repository.dart';
 
 void main() {

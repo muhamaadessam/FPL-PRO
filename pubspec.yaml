@@ -48,6 +48,8 @@ dependencies:
   upgrader: ^13.5.0
   url_launcher: ^6.3.2
   web: ^1.1.1
+  fpl_engine:
+    path: packages/fpl_engine
 
 dev_dependencies:
   flutter_test:

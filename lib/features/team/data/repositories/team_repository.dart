@@ -1,7 +1,7 @@
 import '../../../auth/domain/entities/official_session.dart';
 import '../../../fixtures/data/datasources/fpl_api_client.dart';
 import '../../domain/repositories/team_repository.dart';
-import '../models/team_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 
 class TeamRepositoryImpl implements TeamRepository {
   const TeamRepositoryImpl(this._dataSource);

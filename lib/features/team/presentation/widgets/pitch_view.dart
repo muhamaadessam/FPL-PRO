@@ -5,8 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../../fixtures/data/models/fpl_models.dart';
-import '../../data/models/team_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../core/network/api_constance.dart';
@@ -20,10 +19,7 @@ BoxDecoration _benchGradient(BuildContext context) {
     gradient: LinearGradient(
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
-      colors: [
-        const Color(0xff00A34F),
-        bgColor,
-      ],
+      colors: [const Color(0xff00A34F), bgColor],
     ),
   );
 }
@@ -156,8 +152,7 @@ class _PitchRowsLayout extends MultiChildRenderObjectWidget {
   const _PitchRowsLayout({required super.children});
 
   @override
-  RenderObject createRenderObject(BuildContext context) =>
-      _RenderPitchRows();
+  RenderObject createRenderObject(BuildContext context) => _RenderPitchRows();
 }
 
 class _PitchRowsParentData extends ContainerBoxParentData<RenderBox> {}
@@ -214,9 +209,7 @@ class _RenderPitchRows extends RenderBox
   Size computeDryLayout(covariant BoxConstraints constraints) {
     final width = constraints.maxWidth;
     final height = _stackedHeight(
-      (child) => child
-          .getDryLayout(BoxConstraints(maxWidth: width))
-          .height,
+      (child) => child.getDryLayout(BoxConstraints(maxWidth: width)).height,
     );
     return constraints.constrain(Size(width, height));
   }
@@ -242,7 +235,10 @@ class _RenderPitchRows extends RenderBox
         inset = math.min(
           _touchlineInset(width: width, height: height, rowTop: top),
           // Never squeeze a row below its natural width.
-          math.max(0.0, (width - child.getMinIntrinsicWidth(double.infinity)) / 2),
+          math.max(
+            0.0,
+            (width - child.getMinIntrinsicWidth(double.infinity)) / 2,
+          ),
         );
         child.layout(
           BoxConstraints.tightFor(width: width - inset * 2),
@@ -965,12 +961,12 @@ class _PlayerDetailBottomSheet extends StatelessWidget {
               child: Container(
                 width: 36,
                 height: 4,
-              decoration: BoxDecoration(
-                color: handleColor,
-                borderRadius: BorderRadius.circular(2),
+                decoration: BoxDecoration(
+                  color: handleColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-          ),
           const SizedBox(height: 16),
 
           // Player header
@@ -1070,7 +1066,9 @@ class _PlayerDetailBottomSheet extends StatelessWidget {
                         if (player?.news.isNotEmpty == true) ...[
                           const SizedBox(height: 4),
                           Text(
-                            AppLocalizations.of(context).playerNews(player!.news),
+                            AppLocalizations.of(
+                              context,
+                            ).playerNews(player!.news),
                             style: TextStyle(
                               fontSize: 12,
                               color: isUnavailable
@@ -1284,7 +1282,9 @@ class PitchSkeleton extends StatelessWidget {
                   color: Theme.of(context).brightness == Brightness.dark
                       ? AppColors.darkBenchBg.withValues(alpha: 0.75)
                       : Colors.white.withValues(alpha: 0.35),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(18),
+                  ),
                   border: Border(
                     top: BorderSide(
                       color: Theme.of(context).brightness == Brightness.dark
@@ -1304,7 +1304,9 @@ class PitchSkeleton extends StatelessWidget {
                                 label,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color: Theme.of(context).brightness == Brightness.dark
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
                                       ? AppColors.darkTextSecondary
                                       : const Color(0xff1f1f2e),
                                   fontSize: 11,
@@ -1315,14 +1317,14 @@ class PitchSkeleton extends StatelessWidget {
                           )
                           .toList(growable: false),
                     ),
-                      const SizedBox(height: 6),
-                      const _PitchSkeletonRow(count: 4, isBench: true),
-                    ],
-                  ),
+                    const SizedBox(height: 6),
+                    const _PitchSkeletonRow(count: 4, isBench: true),
+                  ],
                 ),
               ),
             ),
           ),
+        ),
       ],
     );
   }

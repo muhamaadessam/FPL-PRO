@@ -1,8 +1,8 @@
 import 'dart:math' as math;
 
-import '../../../fixtures/data/models/fpl_models.dart';
-import '../../../fixtures/domain/usecases/team_ratings.dart';
-import '../../../team/data/models/team_models.dart';
+import 'models/fpl_models.dart';
+import 'team_ratings.dart';
+import 'models/team_models.dart';
 
 enum SuggestedChip { none, wildcard, freeHit, benchBoost, tripleCaptain }
 

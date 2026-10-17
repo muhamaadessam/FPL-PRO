@@ -3,9 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../l10n/app_localizations.dart';
 import '../../data/datasources/fpl_api_client.dart';
-import '../../data/models/fpl_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 import '../../domain/repositories/fixtures_repository.dart';
-import '../../domain/usecases/predict_fixtures.dart';
 import '../cubit/fixtures_cubit.dart';
 import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
 import '../../../../core/layout/responsive.dart';
@@ -132,17 +131,18 @@ class _FixtureListState extends State<_FixtureList> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final fixtures = widget.fixtures
-        .where((fixture) => fixture.gameweekId == _selectedGameweekId)
-        .toList()
-      ..sort((a, b) {
-        if (a.kickoffTime == null && b.kickoffTime == null) {
-          return a.id.compareTo(b.id);
-        }
-        if (a.kickoffTime == null) return 1;
-        if (b.kickoffTime == null) return -1;
-        return a.kickoffTime!.compareTo(b.kickoffTime!);
-      });
+    final fixtures =
+        widget.fixtures
+            .where((fixture) => fixture.gameweekId == _selectedGameweekId)
+            .toList()
+          ..sort((a, b) {
+            if (a.kickoffTime == null && b.kickoffTime == null) {
+              return a.id.compareTo(b.id);
+            }
+            if (a.kickoffTime == null) return 1;
+            if (b.kickoffTime == null) return -1;
+            return a.kickoffTime!.compareTo(b.kickoffTime!);
+          });
 
     final dayGroups = <DateTime?, List<FplFixture>>{};
     for (final fixture in fixtures) {
@@ -241,7 +241,12 @@ class _FixtureListState extends State<_FixtureList> {
           else
             for (final entry in dayGroups.entries) ...[
               Padding(
-                padding: const EdgeInsets.only(top: 14, bottom: 8, left: 4, right: 4),
+                padding: const EdgeInsets.only(
+                  top: 14,
+                  bottom: 8,
+                  left: 4,
+                  right: 4,
+                ),
                 child: Text(
                   l10n.matchDayHeader(entry.key),
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -515,8 +520,8 @@ class _ScoreArea extends StatelessWidget {
         fixture.isLive || fixture.isFinished
             ? '—'
             : (compact
-                ? l10n.kickoffTimeOnly(fixture.kickoffTime)
-                : l10n.kickoffLabel(fixture.kickoffTime)),
+                  ? l10n.kickoffTimeOnly(fixture.kickoffTime)
+                  : l10n.kickoffLabel(fixture.kickoffTime)),
         style: TextStyle(
           fontWeight: FontWeight.w800,
           fontSize: compact ? 13 : 14,
@@ -773,17 +778,17 @@ class _FixturePredictionPanel extends StatelessWidget {
     var homeScorers = prediction.homeScorers.isNotEmpty
         ? prediction.homeScorers
         : (homeTeamId != null
-            ? prediction.scorers
-                .where((s) => s.player.teamId == homeTeamId)
-                .toList()
-            : <PlayerEventPrediction>[]);
+              ? prediction.scorers
+                    .where((s) => s.player.teamId == homeTeamId)
+                    .toList()
+              : <PlayerEventPrediction>[]);
     var awayScorers = prediction.awayScorers.isNotEmpty
         ? prediction.awayScorers
         : (awayTeamId != null
-            ? prediction.scorers
-                .where((s) => s.player.teamId == awayTeamId)
-                .toList()
-            : <PlayerEventPrediction>[]);
+              ? prediction.scorers
+                    .where((s) => s.player.teamId == awayTeamId)
+                    .toList()
+              : <PlayerEventPrediction>[]);
 
     if (homeScorers.isEmpty &&
         awayScorers.isEmpty &&
@@ -794,17 +799,17 @@ class _FixturePredictionPanel extends StatelessWidget {
     var homeAssists = prediction.homeAssists.isNotEmpty
         ? prediction.homeAssists
         : (homeTeamId != null
-            ? prediction.assists
-                .where((a) => a.player.teamId == homeTeamId)
-                .toList()
-            : <PlayerEventPrediction>[]);
+              ? prediction.assists
+                    .where((a) => a.player.teamId == homeTeamId)
+                    .toList()
+              : <PlayerEventPrediction>[]);
     var awayAssists = prediction.awayAssists.isNotEmpty
         ? prediction.awayAssists
         : (awayTeamId != null
-            ? prediction.assists
-                .where((a) => a.player.teamId == awayTeamId)
-                .toList()
-            : <PlayerEventPrediction>[]);
+              ? prediction.assists
+                    .where((a) => a.player.teamId == awayTeamId)
+                    .toList()
+              : <PlayerEventPrediction>[]);
 
     if (homeAssists.isEmpty &&
         awayAssists.isEmpty &&
@@ -872,9 +877,7 @@ class _PredictedScoreCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colors.outlineVariant.withValues(alpha: 0.4),
-        ),
+        border: Border.all(color: colors.outlineVariant.withValues(alpha: 0.4)),
       ),
       child: Column(
         children: [
@@ -885,9 +888,9 @@ class _PredictedScoreCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   l10n.matchPrediction,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w900,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
                 ),
               ),
               Container(
@@ -1021,7 +1024,10 @@ class _OutcomeProbabilityBar extends StatelessWidget {
               children: [
                 for (final (_, chance, color) in outcomes)
                   if (chance > 0)
-                    Expanded(flex: chance, child: ColoredBox(color: color)),
+                    Expanded(
+                      flex: chance,
+                      child: ColoredBox(color: color),
+                    ),
               ],
             ),
           ),
@@ -1164,10 +1170,7 @@ class _PredictionCategorySection extends StatelessWidget {
 }
 
 class _PredictionPlayerRow extends StatelessWidget {
-  const _PredictionPlayerRow({
-    required this.candidate,
-    required this.isHome,
-  });
+  const _PredictionPlayerRow({required this.candidate, required this.isHome});
 
   final PlayerEventPrediction candidate;
   final bool isHome;
@@ -1209,16 +1212,8 @@ class _PredictionPlayerRow extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: isHome
-            ? [
-                playerText,
-                const SizedBox(width: 6),
-                badge,
-              ]
-            : [
-                badge,
-                const SizedBox(width: 6),
-                playerText,
-              ],
+            ? [playerText, const SizedBox(width: 6), badge]
+            : [badge, const SizedBox(width: 6), playerText],
       ),
     );
   }
@@ -1281,16 +1276,8 @@ class _PredictionCleanSheetSection extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: isHome
-              ? [
-                  label,
-                  const SizedBox(width: 6),
-                  badge,
-                ]
-              : [
-                  badge,
-                  const SizedBox(width: 6),
-                  label,
-                ],
+              ? [label, const SizedBox(width: 6), badge]
+              : [badge, const SizedBox(width: 6), label],
         ),
       );
     }

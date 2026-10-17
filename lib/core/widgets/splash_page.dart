@@ -28,12 +28,10 @@ class _SplashPageState extends State<SplashPage>
       duration: const Duration(milliseconds: 2400),
     )..repeat();
 
-    _pulseAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeInOut,
-      ),
-    );
+    _pulseAnimation = Tween<double>(
+      begin: 0.95,
+      end: 1.05,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAuthAndPreload(context.read<AuthCubit>().state);
@@ -144,8 +142,10 @@ class _SplashPageState extends State<SplashPage>
                       final needsTeamSetup =
                           preloadState.status ==
                           PreloadStatus.teamSetupRequired;
-                      final authLoading =
-                          context.watch<AuthCubit>().state.isLoading;
+                      final authLoading = context
+                          .watch<AuthCubit>()
+                          .state
+                          .isLoading;
 
                       return Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -190,8 +190,9 @@ class _SplashPageState extends State<SplashPage>
                                   borderRadius: BorderRadius.circular(8),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(0xff00ff87)
-                                          .withValues(alpha: 0.45),
+                                      color: const Color(
+                                        0xff00ff87,
+                                      ).withValues(alpha: 0.45),
                                       blurRadius: 14,
                                       offset: const Offset(0, 2),
                                     ),
@@ -237,10 +238,11 @@ class _SplashPageState extends State<SplashPage>
                                     : const Color(0xff2d111d),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: (needsTeamSetup
-                                          ? const Color(0xff00ff87)
-                                          : const Color(0xffef4444))
-                                      .withValues(alpha: 0.4),
+                                  color:
+                                      (needsTeamSetup
+                                              ? const Color(0xff00ff87)
+                                              : const Color(0xffef4444))
+                                          .withValues(alpha: 0.4),
                                 ),
                               ),
                               child: Column(
@@ -273,12 +275,17 @@ class _SplashPageState extends State<SplashPage>
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                     ),
-                                    icon: const Icon(Icons.refresh_rounded, size: 18),
+                                    icon: const Icon(
+                                      Icons.refresh_rounded,
+                                      size: 18,
+                                    ),
                                     label: Text(
                                       needsTeamSetup
                                           ? l10n.teamSetupRetry
                                           : l10n.retry,
-                                      style: const TextStyle(fontWeight: FontWeight.w800),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -291,9 +298,13 @@ class _SplashPageState extends State<SplashPage>
                             AnimatedBuilder(
                               animation: _controller,
                               builder: (context, child) {
-                                final opacity = 0.55 +
+                                final opacity =
+                                    0.55 +
                                     (0.45 *
-                                        math.sin(_controller.value * 2 * math.pi)
+                                        math
+                                            .sin(
+                                              _controller.value * 2 * math.pi,
+                                            )
                                             .abs());
                                 return Opacity(
                                   opacity: opacity,
@@ -301,12 +312,14 @@ class _SplashPageState extends State<SplashPage>
                                     preloadState.status == PreloadStatus.loading
                                         ? l10n.loadingData
                                         : (authLoading
-                                            ? l10n.authenticating
-                                            : l10n.loadingData),
+                                              ? l10n.authenticating
+                                              : l10n.loadingData),
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500,
-                                      color: Colors.white.withValues(alpha: 0.75),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.75,
+                                      ),
                                       letterSpacing: 0.3,
                                     ),
                                   ),
@@ -397,10 +410,7 @@ class _HeroLogoBadge extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: const RadialGradient(
-                colors: [
-                  Color(0xff2d174d),
-                  Color(0xff120824),
-                ],
+                colors: [Color(0xff2d174d), Color(0xff120824)],
                 stops: [0.3, 1.0],
               ),
               border: Border.all(
@@ -495,15 +505,14 @@ class _AnimatedProgressBar extends StatelessWidget {
                     child: Container(
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [
-                            Color(0xff00ff87),
-                            Color(0xff55d49c),
-                          ],
+                          colors: [Color(0xff00ff87), Color(0xff55d49c)],
                         ),
                         borderRadius: BorderRadius.circular(2),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xff00ff87).withValues(alpha: 0.6),
+                            color: const Color(
+                              0xff00ff87,
+                            ).withValues(alpha: 0.6),
                             blurRadius: 6,
                           ),
                         ],

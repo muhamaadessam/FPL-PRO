@@ -31,17 +31,15 @@ class _LoginPageState extends State<LoginPage>
       duration: const Duration(milliseconds: 2600),
     );
 
-    final isTest =
-        WidgetsBinding.instance.runtimeType.toString().contains('Test');
+    final isTest = WidgetsBinding.instance.runtimeType.toString().contains(
+      'Test',
+    );
     if (!isTest) {
       _glowController.repeat(reverse: true);
     }
 
     _pulseAnimation = Tween<double>(begin: 0.96, end: 1.04).animate(
-      CurvedAnimation(
-        parent: _glowController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
     );
   }
 
@@ -57,11 +55,16 @@ class _LoginPageState extends State<LoginPage>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final bgColor = isDark ? AppColors.darkBackground : AppColors.lightBackground;
+    final bgColor = isDark
+        ? AppColors.darkBackground
+        : AppColors.lightBackground;
     final textPrimary = AppColors.textPrimary(isDark);
-    final textMuted = isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
-    final dividerColor =
-        isDark ? AppColors.darkCardBorder : const Color(0xffe5e0f0);
+    final textMuted = isDark
+        ? AppColors.darkTextMuted
+        : AppColors.lightTextMuted;
+    final dividerColor = isDark
+        ? AppColors.darkCardBorder
+        : const Color(0xffe5e0f0);
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -126,7 +129,10 @@ class _LoginPageState extends State<LoginPage>
             child: Center(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 20,
+                ),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 480),
                   child: Column(
@@ -203,8 +209,9 @@ class _LoginPageState extends State<LoginPage>
                                 borderRadius: BorderRadius.circular(8),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xff00ff87)
-                                        .withValues(alpha: 0.4),
+                                    color: const Color(
+                                      0xff00ff87,
+                                    ).withValues(alpha: 0.4),
                                     blurRadius: 10,
                                     offset: const Offset(0, 2),
                                   ),
@@ -248,33 +255,35 @@ class _LoginPageState extends State<LoginPage>
                       // Official sign-in runs through a native WebView, so the
                       // web build offers the team ID entry only.
                       if (!kIsWeb) ...[
-                      // Divider with "OR"
-                      Row(
-                        children: [
-                          Expanded(child: Divider(color: dividerColor)),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 14),
-                            child: Text(
-                              l10n.isArabic ? 'أو' : 'OR',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: textMuted,
+                        // Divider with "OR"
+                        Row(
+                          children: [
+                            Expanded(child: Divider(color: dividerColor)),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                              ),
+                              child: Text(
+                                l10n.isArabic ? 'أو' : 'OR',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: textMuted,
+                                ),
                               ),
                             ),
-                          ),
-                          Expanded(child: Divider(color: dividerColor)),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
+                            Expanded(child: Divider(color: dividerColor)),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
 
-                      // Official sign-in for team management and transfers
-                      _OfficialSignInButton(
-                        onPressed: () => context.push('/login/web'),
-                        label: l10n.officialSignIn,
-                        isDark: isDark,
-                        isArabic: l10n.isArabic,
-                      ),
+                        // Official sign-in for team management and transfers
+                        _OfficialSignInButton(
+                          onPressed: () => context.push('/login/web'),
+                          label: l10n.officialSignIn,
+                          isDark: isDark,
+                          isArabic: l10n.isArabic,
+                        ),
                       ],
                       const SizedBox(height: 8),
                     ],
@@ -358,10 +367,7 @@ class _LanguageToggle extends StatelessWidget {
 
 /// Interactive Theme mode switcher (Light / Dark)
 class _ThemeToggle extends StatelessWidget {
-  const _ThemeToggle({
-    required this.isDark,
-    required this.onToggle,
-  });
+  const _ThemeToggle({required this.isDark, required this.onToggle});
 
   final bool isDark;
   final VoidCallback onToggle;
@@ -428,12 +434,16 @@ class _HeroEmblem extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.plMint.withValues(alpha: isDark ? 0.35 : 0.22),
+                  color: AppColors.plMint.withValues(
+                    alpha: isDark ? 0.35 : 0.22,
+                  ),
                   blurRadius: 26,
                   spreadRadius: 2,
                 ),
                 BoxShadow(
-                  color: AppColors.plPurple.withValues(alpha: isDark ? 0.65 : 0.25),
+                  color: AppColors.plPurple.withValues(
+                    alpha: isDark ? 0.65 : 0.25,
+                  ),
                   blurRadius: 32,
                   offset: const Offset(0, 8),
                 ),
@@ -449,14 +459,8 @@ class _HeroEmblem extends StatelessWidget {
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: isDark
-                    ? const [
-                        Color(0xff2d174d),
-                        Color(0xff120824),
-                      ]
-                    : const [
-                        Color(0xff37003c),
-                        Color(0xff200024),
-                      ],
+                    ? const [Color(0xff2d174d), Color(0xff120824)]
+                    : const [Color(0xff37003c), Color(0xff200024)],
                 stops: const [0.3, 1.0],
               ),
               border: Border.all(
@@ -617,9 +621,7 @@ class _TeamIdFormState extends State<_TeamIdForm> {
             errorText: _error,
             errorMaxLines: 2,
             prefixIcon: const Icon(Icons.tag_rounded),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
           ),
         ),
         const SizedBox(height: 14),

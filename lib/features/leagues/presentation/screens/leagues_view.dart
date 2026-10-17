@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
-import '../../../team/data/models/team_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 import '../../../team/domain/repositories/team_repository.dart';
 import '../../../../core/layout/responsive.dart';
 import '../../../../core/app/routes.dart';
@@ -132,7 +132,9 @@ class _PageHeader extends StatelessWidget {
                 : theme.colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isDark ? AppColors.darkCardBorder : theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
+              color: isDark
+                  ? AppColors.darkCardBorder
+                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
             ),
           ),
           child: Row(
@@ -183,7 +185,9 @@ class _LeagueSection extends StatelessWidget {
     final surface = isDark
         ? AppColors.darkCard
         : theme.colorScheme.surfaceContainerHighest;
-    final border = isDark ? AppColors.darkCardBorder : theme.colorScheme.outlineVariant.withValues(alpha: 0.45);
+    final border = isDark
+        ? AppColors.darkCardBorder
+        : theme.colorScheme.outlineVariant.withValues(alpha: 0.45);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 18),

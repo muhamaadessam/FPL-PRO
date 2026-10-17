@@ -277,6 +277,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  fpl_engine:
+    dependency: "direct main"
+    description:
+      path: "packages/fpl_engine"
+      relative: true
+    source: path
+    version: "1.0.0"
   go_router:
     dependency: "direct main"
     description:

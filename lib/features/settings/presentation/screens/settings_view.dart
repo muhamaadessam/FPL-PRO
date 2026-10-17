@@ -35,10 +35,14 @@ class SettingsView extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final cardBg = AppColors.card(isDark);
-    final cardBorder = isDark ? AppColors.darkCardBorder : const Color(0xfff0edf6);
+    final cardBorder = isDark
+        ? AppColors.darkCardBorder
+        : const Color(0xfff0edf6);
     final titleColor = AppColors.textPrimary(isDark);
     final subColor = AppColors.textSecondary(isDark);
-    final primaryIconColor = isDark ? AppColors.plMint : const Color(0xff37003c);
+    final primaryIconColor = isDark
+        ? AppColors.plMint
+        : const Color(0xff37003c);
 
     return ListView(
       padding: contentInsets(
@@ -83,8 +87,10 @@ class SettingsView extends StatelessWidget {
                 entry?.name.isNotEmpty == true
                     ? entry!.name
                     : (entry?.playerFullName.isNotEmpty == true
-                        ? entry!.playerFullName
-                        : (entryId != null ? 'Entry #$entryId' : 'FPL Manager')),
+                          ? entry!.playerFullName
+                          : (entryId != null
+                                ? 'Entry #$entryId'
+                                : 'FPL Manager')),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
@@ -93,7 +99,8 @@ class SettingsView extends StatelessWidget {
               ),
               const SizedBox(height: 3),
               Text(
-                entry?.playerFullName.isNotEmpty == true && entry?.name.isNotEmpty == true
+                entry?.playerFullName.isNotEmpty == true &&
+                        entry?.name.isNotEmpty == true
                     ? '${entry!.playerFullName} • Entry #${entry.id}'
                     : (entryId != null ? 'Entry #$entryId' : 'FPL Manager'),
                 style: TextStyle(
@@ -150,9 +157,8 @@ class SettingsView extends StatelessWidget {
                 title: l10n.themeSystem,
                 isSelected: themeMode == ThemeMode.system,
                 isDark: isDark,
-                onTap: () => context
-                    .read<ThemeCubit>()
-                    .setThemeMode(ThemeMode.system),
+                onTap: () =>
+                    context.read<ThemeCubit>().setThemeMode(ThemeMode.system),
               ),
               Divider(height: 1, indent: 48, color: cardBorder),
               _ThemeOptionTile(
@@ -160,9 +166,8 @@ class SettingsView extends StatelessWidget {
                 title: l10n.themeLight,
                 isSelected: themeMode == ThemeMode.light,
                 isDark: isDark,
-                onTap: () => context
-                    .read<ThemeCubit>()
-                    .setThemeMode(ThemeMode.light),
+                onTap: () =>
+                    context.read<ThemeCubit>().setThemeMode(ThemeMode.light),
               ),
               Divider(height: 1, indent: 48, color: cardBorder),
               _ThemeOptionTile(
@@ -170,9 +175,8 @@ class SettingsView extends StatelessWidget {
                 title: l10n.themeDark,
                 isSelected: themeMode == ThemeMode.dark,
                 isDark: isDark,
-                onTap: () => context
-                    .read<ThemeCubit>()
-                    .setThemeMode(ThemeMode.dark),
+                onTap: () =>
+                    context.read<ThemeCubit>().setThemeMode(ThemeMode.dark),
               ),
             ],
           ),
@@ -260,21 +264,29 @@ class SettingsView extends StatelessWidget {
           onPressed: () => context.read<AuthCubit>().logout(),
           icon: Icon(
             Icons.logout_rounded,
-            color: isDark ? AppColors.darkAlertErrorText : const Color(0xffdc2626),
+            color: isDark
+                ? AppColors.darkAlertErrorText
+                : const Color(0xffdc2626),
           ),
           label: Text(
             isGuest ? l10n.changeTeam : l10n.logout,
             style: TextStyle(
-              color: isDark ? AppColors.darkAlertErrorText : const Color(0xffdc2626),
+              color: isDark
+                  ? AppColors.darkAlertErrorText
+                  : const Color(0xffdc2626),
               fontWeight: FontWeight.w800,
             ),
           ),
           style: FilledButton.styleFrom(
-            backgroundColor: isDark ? AppColors.darkAlertErrorBg : const Color(0xfffee2e2),
+            backgroundColor: isDark
+                ? AppColors.darkAlertErrorBg
+                : const Color(0xfffee2e2),
             padding: const EdgeInsets.symmetric(vertical: 14),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
-              side: isDark ? const BorderSide(color: AppColors.darkAlertErrorBorder) : BorderSide.none,
+              side: isDark
+                  ? const BorderSide(color: AppColors.darkAlertErrorBorder)
+                  : BorderSide.none,
             ),
           ),
         ),
@@ -331,10 +343,7 @@ class _ThemeOptionTile extends StatelessWidget {
 
     return ListTile(
       onTap: onTap,
-      leading: Icon(
-        icon,
-        color: isSelected ? activeColor : inactiveColor,
-      ),
+      leading: Icon(icon, color: isSelected ? activeColor : inactiveColor),
       title: Text(
         title,
         style: TextStyle(

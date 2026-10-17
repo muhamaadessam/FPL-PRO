@@ -1,8 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
-import 'package:fantasy_pl/features/fixtures/data/models/fpl_models.dart';
-import 'package:fantasy_pl/features/recommendations/domain/usecases/recommendation_engine.dart';
-import 'package:fantasy_pl/features/team/data/models/team_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 
 void main() {
   test(

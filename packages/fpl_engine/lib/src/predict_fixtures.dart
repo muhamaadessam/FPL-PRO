@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import '../../data/models/fpl_models.dart';
+import 'models/fpl_models.dart';
 import 'team_ratings.dart';
 
 class PlayerEventPrediction {

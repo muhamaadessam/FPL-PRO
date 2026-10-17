@@ -7,10 +7,9 @@ import '../../../../core/themes/app_colors.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../fixtures/data/datasources/fpl_api_client.dart';
-import '../../../fixtures/data/models/fpl_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 import '../../../fixtures/domain/repositories/fixtures_repository.dart';
 import '../../data/repositories/team_repository.dart';
-import '../../data/models/team_models.dart';
 import '../../domain/repositories/team_repository.dart';
 import '../cubit/team_cubit.dart';
 import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
@@ -202,94 +201,103 @@ class _TeamContentState extends State<_TeamContent> {
                 child: MaxWidth(
                   maxWidth: columnWidth,
                   child: Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // 1. Top Header: Dynamic Team name & Manager name, Gameweek Switcher
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Builder(
-                          builder: (context) {
-                            final teamName = widget.entry?.name.isNotEmpty == true
-                                ? widget.entry!.name
-                                : (widget.entryId != null
-                                      ? 'Entry #${widget.entryId}'
-                                      : 'My Team');
-                            final managerName = widget.entry?.playerFullName ?? '';
-                            final hasDistinctManager =
-                                managerName.isNotEmpty &&
-                                managerName.trim().toLowerCase() !=
-                                    teamName.trim().toLowerCase();
-                            final subtitle = hasDistinctManager ? managerName : null;
-
-                            return _TeamHeader(
-                              title: teamName,
-                              subtitle: subtitle,
-                              showBackButton: widget.entryId != null,
-                              selectedGameweekId: widget.selectedGameweekId,
-                              bootstrap: widget.bootstrap,
-                              firstGameweekId: widget.entry?.startedEvent,
-                              onGameweekChanged: widget.onGameweekChanged,
-                              onManage:
-                                  widget.entryId == null &&
-                                      !(context
-                                              .read<AuthCubit>()
-                                              .state
-                                              .session
-                                              ?.isGuest ??
-                                          false)
-                                  ? () => _openManageTeam(context)
-                                  : null,
-                            );
-                          },
-                        ),
-                      ),
-                      SizedBox(height: headerToStats),
-                      if (widget.entryId == null &&
-                          !(widget.entry?.hasStartedBy(
-                                widget.bootstrap.currentGameweekId,
-                              ) ??
-                              true)) ...[
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // 1. Top Header: Dynamic Team name & Manager name, Gameweek Switcher
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: _FirstGameweekNotice(
-                            firstGameweekId: widget.entry!.startedEvent!,
+                          child: Builder(
+                            builder: (context) {
+                              final teamName =
+                                  widget.entry?.name.isNotEmpty == true
+                                  ? widget.entry!.name
+                                  : (widget.entryId != null
+                                        ? 'Entry #${widget.entryId}'
+                                        : 'My Team');
+                              final managerName =
+                                  widget.entry?.playerFullName ?? '';
+                              final hasDistinctManager =
+                                  managerName.isNotEmpty &&
+                                  managerName.trim().toLowerCase() !=
+                                      teamName.trim().toLowerCase();
+                              final subtitle = hasDistinctManager
+                                  ? managerName
+                                  : null;
+
+                              return _TeamHeader(
+                                title: teamName,
+                                subtitle: subtitle,
+                                showBackButton: widget.entryId != null,
+                                selectedGameweekId: widget.selectedGameweekId,
+                                bootstrap: widget.bootstrap,
+                                firstGameweekId: widget.entry?.startedEvent,
+                                onGameweekChanged: widget.onGameweekChanged,
+                                onManage:
+                                    widget.entryId == null &&
+                                        !(context
+                                                .read<AuthCubit>()
+                                                .state
+                                                .session
+                                                ?.isGuest ??
+                                            false)
+                                    ? () => _openManageTeam(context)
+                                    : null,
+                              );
+                            },
                           ),
                         ),
                         SizedBox(height: headerToStats),
+                        if (widget.entryId == null &&
+                            !(widget.entry?.hasStartedBy(
+                                  widget.bootstrap.currentGameweekId,
+                                ) ??
+                                true)) ...[
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: _FirstGameweekNotice(
+                              firstGameweekId: widget.entry!.startedEvent!,
+                            ),
+                          ),
+                          SizedBox(height: headerToStats),
+                        ],
+
+                        // 2. Stats Row: Average | Total Pts (Highlighted Card) | Highest (tappable)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: _StatsSummaryCards(
+                            averageScore:
+                                gameweek.averageEntryScore?.toString() ?? '—',
+                            totalPoints: displayedPoints?.toString() ?? '—',
+                            highestScore:
+                                gameweek.highestScore?.toString() ?? '—',
+                            gameweek: gameweek,
+                            activeChip: _activeChipForGameweek(
+                              widget.team,
+                              widget.selectedGameweekId,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: statsToSubNav),
+
+                        // 3. Sub-Navigation Bar: Segmented [Pitch | List] & Metric Selector Dropdown
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: _SubNavigationRow(
+                            showViewToggle: !isWide,
+                            isPitchView: _isPitchView,
+                            selectedMetric: _selectedMetric,
+                            onTogglePitch: (isPitch) =>
+                                setState(() => _isPitchView = isPitch),
+                            onMetricChanged: (metric) =>
+                                setState(() => _selectedMetric = metric),
+                          ),
+                        ),
+                        SizedBox(height: subNavToPitch),
                       ],
-
-                      // 2. Stats Row: Average | Total Pts (Highlighted Card) | Highest (tappable)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: _StatsSummaryCards(
-                          averageScore: gameweek.averageEntryScore?.toString() ?? '—',
-                          totalPoints: displayedPoints?.toString() ?? '—',
-                          highestScore: gameweek.highestScore?.toString() ?? '—',
-                          gameweek: gameweek,
-                          activeChip: _activeChipForGameweek(widget.team, widget.selectedGameweekId),
-                        ),
-                      ),
-                      SizedBox(height: statsToSubNav),
-
-                      // 3. Sub-Navigation Bar: Segmented [Pitch | List] & Metric Selector Dropdown
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: _SubNavigationRow(
-                          showViewToggle: !isWide,
-                          isPitchView: _isPitchView,
-                          selectedMetric: _selectedMetric,
-                          onTogglePitch: (isPitch) =>
-                              setState(() => _isPitchView = isPitch),
-                          onMetricChanged: (metric) =>
-                              setState(() => _selectedMetric = metric),
-                        ),
-                      ),
-                      SizedBox(height: subNavToPitch),
-                    ],
+                    ),
                   ),
-                ),
                 ),
               ),
               if (isWide)
@@ -328,39 +336,39 @@ class _TeamContentState extends State<_TeamContent> {
                   ),
                 )
               else
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: _isPitchView
-                    ? Align(
-                        // Phones anchor the pitch to the nav bar; wider
-                        // screens keep it right under the controls.
-                        alignment: Breakpoints.hasTopNav(context)
-                            ? Alignment.topCenter
-                            : Alignment.bottomCenter,
-                        child: MaxWidth(
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: _isPitchView
+                      ? Align(
+                          // Phones anchor the pitch to the nav bar; wider
+                          // screens keep it right under the controls.
+                          alignment: Breakpoints.hasTopNav(context)
+                              ? Alignment.topCenter
+                              : Alignment.bottomCenter,
+                          child: MaxWidth(
+                            maxWidth: columnWidth,
+                            child: PitchView(
+                              starting: starting,
+                              bench: bench,
+                              bootstrap: widget.bootstrap,
+                              gameweekPoints: widget.gameweekPoints,
+                              metric: _selectedMetric,
+                            ),
+                          ),
+                        )
+                      : MaxWidth(
                           maxWidth: columnWidth,
-                          child: PitchView(
-                            starting: starting,
-                            bench: bench,
-                            bootstrap: widget.bootstrap,
-                            gameweekPoints: widget.gameweekPoints,
-                            metric: _selectedMetric,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                            child: _TeamListView(
+                              starting: starting,
+                              bench: bench,
+                              bootstrap: widget.bootstrap,
+                              gameweekPoints: widget.gameweekPoints,
+                            ),
                           ),
                         ),
-                      )
-                    : MaxWidth(
-                        maxWidth: columnWidth,
-                        child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                        child: _TeamListView(
-                          starting: starting,
-                          bench: bench,
-                          bootstrap: widget.bootstrap,
-                          gameweekPoints: widget.gameweekPoints,
-                        ),
-                      ),
-                      ),
-              ),
+                ),
             ],
           );
         },
@@ -369,11 +377,7 @@ class _TeamContentState extends State<_TeamContent> {
   }
 
   Future<void> _openManageTeam(BuildContext context) async {
-    await pushPage<void>(
-      context,
-      AppRoutes.manageTeam,
-      const ManageTeamPage(),
-    );
+    await pushPage<void>(context, AppRoutes.manageTeam, const ManageTeamPage());
     // Lineup and transfer changes made there show up here after a refresh.
     await widget.onRefresh();
   }
@@ -778,7 +782,10 @@ class _StatsSummaryCards extends StatelessWidget {
                 children: [
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
                         colors: [Color(0xff00d4ff), Color(0xff536dfe)],
@@ -816,7 +823,10 @@ class _StatsSummaryCards extends StatelessWidget {
                   if (activeChip != null && activeChip!.isNotEmpty)
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4.5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 4.5,
+                      ),
                       color: Colors.white,
                       child: Text(
                         _formatChipName(context, activeChip!),
@@ -924,12 +934,12 @@ class _StatsSummaryCards extends StatelessWidget {
                 child: Container(
                   width: 36,
                   height: 4,
-                decoration: BoxDecoration(
-                  color: handleColor,
-                  borderRadius: BorderRadius.circular(2),
+                  decoration: BoxDecoration(
+                    color: handleColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ),
             const SizedBox(height: 16),
             const Icon(
               Icons.emoji_events_rounded,
@@ -1053,29 +1063,32 @@ class _SubNavigationRow extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             // Pitch | List Segmented Control
-            if (!showViewToggle) const SizedBox.shrink() else Container(
-              height: 38,
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                color: segmentedBg,
-                borderRadius: BorderRadius.circular(19),
+            if (!showViewToggle)
+              const SizedBox.shrink()
+            else
+              Container(
+                height: 38,
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: segmentedBg,
+                  borderRadius: BorderRadius.circular(19),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _SegmentTab(
+                      title: 'Pitch',
+                      isSelected: isPitchView,
+                      onTap: () => onTogglePitch(true),
+                    ),
+                    _SegmentTab(
+                      title: 'List',
+                      isSelected: !isPitchView,
+                      onTap: () => onTogglePitch(false),
+                    ),
+                  ],
+                ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _SegmentTab(
-                    title: 'Pitch',
-                    isSelected: isPitchView,
-                    onTap: () => onTogglePitch(true),
-                  ),
-                  _SegmentTab(
-                    title: 'List',
-                    isSelected: !isPitchView,
-                    onTap: () => onTogglePitch(false),
-                  ),
-                ],
-              ),
-            ),
 
             // Filter / Metric Selector Dropdown: Points, Price, Form, Selected %, Total Pts
             PopupMenuButton<PlayerCardMetric>(

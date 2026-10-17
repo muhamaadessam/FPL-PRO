@@ -35,3 +35,10 @@ jobs:
 
       - name: Run tests
         run: flutter test
+
+      - name: Test prediction engine
+        working-directory: packages/fpl_engine
+        run: |
+          dart pub get
+          dart analyze
+          dart test

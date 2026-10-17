@@ -1,4 +1,4 @@
-import '../../data/models/fpl_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 
 abstract interface class FixturesRepository {
   Future<FplBootstrap> getBootstrap();

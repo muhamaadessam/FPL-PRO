@@ -26,9 +26,8 @@ abstract final class AppRoutes {
   static const tabs = [home, tips, matches, leagues, settings];
 
   /// Whether [location] belongs to the signed-in dashboard.
-  static bool isDashboard(String location) => tabs.any(
-    (tab) => location == tab || location.startsWith('$tab/'),
-  );
+  static bool isDashboard(String location) =>
+      tabs.any((tab) => location == tab || location.startsWith('$tab/'));
 }
 
 /// Opens [page] at [location].

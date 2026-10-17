@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../data/models/fpl_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 import '../../domain/repositories/fixtures_repository.dart';
 
 enum FixturesStatus { initial, loading, success, failure }

@@ -49,3 +49,4 @@ app.*.map.json
 
 # Temporary Google credentials created by GitHub Actions
 gha-creds-*.json
+packages/fpl_engine/pubspec.lock

@@ -4,12 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../fixtures/data/datasources/fpl_api_client.dart';
-import '../../../fixtures/data/models/fpl_models.dart';
+import 'package:fpl_engine/fpl_engine.dart';
 import '../../../fixtures/domain/repositories/fixtures_repository.dart';
 import '../../../team/data/repositories/team_repository.dart';
 import '../../../team/domain/repositories/team_repository.dart';
 import '../../domain/entities/recommendation_data.dart';
-import '../../domain/usecases/recommendation_engine.dart';
 import '../cubit/recommendations_cubit.dart';
 import 'next_gameweek_analysis_page.dart';
 import 'player_directory_page.dart';
@@ -384,13 +383,13 @@ class _RecommendationContentState extends State<_RecommendationContent>
                     child: Container(
                       width: 36,
                       height: 4,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(2),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
-                ),
                 Text(
                   l10n.compareTransfer,
                   style: Theme.of(
@@ -412,9 +411,9 @@ class _RecommendationContentState extends State<_RecommendationContent>
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.swap_horiz_rounded, size: 20),
@@ -501,13 +500,13 @@ class _RecommendationContentState extends State<_RecommendationContent>
                     child: Container(
                       width: 36,
                       height: 4,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(2),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
-                ),
                 Text(
                   l10n.chipSelection(l10n.chipName(chip.name)),
                   style: Theme.of(
@@ -585,9 +584,7 @@ class _RecommendationContentState extends State<_RecommendationContent>
                       children: [
                         Text(
                           l10n.recommendations,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge
+                          style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(fontWeight: FontWeight.w900),
                         ),
                         const SizedBox(width: 8),
@@ -627,9 +624,7 @@ class _RecommendationContentState extends State<_RecommendationContent>
                           Flexible(
                             child: Text(
                               l10n.kickoffLabel(data.gameweek.deadlineTime!),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
+                              style: Theme.of(context).textTheme.labelSmall
                                   ?.copyWith(fontWeight: FontWeight.w700),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -746,10 +741,7 @@ class _PlanTab extends StatelessWidget {
       ),
       children: [
         // Unified Gameweek Plan & Squad Rating Hero Card
-        _WeeklyPlanCard(
-          data: data,
-          onTransfer: onTransfer,
-        ),
+        _WeeklyPlanCard(data: data, onTransfer: onTransfer),
         const SizedBox(height: 14),
 
         // Quick Decisions Grid: Captain + Chip Advice
@@ -1046,11 +1038,11 @@ class _TopPicksTab extends StatelessWidget {
               context,
               AppRoutes.players,
               PlayerDirectoryPage(
-                  bootstrap: data.bootstrap,
-                  fixtures: data.fixtures,
-                  gameweekId: data.result.gameweekId,
-                  projections: data.projections,
-                ),
+                bootstrap: data.bootstrap,
+                fixtures: data.fixtures,
+                gameweekId: data.result.gameweekId,
+                projections: data.projections,
+              ),
             ),
             borderRadius: BorderRadius.circular(14),
             child: Padding(
@@ -1161,10 +1153,7 @@ class _TopPicksTab extends StatelessWidget {
 // Weekly Plan Card
 // -----------------------------------------------------------------------------
 class _WeeklyPlanCard extends StatelessWidget {
-  const _WeeklyPlanCard({
-    required this.data,
-    this.onTransfer,
-  });
+  const _WeeklyPlanCard({required this.data, this.onTransfer});
 
   final RecommendationData data;
   final Future<void> Function(TransferSuggestion transfer)? onTransfer;
@@ -1176,8 +1165,7 @@ class _WeeklyPlanCard extends StatelessWidget {
     final analysis = data.result.squadAnalysis;
     final lineup = data.result.suggestedLineup;
     final gain =
-        lineup.expectedStartingPoints -
-        analysis.expectedStartingPoints;
+        lineup.expectedStartingPoints - analysis.expectedStartingPoints;
     final hasFullSquad =
         lineup.players.length == 15 && lineup.suggestedStartingIds.length == 11;
     final formation = [
@@ -1209,9 +1197,7 @@ class _WeeklyPlanCard extends StatelessWidget {
       color: colors.surfaceContainerHigh,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: colors.outlineVariant.withValues(alpha: 0.4),
-        ),
+        side: BorderSide(color: colors.outlineVariant.withValues(alpha: 0.4)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -1226,10 +1212,7 @@ class _WeeklyPlanCard extends StatelessWidget {
                 onTap: () => pushPage<void>(
                   context,
                   AppRoutes.analysis,
-                  NextGameweekAnalysisPage(
-                      data: data,
-                      onTransfer: onTransfer,
-                    ),
+                  NextGameweekAnalysisPage(data: data, onTransfer: onTransfer),
                 ),
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
@@ -1306,7 +1289,9 @@ class _WeeklyPlanCard extends StatelessWidget {
                                 Icon(
                                   Icons.arrow_forward_ios_rounded,
                                   size: 11,
-                                  color: colors.onSurfaceVariant.withValues(alpha: 0.7),
+                                  color: colors.onSurfaceVariant.withValues(
+                                    alpha: 0.7,
+                                  ),
                                 ),
                               ],
                             ),
@@ -1369,7 +1354,9 @@ class _WeeklyPlanCard extends StatelessWidget {
                           '${(hasFullSquad ? lineup.expectedStartingPoints : analysis.expectedStartingPoints).toStringAsFixed(1)} ${l10n.ptsCue}',
                           style: TextStyle(
                             fontWeight: FontWeight.w900,
-                            color: gain > 0.05 ? colors.primary : colors.onSurface,
+                            color: gain > 0.05
+                                ? colors.primary
+                                : colors.onSurface,
                             fontSize: 12,
                           ),
                         ),
@@ -1390,7 +1377,9 @@ class _WeeklyPlanCard extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
+                    color: colors.surfaceContainerHighest.withValues(
+                      alpha: 0.5,
+                    ),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -1398,7 +1387,8 @@ class _WeeklyPlanCard extends StatelessWidget {
                       Expanded(
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
-                          alignment: Directionality.of(context) == TextDirection.rtl
+                          alignment:
+                              Directionality.of(context) == TextDirection.rtl
                               ? Alignment.centerRight
                               : Alignment.centerLeft,
                           child: Row(
@@ -1413,7 +1403,9 @@ class _WeeklyPlanCard extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                analysis.expectedStartingPoints.toStringAsFixed(1),
+                                analysis.expectedStartingPoints.toStringAsFixed(
+                                  1,
+                                ),
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: colors.onSurface,
@@ -1421,7 +1413,9 @@ class _WeeklyPlanCard extends StatelessWidget {
                                 ),
                               ),
                               Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                ),
                                 child: Icon(
                                   Icons.arrow_forward_rounded,
                                   size: 13,
@@ -1466,18 +1460,18 @@ class _WeeklyPlanCard extends StatelessWidget {
                 Text(
                   l10n.lineupGain(gain),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colors.onSurfaceVariant,
-                        fontSize: 12,
-                      ),
+                    color: colors.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
                 ),
               ] else ...[
                 const SizedBox(height: 8),
                 Text(
                   l10n.lineupAlreadyBest,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colors.onSurfaceVariant,
-                        fontSize: 12,
-                      ),
+                    color: colors.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
                 ),
               ],
               if (promoted.isNotEmpty) ...[
@@ -1485,7 +1479,9 @@ class _WeeklyPlanCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: colors.surfaceContainerHighest.withValues(alpha: 0.6),
+                    color: colors.surfaceContainerHighest.withValues(
+                      alpha: 0.6,
+                    ),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -1540,9 +1536,9 @@ class _WeeklyPlanCard extends StatelessWidget {
                 Text(
                   '${l10n.benchOrder}: ${names(lineup.bench)}',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colors.onSurfaceVariant,
-                        fontSize: 11,
-                      ),
+                    color: colors.onSurfaceVariant,
+                    fontSize: 11,
+                  ),
                 ),
               ],
               const SizedBox(height: 12),
@@ -1554,10 +1550,10 @@ class _WeeklyPlanCard extends StatelessWidget {
                     context,
                     AppRoutes.analysis,
                     NextGameweekAnalysisPage(
-                        data: data,
-                        onTransfer: onTransfer,
-                        useSuggestedLineup: true,
-                      ),
+                      data: data,
+                      onTransfer: onTransfer,
+                      useSuggestedLineup: true,
+                    ),
                   ),
                   icon: const Icon(Icons.groups_outlined, size: 18),
                   label: Text(l10n.suggestedLineup),
@@ -1573,9 +1569,9 @@ class _WeeklyPlanCard extends StatelessWidget {
                     context,
                     AppRoutes.analysis,
                     NextGameweekAnalysisPage(
-                        data: data,
-                        onTransfer: onTransfer,
-                      ),
+                      data: data,
+                      onTransfer: onTransfer,
+                    ),
                   ),
                   icon: const Icon(Icons.insights_rounded, size: 18),
                   label: Text(l10n.nextGameweekAnalysis),
@@ -1608,9 +1604,7 @@ class _CaptainCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.primaryContainer,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colors.primary.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: colors.primary.withValues(alpha: 0.3)),
       ),
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -1665,7 +1659,8 @@ class _CaptainCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        bootstrap.teams[captain.player.teamId]?.shortName ?? '—',
+                        bootstrap.teams[captain.player.teamId]?.shortName ??
+                            '—',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                       Builder(
@@ -1774,9 +1769,7 @@ class _ChipCard extends StatelessWidget {
     final isNone = result.chip == SuggestedChip.none;
 
     return Material(
-      color: isSelected
-          ? colors.primaryContainer
-          : colors.surfaceContainerHigh,
+      color: isSelected ? colors.primaryContainer : colors.surfaceContainerHigh,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
@@ -1828,7 +1821,9 @@ class _ChipCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isNone ? l10n.holdChips : l10n.chipName(result.chip.name),
+                          isNone
+                              ? l10n.holdChips
+                              : l10n.chipName(result.chip.name),
                           style: TextStyle(
                             fontWeight: FontWeight.w900,
                             fontSize: 14,
@@ -1838,7 +1833,8 @@ class _ChipCard extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           l10n.chipReason(result.chipReason.name),
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
                                 fontSize: 11,
                                 color: colors.onSurfaceVariant,
                               ),
@@ -1959,9 +1955,9 @@ class _TransferCard extends StatelessWidget {
                           ),
                           Text(
                             '$outTeam • £${_price(transfer.outPlayer.nowCost)}m',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  fontSize: 11,
-                                ),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(fontSize: 11),
                           ),
                         ],
                       ),
@@ -2002,9 +1998,9 @@ class _TransferCard extends StatelessWidget {
                           ),
                           Text(
                             '$inTeam • £${_price(transfer.inPlayer.nowCost)}m',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  fontSize: 11,
-                                ),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(fontSize: 11),
                           ),
                         ],
                       ),
