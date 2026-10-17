@@ -16,6 +16,7 @@ import 'player_directory_page.dart';
 import '../../../../core/layout/responsive.dart';
 import '../../../../core/app/routes.dart';
 import '../../../../core/widgets/adaptive_modal.dart';
+import '../../../../core/widgets/pill_tab_bar.dart';
 
 export '../../domain/entities/recommendation_data.dart';
 
@@ -647,99 +648,24 @@ class _RecommendationContentState extends State<_RecommendationContent>
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   maxWidth: _recommendationsMaxWidth,
                 ),
-                child: Container(
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: TabBar(
-                    controller: _tabController,
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    dividerColor: Colors.transparent,
-                    indicator: BoxDecoration(
-                      color: colors.primaryContainer,
-                      borderRadius: BorderRadius.circular(10),
+                child: PillTabBar(
+                  controller: _tabController,
+                  indicatorColor: colors.primaryContainer,
+                  labelColor: colors.onPrimaryContainer,
+                  tabs: [
+                    PillTab(icon: Icons.tune_rounded, label: l10n.tabPlan),
+                    PillTab(
+                      icon: Icons.swap_horiz_rounded,
+                      label: l10n.tabTransfers,
+                      badge: result.transfers.isEmpty
+                          ? null
+                          : '${result.transfers.length}',
                     ),
-                    labelColor: colors.onPrimaryContainer,
-                    unselectedLabelColor: colors.onSurfaceVariant,
-                    labelStyle: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
+                    PillTab(
+                      icon: Icons.star_outline_rounded,
+                      label: l10n.tabTopPicks,
                     ),
-                    unselectedLabelStyle: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                    tabs: [
-                      Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.tune_rounded, size: 15),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                l10n.tabPlan,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.swap_horiz_rounded, size: 16),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                l10n.tabTransfers,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            if (result.transfers.isNotEmpty) ...[
-                              const SizedBox(width: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 5,
-                                  vertical: 1,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: colors.primary,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  '${result.transfers.length}',
-                                  style: TextStyle(
-                                    color: colors.onPrimary,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.star_outline_rounded, size: 15),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                l10n.tabTopPicks,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                  ],
                 ),
               ),
 

@@ -11,6 +11,7 @@ import 'player_directory_page.dart';
 import '../../../../core/widgets/adaptive_modal.dart';
 import '../../../../core/app/routes.dart';
 import '../../../../core/layout/responsive.dart';
+import '../../../../core/widgets/pill_tab_bar.dart';
 
 class NextGameweekAnalysisPage extends StatefulWidget {
   const NextGameweekAnalysisPage({
@@ -454,66 +455,25 @@ class _NextGameweekAnalysisPageState extends State<NextGameweekAnalysisPage>
           preferredSize: const Size.fromHeight(48),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-            child: Container(
+            child: PillTabBar(
+              controller: _tabController,
               height: 40,
-              decoration: BoxDecoration(
-                color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                indicatorSize: TabBarIndicatorSize.tab,
-                dividerColor: Colors.transparent,
-                indicator: BoxDecoration(
-                  color: isDark
-                      ? AppColors.darkActiveTab
-                      : colors.primaryContainer,
-                  borderRadius: BorderRadius.circular(10),
+              fontSize: 13,
+              indicatorColor: isDark
+                  ? AppColors.darkActiveTab
+                  : colors.primaryContainer,
+              labelColor: isDark ? Colors.white : colors.onPrimaryContainer,
+              tabs: [
+                PillTab(
+                  icon: Icons.sports_soccer_rounded,
+                  label: l10n.tabPitch,
                 ),
-                labelColor: isDark ? Colors.white : colors.onPrimaryContainer,
-                unselectedLabelColor: colors.onSurfaceVariant,
-                labelStyle: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 13,
+                PillTab(
+                  icon: Icons.format_list_bulleted_rounded,
+                  label:
+                      '${l10n.tabPlayerBreakdown} (${analysis.players.length})',
                 ),
-                unselectedLabelStyle: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
-                tabs: [
-                  Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.sports_soccer_rounded, size: 16),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            l10n.tabPitch,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.format_list_bulleted_rounded,
-                            size: 16),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            '${l10n.tabPlayerBreakdown} (${analysis.players.length})',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+              ],
             ),
           ),
         ),

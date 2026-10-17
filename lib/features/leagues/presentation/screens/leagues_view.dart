@@ -222,7 +222,7 @@ class _LeagueSection extends StatelessWidget {
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 12, 10, 10),
+                  padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 16, 10),
                   child: _RankHeader(l10n: l10n),
                 ),
                 Divider(height: 1, color: border),
@@ -240,6 +240,19 @@ class _LeagueSection extends StatelessWidget {
   }
 }
 
+/// Rank column widths: compact on phones; a roomy, right-aligned numbers
+/// table on wide screens, with the movement spelled out.
+class _RankColumns {
+  _RankColumns.of(BuildContext context) : wide = Breakpoints.hasTopNav(context);
+
+  final bool wide;
+
+  double get current => wide ? 120 : 66;
+  double get last => wide ? 120 : 62;
+  double get change => wide ? 110 : 30;
+  TextAlign get align => wide ? TextAlign.end : TextAlign.center;
+}
+
 class _RankHeader extends StatelessWidget {
   const _RankHeader({required this.l10n});
 
@@ -251,30 +264,36 @@ class _RankHeader extends StatelessWidget {
       color: Theme.of(context).colorScheme.onSurfaceVariant,
       fontWeight: FontWeight.w800,
     );
+    final columns = _RankColumns.of(context);
     return Row(
       children: [
         Expanded(child: Text(l10n.league, style: style)),
         // Same widths and alignment as the rank cells of each row; long
         // labels wrap instead of running into each other.
         SizedBox(
-          width: 66,
+          width: columns.current,
           child: Text(
             l10n.currentRank,
             style: style,
-            textAlign: TextAlign.center,
+            textAlign: columns.align,
             maxLines: 2,
           ),
         ),
         SizedBox(
-          width: 62,
+          width: columns.last,
           child: Text(
             l10n.lastRank,
             style: style,
-            textAlign: TextAlign.center,
+            textAlign: columns.align,
             maxLines: 2,
           ),
         ),
-        const SizedBox(width: 30),
+        SizedBox(
+          width: columns.change,
+          child: columns.wide
+              ? Text(l10n.rankChange, style: style, textAlign: TextAlign.end)
+              : null,
+        ),
       ],
     );
   }
@@ -309,6 +328,7 @@ class _LeagueRow extends StatelessWidget {
         : rankChange > 0
         ? l10n.rankImproved
         : l10n.rankDropped;
+    final columns = _RankColumns.of(context);
 
     return Material(
       color: Colors.transparent,
@@ -323,7 +343,7 @@ class _LeagueRow extends StatelessWidget {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+              padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 16, 12),
               child: Row(
                 children: [
                   Expanded(
@@ -357,30 +377,49 @@ class _LeagueRow extends StatelessWidget {
                     ),
                   ),
                   SizedBox(
-                    width: 66,
+                    width: columns.current,
                     child: Text(
                       _rank(context, league.currentRank),
-                      textAlign: TextAlign.center,
+                      textAlign: columns.align,
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
                   SizedBox(
-                    width: 62,
+                    width: columns.last,
                     child: Text(
                       _rank(context, league.lastRank),
-                      textAlign: TextAlign.center,
+                      textAlign: columns.align,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: secondary,
                       ),
                     ),
                   ),
                   SizedBox(
-                    width: 30,
+                    width: columns.change,
                     child: Semantics(
                       label: changeLabel,
-                      child: Icon(changeIcon, size: 18, color: changeColor),
+                      child: Row(
+                        mainAxisAlignment: columns.wide
+                            ? MainAxisAlignment.end
+                            : MainAxisAlignment.center,
+                        children: [
+                          Icon(changeIcon, size: 18, color: changeColor),
+                          if (columns.wide &&
+                              rankChange != null &&
+                              rankChange != 0) ...[
+                            const SizedBox(width: 4),
+                            Text(
+                              _rank(context, rankChange.abs()),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: changeColor,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
