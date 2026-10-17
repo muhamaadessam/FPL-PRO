@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -17,6 +18,7 @@ import '../widgets/pitch_view.dart';
 import 'manage_team_page.dart';
 import '../../../../core/layout/responsive.dart';
 import '../../../../core/widgets/adaptive_modal.dart';
+import '../../../../core/widgets/get_app_notice.dart';
 import '../../../../core/app/routes.dart';
 
 class TeamView extends StatelessWidget {
@@ -249,6 +251,15 @@ class _TeamContentState extends State<_TeamContent> {
                           ),
                         ),
                         SizedBox(height: headerToStats),
+                        // Web visitors open a team by ID and cannot sign in,
+                        // so point them to the app for team management.
+                        if (kIsWeb && widget.entryId == null) ...[
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            child: GetAppNotice(),
+                          ),
+                          SizedBox(height: headerToStats),
+                        ],
                         if (widget.entryId == null &&
                             !(widget.entry?.hasStartedBy(
                                   widget.bootstrap.currentGameweekId,

@@ -118,7 +118,9 @@ class SettingsView extends StatelessWidget {
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        l10n.teamIdModeNotice,
+                        kIsWeb
+                            ? l10n.webTeamIdModeNotice
+                            : l10n.teamIdModeNotice,
                         style: TextStyle(
                           fontSize: 12,
                           height: 1.4,

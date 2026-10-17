@@ -46,6 +46,13 @@ class AppLocalizations {
   String get teamIdModeNotice => isArabic
       ? 'أنت داخل برقم الفريق. التشكيلة المعروضة للجولة الجاية هي آخر تشكيلة منشورة، ولتعديل الفريق أو عمل تبديلات سجّل دخولك.'
       : 'You are viewing by team ID. The upcoming squad shown is your last published one; sign in to edit your team or make transfers.';
+  String get webTeamIdModeNotice => isArabic
+      ? 'أنت داخل برقم الفريق. التشكيلة المعروضة للجولة الجاية هي آخر تشكيلة منشورة، ولتعديل الفريق أو عمل تبديلات حمّل التطبيق.'
+      : 'You are viewing by team ID. The upcoming squad shown is your last published one; get the app to edit your team or make transfers.';
+  String get getAppForManagement => isArabic
+      ? 'لإدارة فريقك من تشكيلة وكابتن وتبديلات وكروت، حمّل التطبيق.'
+      : 'To manage your team (lineup, captain, transfers and chips), get the FPL Pro app.';
+  String get getAppAction => isArabic ? 'حمّل التطبيق' : 'Get the app';
   String get changeTeam => isArabic ? 'تغيير الفريق' : 'Change team';
   String get loginCancelled =>
       isArabic ? 'تم إلغاء تسجيل الدخول.' : 'Sign-in was cancelled.';
