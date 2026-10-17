@@ -37,6 +37,7 @@ button.lang:hover{border-color:var(--mint)}
 .btn.primary:hover{filter:brightness(1.06)}
 .btn.ghost{border-color:var(--line2);color:var(--text);background:var(--bg2)}
 .btn.ghost:hover{border-color:var(--mint)}
+.btn.nav-cta{min-height:42px;padding:0 18px;font-size:.92rem;border-radius:12px;box-shadow:none;white-space:nowrap}
 .btn.dis{opacity:.55;cursor:default;pointer-events:none}
 
 /* hero */

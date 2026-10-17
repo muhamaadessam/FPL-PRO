@@ -9,6 +9,7 @@ import '../../../fixtures/data/models/fpl_models.dart';
 import '../../data/models/team_models.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../../core/network/api_constance.dart';
 
 enum PlayerCardMetric { points, price, form, selectedPercent, totalPoints }
 
@@ -806,7 +807,7 @@ class _PitchPlayer extends StatelessWidget {
         ? 'shirt_${code}_1-110.webp'
         : 'shirt_$code-66.webp';
     return Image.network(
-      'https://fantasy.premierleague.com/dist/img/shirts/standard/$fileName',
+      '${ApiConstance.shirtsBaseUrl}/$fileName',
       webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
       fit: BoxFit.contain,
       errorBuilder: (_, _, _) => fallback,
@@ -827,7 +828,7 @@ class _ClubLogo extends StatelessWidget {
       return Icon(Icons.shield_outlined, size: 11, color: color);
     }
     return Image.network(
-      'https://resources.premierleague.com/premierleague/badges/70/t$code.png',
+      '${ApiConstance.badgesBaseUrl}/t$code.png',
       webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
       width: 11,
       height: 11,

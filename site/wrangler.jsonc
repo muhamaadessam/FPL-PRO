@@ -1,10 +1,13 @@
 {
   "name": "fpl-pro",
+  "main": "src/worker.js",
   "compatibility_date": "2026-10-12",
   "assets": {
     "directory": "./public",
+    "binding": "ASSETS",
     "html_handling": "auto-trailing-slash",
-    "not_found_handling": "404-page"
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*", "/fpl/*", "/pl-resources/*"]
   },
   "routes": [
     { "pattern": "fpl-pro.muhammadessam.me", "custom_domain": true }

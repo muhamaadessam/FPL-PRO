@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -244,6 +245,9 @@ class _LoginPageState extends State<LoginPage>
                       _TeamIdForm(isDark: isDark),
                       const SizedBox(height: 20),
 
+                      // Official sign-in runs through a native WebView, so the
+                      // web build offers the team ID entry only.
+                      if (!kIsWeb) ...[
                       // Divider with "OR"
                       Row(
                         children: [
@@ -271,6 +275,7 @@ class _LoginPageState extends State<LoginPage>
                         isDark: isDark,
                         isArabic: l10n.isArabic,
                       ),
+                      ],
                       const SizedBox(height: 8),
                     ],
                   ),

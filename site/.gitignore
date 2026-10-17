@@ -1,2 +1,4 @@
 .wrangler
 node_modules
+# Built by `flutter build web` in the deploy workflow.
+public/app

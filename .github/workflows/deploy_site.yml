@@ -5,6 +5,11 @@ on:
     branches: [development, main]
     paths:
       - 'site/**'
+      - 'lib/**'
+      - 'web/**'
+      - 'assets/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
       - '.github/workflows/deploy_site.yml'
   workflow_dispatch:
 
@@ -19,9 +24,23 @@ jobs:
   deploy:
     name: Deploy to Cloudflare
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.6
+          cache: true
+
+      - name: Build web app
+        run: |
+          flutter pub get
+          flutter build web --release --base-href /app/ \
+            --dart-define=WEB_PROXY_ORIGIN=https://fpl-pro.muhammadessam.me
+          rm -rf site/public/app
+          cp -R build/web site/public/app
 
       - name: Deploy site
         uses: cloudflare/wrangler-action@v3

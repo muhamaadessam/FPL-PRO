@@ -9,6 +9,7 @@ import '../../domain/usecases/predict_fixtures.dart';
 import '../cubit/fixtures_cubit.dart';
 import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
 import '../../../../core/layout/responsive.dart';
+import '../../../../core/network/api_constance.dart';
 
 class FixturesView extends StatelessWidget {
   const FixturesView({super.key});
@@ -421,7 +422,7 @@ class _TeamBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     if (teamCode == null) return _FallbackShield(size: size);
     return Image.network(
-      'https://resources.premierleague.com/premierleague/badges/70/t$teamCode.png',
+      '${ApiConstance.badgesBaseUrl}/t$teamCode.png',
       webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
       width: size,
       height: size,
