@@ -20,6 +20,87 @@ const APP_PATHS = [
   /^\/(home|tips|matches|leagues|settings)(\/[\w-]+)*\/?$/,
 ];
 
+const SITE = 'https://fpl-pro.muhammadessam.me';
+
+// Link previews for the app's routes. Every route serves the same page, so its
+// title, description and URLs are filled in here. Only the sign-in page is
+// indexed; the rest are behind sign-in or per-user.
+const APP_META = {
+  '/login': ['Sign in', 'Open FPL Pro in your browser: enter your Fantasy Premier League team ID to see your squad on the pitch, captain and transfer suggestions, and match predictions.'],
+  '/home': ['My team', 'Your Fantasy Premier League squad on a real pitch, with gameweek, average and highest scores.'],
+  '/home/manage': ['Manage team', 'Pick your lineup, captain and chips, with FPL rules checked before anything is saved.'],
+  '/tips': ['Gameweek plan', 'Captain, chip and transfer suggestions for the next gameweek, with the reasoning shown.'],
+  '/tips/analysis': ['Gameweek analysis', 'How your squad is expected to score next gameweek, and what would change it.'],
+  '/tips/players': ['Top picks', 'The best-value Fantasy Premier League players by position for the coming gameweeks.'],
+  '/tips/compare': ['Compare players', 'Compare Fantasy Premier League players side by side before you transfer.'],
+  '/matches': ['Fixtures and predictions', 'Premier League fixtures, live scores and match predictions for every gameweek.'],
+  '/leagues': ['Leagues', 'Your Fantasy Premier League classic and head-to-head league standings.'],
+  '/settings': ['Settings', 'Language, theme and account settings for FPL Pro.'],
+  '/settings/privacy': ['Privacy', 'How FPL Pro handles your data.'],
+};
+
+function appMeta(pathname) {
+  const path = pathname.replace(/\/+$/, '') || '/';
+  const team = path.match(/^\/team\/(\d+)$/);
+  if (team) {
+    return {
+      path,
+      title: `FPL team ${team[1]} – FPL Pro`,
+      description: 'See this Fantasy Premier League squad on the pitch, with points per player, in FPL Pro.',
+      index: false,
+    };
+  }
+  const known = APP_META[path] ? path : '/login';
+  const [title, description] = APP_META[known];
+  return { path: known, title: `${title} – FPL Pro`, description, index: known === '/login' };
+}
+
+// Sets `attribute` to `value` on every element matching one of `selectors`.
+function setAll(rewriter, selectors, attribute, value) {
+  for (const selector of selectors) {
+    rewriter.on(selector, { element: (e) => e.setAttribute(attribute, value) });
+  }
+  return rewriter;
+}
+
+function withAppMeta(page, pathname) {
+  const meta = appMeta(pathname);
+  const href = SITE + meta.path;
+  const rewriter = new HTMLRewriter().on('title', { element: (e) => e.setInnerContent(meta.title) });
+  setAll(rewriter, ['meta[property="og:title"]', 'meta[name="twitter:title"]'], 'content', meta.title);
+  setAll(
+    rewriter,
+    ['meta[name="description"]', 'meta[property="og:description"]', 'meta[name="twitter:description"]'],
+    'content',
+    meta.description,
+  );
+  setAll(rewriter, ['meta[property="og:url"]'], 'content', href);
+  setAll(rewriter, ['link[rel="canonical"]'], 'href', href);
+  setAll(rewriter, ['meta[name="robots"]'], 'content', meta.index ? 'index,follow,max-image-preview:large' : 'noindex,follow');
+  return rewriter.transform(page);
+}
+
+// The site's pages switch language in the browser, so crawlers would always
+// see English. For ?lang=ar, swap in the Arabic text each tag keeps in data-ar.
+function withArabicMeta(page) {
+  let title = null;
+  return new HTMLRewriter()
+    .on('html', {
+      element(e) {
+        title = e.getAttribute('data-title-ar');
+        e.setAttribute('lang', 'ar');
+        e.setAttribute('dir', 'rtl');
+      },
+    })
+    .on('title', { element: (e) => title && e.setInnerContent(title) })
+    .on('[data-ar]', {
+      element(e) {
+        e.setAttribute(e.tagName === 'link' ? 'href' : 'content', e.getAttribute('data-ar'));
+      },
+    })
+    .transform(page);
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -33,7 +114,12 @@ export default {
       const headers = new Headers(page.headers);
       // The page is tiny and must pick up new builds right away.
       headers.set('Cache-Control', 'no-cache');
-      return new Response(page.body, { status: page.status, headers });
+      return withAppMeta(new Response(page.body, { status: page.status, headers }), url.pathname);
+    }
+    if (url.searchParams.get('lang') === 'ar') {
+      const page = await env.ASSETS.fetch(request);
+      const isHtml = (page.headers.get('content-type') || '').startsWith('text/html');
+      return isHtml ? withArabicMeta(page) : page;
     }
 
     const route = ROUTES.find((r) => url.pathname.startsWith(r.prefix));

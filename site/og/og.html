@@ -1,0 +1,60 @@
+<!doctype html>
+<!-- Source for the 1200x630 social share images. Rendered by og/render.sh. -->
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<style>
+:root{--bg:#0c0c14;--bg2:#14141f;--line:#2a2a3d;--line2:#36364d;--text:#f4f4f8;--muted:#b4b4c4;--mint:#79f0c5;--mint-d:#00ff87;--cyan:#22d3ee}
+*{box-sizing:border-box}
+html,body{margin:0;width:1200px;height:630px;overflow:hidden}
+body{position:relative;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"SF Arabic","Geeza Pro","Noto Sans Arabic",sans-serif;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(700px 460px at 92% -10%,rgba(121,240,197,.20),transparent 60%),radial-gradient(640px 480px at -10% 30%,rgba(167,139,250,.16),transparent 60%),radial-gradient(600px 420px at 60% 115%,rgba(34,211,238,.12),transparent 60%)}
+body::after{content:"";position:absolute;inset:0;border:1px solid rgba(255,255,255,.05);pointer-events:none}
+.copy{position:absolute;inset-block:56px;inset-inline-start:64px;width:640px;display:flex;flex-direction:column}
+.brand{direction:ltr;display:flex;align-items:center;gap:14px;font-weight:800;font-size:34px;letter-spacing:-.01em}
+.brand img{width:64px;height:64px;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.pro{background:linear-gradient(90deg,var(--mint-d),#00e5ff);color:#06130d;font-size:15px;letter-spacing:.14em;padding:4px 12px;border-radius:999px;font-weight:800}
+h1{font-size:62px;line-height:1.06;letter-spacing:-.03em;margin:40px 0 22px;font-weight:800}
+h1 em{font-style:normal;color:var(--mint)}
+[dir=rtl] .brand{justify-content:flex-end}
+[dir=rtl] h1{font-size:60px;line-height:1.2;letter-spacing:0}
+.lead{font-size:25px;line-height:1.4;color:var(--muted);margin:0}
+.foot{margin-top:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.chip{border:1px solid var(--line2);background:var(--bg2);border-radius:999px;padding:8px 18px;font-size:19px;color:var(--muted);font-weight:600}
+.chip b{color:var(--mint)}
+.url{font-size:20px;color:var(--text);font-weight:700;opacity:.9;margin-top:18px;width:100%;direction:ltr;text-align:start}
+[dir=rtl] .url{text-align:end}
+.stage{position:absolute;top:0;bottom:0;inset-inline-end:40px;width:430px}
+.phone{position:absolute;margin:0;border-radius:40px;padding:7px;background:linear-gradient(160deg,#2a2a3d,#0a0a12);border:1px solid var(--line2);box-shadow:0 40px 80px rgba(0,0,0,.6)}
+.phone img{display:block;width:100%;border-radius:33px}
+.p1{width:250px;top:52px;inset-inline-start:0;z-index:2}
+.p2{width:230px;top:112px;inset-inline-end:0;z-index:1;opacity:.95}
+.glow{position:absolute;inset:10% 6% 0;background:radial-gradient(closest-side,rgba(121,240,197,.22),transparent);filter:blur(30px)}
+</style>
+</head>
+<body>
+<div class="copy">
+ <div class="brand"><img src="../public/icon.png" alt=""><span>FPL</span><span class="pro">PRO</span></div>
+ <h1 data-en="Make every gameweek decision <em>with the numbers</em>." data-ar="اتخذ قرار كل جولة <em>بالأرقام</em>."></h1>
+ <p class="lead" data-en="Your squad on a real pitch, captain and transfer picks with the reasoning shown, and match predictions." data-ar="فريقك على ملعب حقيقي، والكابتن والانتقالات مع أسبابها، وتوقعات المباريات."></p>
+ <div class="foot">
+  <span class="chip"><b>Web</b> · <b>iOS</b> · <b>Android</b></span>
+  <span class="chip" data-en="English &amp; العربية" data-ar="العربية و English"></span>
+  <span class="chip" data-en="Free" data-ar="مجاني"></span>
+  <div class="url">fpl-pro.muhammadessam.me</div>
+ </div>
+</div>
+<div class="stage">
+ <div class="glow"></div>
+ <figure class="phone p1"><img id="s1" alt=""></figure>
+ <figure class="phone p2"><img id="s2" alt=""></figure>
+</div>
+<script>
+var ar=location.hash==='#ar',d=document.documentElement;
+if(ar){d.lang='ar';d.dir='rtl'}
+document.querySelectorAll('[data-en]').forEach(function(e){e.innerHTML=e.getAttribute(ar?'data-ar':'data-en')});
+document.getElementById('s1').src='../public/img/'+(ar?'05-dark-arabic':'07-team')+'.jpg';
+document.getElementById('s2').src='../public/img/08-tips.jpg';
+</script>
+</body>
+</html>
