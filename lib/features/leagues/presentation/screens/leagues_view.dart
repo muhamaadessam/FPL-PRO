@@ -7,6 +7,7 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
 import '../../../team/data/models/team_models.dart';
 import '../../../team/domain/repositories/team_repository.dart';
+import '../../../../core/layout/responsive.dart';
 
 class LeaguesView extends StatelessWidget {
   const LeaguesView({super.key});
@@ -57,7 +58,11 @@ class LeaguesView extends StatelessWidget {
           color: Theme.of(context).colorScheme.primary,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+            padding: contentInsets(
+              context,
+              const EdgeInsets.fromLTRB(16, 20, 16, 32),
+              maxWidth: 1000,
+            ),
             children: [
               _PageHeader(entry: entry, leagueCount: leagues.length),
               const SizedBox(height: 20),
@@ -389,7 +394,11 @@ class _MessageState extends StatelessWidget {
     final theme = Theme.of(context);
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(24),
+      padding: contentInsets(
+        context,
+        const EdgeInsets.all(24),
+        maxWidth: Breakpoints.narrow,
+      ),
       children: [
         const SizedBox(height: 96),
         Icon(icon, size: 48, color: theme.colorScheme.primary),
@@ -554,7 +563,11 @@ class _LeagueDetailsPageState extends State<LeagueDetailsPage> {
                 },
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                  padding: contentInsets(
+                    context,
+                    const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                    maxWidth: 1000,
+                  ),
                   children: [
                     _LeagueDetailsHeader(details: _details!),
                     const SizedBox(height: 22),

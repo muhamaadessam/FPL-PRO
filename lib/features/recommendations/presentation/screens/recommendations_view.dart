@@ -13,8 +13,12 @@ import '../../domain/usecases/recommendation_engine.dart';
 import '../cubit/recommendations_cubit.dart';
 import 'next_gameweek_analysis_page.dart';
 import 'player_directory_page.dart';
+import '../../../../core/layout/responsive.dart';
 
 export '../../domain/entities/recommendation_data.dart';
+
+/// Tips read best as a focused column, narrower than the default content.
+const _recommendationsMaxWidth = 1040.0;
 
 class RecommendationsView extends StatelessWidget {
   const RecommendationsView({super.key});
@@ -188,7 +192,11 @@ class _RecommendationsSkeletonState extends State<_RecommendationsSkeleton>
           );
         },
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          padding: contentInsets(
+            context,
+            const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            maxWidth: _recommendationsMaxWidth,
+          ),
           physics: const NeverScrollableScrollPhysics(),
           children: [
             Row(
@@ -558,7 +566,11 @@ class _RecommendationContentState extends State<_RecommendationContent>
             children: [
               // Top Header Section: Gameweek & Hero Squad Rating
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                padding: contentInsets(
+                  context,
+                  const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  maxWidth: _recommendationsMaxWidth,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -626,7 +638,11 @@ class _RecommendationContentState extends State<_RecommendationContent>
 
               // Segmented TabBar
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: contentInsets(
+                  context,
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  maxWidth: _recommendationsMaxWidth,
+                ),
                 child: Container(
                   height: 42,
                   decoration: BoxDecoration(
@@ -793,7 +809,11 @@ class _PlanTab extends StatelessWidget {
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: contentInsets(
+        context,
+        const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        maxWidth: _recommendationsMaxWidth,
+      ),
       children: [
         // Unified Gameweek Plan & Squad Rating Hero Card
         _WeeklyPlanCard(
@@ -879,7 +899,11 @@ class _TransfersTab extends StatelessWidget {
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: contentInsets(
+        context,
+        const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        maxWidth: _recommendationsMaxWidth,
+      ),
       children: [
         // Budget & Free Transfers Bar
         Container(
@@ -1076,7 +1100,11 @@ class _TopPicksTab extends StatelessWidget {
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: contentInsets(
+        context,
+        const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        maxWidth: _recommendationsMaxWidth,
+      ),
       children: [
         // Player Directory Action Card
         Material(

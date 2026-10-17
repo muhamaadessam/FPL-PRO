@@ -8,6 +8,7 @@ import '../../domain/repositories/fixtures_repository.dart';
 import '../../domain/usecases/predict_fixtures.dart';
 import '../cubit/fixtures_cubit.dart';
 import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
+import '../../../../core/layout/responsive.dart';
 
 class FixturesView extends StatelessWidget {
   const FixturesView({super.key});
@@ -167,7 +168,10 @@ class _FixtureListState extends State<_FixtureList> {
         await context.read<FixturesCubit>().refresh();
       },
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        padding: contentInsets(
+          context,
+          const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        ),
         children: [
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
@@ -244,18 +248,50 @@ class _FixtureListState extends State<_FixtureList> {
                   ),
                 ),
               ),
-              for (final fixture in entry.value) ...[
-                _FixtureCard(
-                  fixture: fixture,
-                  teams: widget.teams,
-                  players: widget.players,
-                  prediction: predictions[fixture.id],
-                ),
-                const SizedBox(height: 8),
-              ],
+              _FixtureGrid(
+                children: [
+                  for (final fixture in entry.value)
+                    _FixtureCard(
+                      fixture: fixture,
+                      teams: widget.teams,
+                      players: widget.players,
+                      prediction: predictions[fixture.id],
+                    ),
+                ],
+              ),
             ],
         ],
       ),
+    );
+  }
+}
+
+/// One card per row on phones; two side by side once there is room.
+class _FixtureGrid extends StatelessWidget {
+  const _FixtureGrid({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    const gap = 8.0;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 720 ? 2 : 1;
+        final itemWidth =
+            (constraints.maxWidth - gap * (columns - 1)) / columns;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: gap),
+          child: Wrap(
+            spacing: gap,
+            runSpacing: gap,
+            children: [
+              for (final child in children)
+                SizedBox(width: itemWidth, child: child),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -1630,7 +1666,10 @@ class _ShimmerSkeletonState extends State<_ShimmerSkeleton>
         );
       },
       child: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        padding: contentInsets(
+          context,
+          const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        ),
         itemCount: 6,
         separatorBuilder: (_, index) =>
             index == 0 ? const SizedBox.shrink() : const SizedBox(height: 12),

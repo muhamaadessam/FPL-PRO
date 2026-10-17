@@ -8,6 +8,7 @@ import '../../../../core/themes/cubit/theme_cubit.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
+import '../../../../core/layout/responsive.dart';
 
 const _privacyPolicyUrl = 'https://fpl-pro-privacy.vercel.app';
 
@@ -37,7 +38,11 @@ class SettingsView extends StatelessWidget {
     final primaryIconColor = isDark ? AppColors.plMint : const Color(0xff37003c);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      padding: contentInsets(
+        context,
+        const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        maxWidth: Breakpoints.narrow,
+      ),
       children: [
         // Title
         Padding(

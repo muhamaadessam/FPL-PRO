@@ -16,6 +16,7 @@ import '../cubit/team_cubit.dart';
 import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
 import '../widgets/pitch_view.dart';
 import 'manage_team_page.dart';
+import '../../../../core/layout/responsive.dart';
 
 class TeamView extends StatelessWidget {
   const TeamView({super.key, this.entryId});
@@ -189,12 +190,16 @@ class _TeamContentState extends State<_TeamContent> {
           final headerToStats = 10.0 + (extraSpace * 0.15);
           final statsToSubNav = 14.0 + (extraSpace * 0.20);
           final subNavToPitch = 10.0 + (extraSpace * 0.25);
+          final isWide = constraints.maxWidth >= Breakpoints.wide;
+          final columnWidth = isWide ? Breakpoints.content : Breakpoints.narrow;
 
           return CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
               SliverToBoxAdapter(
-                child: Padding(
+                child: MaxWidth(
+                  maxWidth: columnWidth,
+                  child: Padding(
                   padding: const EdgeInsets.only(top: 6),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -270,6 +275,7 @@ class _TeamContentState extends State<_TeamContent> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: _SubNavigationRow(
+                          showViewToggle: !isWide,
                           isPitchView: _isPitchView,
                           selectedMetric: _selectedMetric,
                           onTogglePitch: (isPitch) =>
@@ -282,14 +288,55 @@ class _TeamContentState extends State<_TeamContent> {
                     ],
                   ),
                 ),
+                ),
               ),
+              if (isWide)
+                SliverToBoxAdapter(
+                  child: MaxWidth(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: PitchView(
+                                starting: starting,
+                                bench: bench,
+                                bootstrap: widget.bootstrap,
+                                gameweekPoints: widget.gameweekPoints,
+                                metric: _selectedMetric,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 24),
+                          SizedBox(
+                            width: 380,
+                            child: _TeamListView(
+                              starting: starting,
+                              bench: bench,
+                              bootstrap: widget.bootstrap,
+                              gameweekPoints: widget.gameweekPoints,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              else
               SliverFillRemaining(
                 hasScrollBody: false,
                 child: _isPitchView
                     ? Align(
-                        alignment: Alignment.bottomCenter,
-                        child: SizedBox(
-                          width: double.infinity,
+                        // Phones anchor the pitch to the nav bar; wider
+                        // screens keep it right under the controls.
+                        alignment: Breakpoints.hasTopNav(context)
+                            ? Alignment.topCenter
+                            : Alignment.bottomCenter,
+                        child: MaxWidth(
+                          maxWidth: columnWidth,
                           child: PitchView(
                             starting: starting,
                             bench: bench,
@@ -299,7 +346,9 @@ class _TeamContentState extends State<_TeamContent> {
                           ),
                         ),
                       )
-                    : Padding(
+                    : MaxWidth(
+                        maxWidth: columnWidth,
+                        child: Padding(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                         child: _TeamListView(
                           starting: starting,
@@ -307,6 +356,7 @@ class _TeamContentState extends State<_TeamContent> {
                           bootstrap: widget.bootstrap,
                           gameweekPoints: widget.gameweekPoints,
                         ),
+                      ),
                       ),
               ),
             ],
@@ -974,8 +1024,11 @@ class _SubNavigationRow extends StatelessWidget {
     required this.selectedMetric,
     required this.onTogglePitch,
     required this.onMetricChanged,
+    this.showViewToggle = true,
   });
 
+  /// Hidden on wide screens, where the pitch and list show side by side.
+  final bool showViewToggle;
   final bool isPitchView;
   final PlayerCardMetric selectedMetric;
   final ValueChanged<bool> onTogglePitch;
@@ -998,7 +1051,7 @@ class _SubNavigationRow extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             // Pitch | List Segmented Control
-            Container(
+            if (!showViewToggle) const SizedBox.shrink() else Container(
               height: 38,
               padding: const EdgeInsets.all(3),
               decoration: BoxDecoration(
