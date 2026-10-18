@@ -31,6 +31,9 @@ jobs:
     name: Deploy to Cloudflare
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      # Pushes the FPL news snapshots to their own branch.
+      contents: write
     steps:
       # Scheduled runs use the default branch's workflow but must not roll the
       # site back to it, so they build development, which deploys on push.
@@ -61,7 +64,38 @@ jobs:
         working-directory: packages/fpl_engine
         run: |
           dart pub get
-          dart run bin/publish_predictions.dart --out ../../site/dist/data
+          dart run bin/publish_predictions.dart --out ../../site/dist/data \
+            --news-snapshot "$RUNNER_TEMP/news.json"
+
+      # Keeps FPL's own injury news as it stood before each deadline, so the
+      # press-conference experiment can be compared with it later. One file,
+      # one commit per change: the branch history is the snapshot archive.
+      - name: Save FPL news snapshot
+        if: >-
+          steps.predictions.outcome == 'success' &&
+          (github.event_name == 'schedule' || github.ref == 'refs/heads/development')
+        continue-on-error: true
+        run: |
+          dir="$RUNNER_TEMP/fpl-news-snapshots"
+          if git fetch --depth=1 origin fpl-news-snapshots; then
+            git worktree add "$dir" FETCH_HEAD
+            git -C "$dir" checkout -B fpl-news-snapshots
+          else
+            git worktree add --orphan -b fpl-news-snapshots "$dir"
+          fi
+          # The first line holds the snapshot time; compare only the players.
+          if [ -f "$dir/news.json" ] &&
+            cmp -s <(tail -n +2 "$dir/news.json") <(tail -n +2 "$RUNNER_TEMP/news.json"); then
+            echo "FPL news unchanged since the last snapshot."
+            exit 0
+          fi
+          cp "$RUNNER_TEMP/news.json" "$dir/news.json"
+          cd "$dir"
+          git add news.json
+          git -c user.name='github-actions[bot]' \
+            -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -q -m "FPL news at $(jq -r '.takenAt' news.json)"
+          git push origin fpl-news-snapshots
 
       - name: Deploy site
         if: github.event_name != 'schedule' || steps.predictions.outcome == 'success'

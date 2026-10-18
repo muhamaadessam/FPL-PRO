@@ -108,6 +108,7 @@ GoRouter createRouter(AuthCubit authCubit, HomePreloadCubit preloadCubit) {
                   extraPage('analysis', AppRoutes.tips),
                   extraPage('players', AppRoutes.tips),
                   extraPage('compare', AppRoutes.tips),
+                  extraPage('news', AppRoutes.tips),
                 ],
               ),
             ],

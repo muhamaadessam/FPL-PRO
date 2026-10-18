@@ -83,6 +83,7 @@ class FplPlayer {
     this.nowCost,
     this.status = 'a',
     this.news = '',
+    this.newsAdded,
     this.chanceOfPlayingThisRound,
     this.chanceOfPlayingNextRound,
     this.canSelect = true,
@@ -114,6 +115,9 @@ class FplPlayer {
   final int? nowCost;
   final String status;
   final String news;
+
+  /// When FPL last changed [news]; null when it never has.
+  final DateTime? newsAdded;
   final int? chanceOfPlayingThisRound;
   final int? chanceOfPlayingNextRound;
   final bool canSelect;
@@ -189,6 +193,7 @@ class FplPlayer {
       nowCost: _nullableInt(json['now_cost']),
       status: json['status'] as String? ?? 'a',
       news: json['news'] as String? ?? '',
+      newsAdded: _date(json['news_added']),
       chanceOfPlayingThisRound: _nullableInt(
         json['chance_of_playing_this_round'],
       ),
