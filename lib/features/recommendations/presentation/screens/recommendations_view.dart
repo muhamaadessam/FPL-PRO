@@ -12,6 +12,7 @@ import '../../domain/entities/recommendation_data.dart';
 import '../cubit/recommendations_cubit.dart';
 import 'next_gameweek_analysis_page.dart';
 import 'player_directory_page.dart';
+import '../../../news/presentation/screens/player_news_page.dart';
 import '../../../../core/layout/responsive.dart';
 import '../../../../core/app/routes.dart';
 import '../../../../core/widgets/adaptive_modal.dart';
@@ -1028,66 +1029,34 @@ class _TopPicksTab extends StatelessWidget {
         maxWidth: _recommendationsMaxWidth,
       ),
       children: [
-        // Player Directory Action Card
-        Material(
+        _TipsLinkCard(
           key: const ValueKey('player-directory'),
-          color: colors.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(14),
-          child: InkWell(
-            onTap: () => pushPage<void>(
-              context,
-              AppRoutes.players,
-              PlayerDirectoryPage(
-                bootstrap: data.bootstrap,
-                fixtures: data.fixtures,
-                gameweekId: data.result.gameweekId,
-                projections: data.projections,
-              ),
+          icon: Icons.manage_search_rounded,
+          title: l10n.playerDirectory,
+          subtitle: l10n.playerDirectorySubtitle,
+          onTap: () => pushPage<void>(
+            context,
+            AppRoutes.players,
+            PlayerDirectoryPage(
+              bootstrap: data.bootstrap,
+              fixtures: data.fixtures,
+              gameweekId: data.result.gameweekId,
+              projections: data.projections,
             ),
-            borderRadius: BorderRadius.circular(14),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: colors.primaryContainer,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    alignment: Alignment.center,
-                    child: Icon(
-                      Icons.manage_search_rounded,
-                      color: colors.primary,
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l10n.playerDirectory,
-                          style: const TextStyle(fontWeight: FontWeight.w900),
-                        ),
-                        Text(
-                          l10n.playerDirectorySubtitle,
-                          style: Theme.of(context).textTheme.bodySmall,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 13,
-                    color: colors.onSurfaceVariant,
-                  ),
-                ],
-              ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        _TipsLinkCard(
+          key: const ValueKey('player-news'),
+          icon: Icons.medical_information_outlined,
+          title: l10n.playerNewsTitle,
+          subtitle: l10n.playerNewsSubtitle,
+          onTap: () => pushPage<void>(
+            context,
+            AppRoutes.news,
+            PlayerNewsPage(
+              bootstrap: data.bootstrap,
+              squadIds: {for (final pick in data.team.picks) pick.elementId},
             ),
           ),
         ),
@@ -2347,6 +2316,75 @@ class _TransferAvailabilityNote extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// A tappable row that opens one of the Tips sub-pages.
+class _TipsLinkCard extends StatelessWidget {
+  const _TipsLinkCard({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Material(
+      color: colors.surfaceContainerHigh,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: colors.primaryContainer,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                alignment: Alignment.center,
+                child: Icon(icon, color: colors.primary, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 13,
+                color: colors.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

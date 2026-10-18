@@ -14,6 +14,7 @@ abstract final class AppRoutes {
   static const analysis = '/tips/analysis';
   static const players = '/tips/players';
   static const compare = '/tips/compare';
+  static const news = '/tips/news';
   static const matches = '/matches';
   static const leagues = '/leagues';
   static const settings = '/settings';

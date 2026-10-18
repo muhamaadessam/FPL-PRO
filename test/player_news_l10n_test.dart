@@ -21,6 +21,12 @@ void main() {
     );
     expect(arabic.playerNews('Suspended until 25 Oct'), 'موقوف حتى 25 أكتوبر');
     expect(
+      arabic.playerNews('Muscular injury - 75% chance of playing'),
+      'إصابة عضلية - فرصة المشاركة 75٪',
+    );
+    expect(arabic.playerNews('Knock'), 'كدمة');
+    expect(arabic.playerNews('Illness'), 'مرض');
+    expect(
       arabic.playerNews(
         'Has joined Rangers on loan for the rest of the season',
       ),

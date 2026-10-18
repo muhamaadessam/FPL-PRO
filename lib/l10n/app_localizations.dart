@@ -423,6 +423,12 @@ class AppLocalizations {
       };
       if (detail != null) return '$label - $detail';
     }
+    switch (text.toLowerCase()) {
+      case 'knock':
+        return 'كدمة';
+      case 'illness':
+        return 'مرض';
+    }
     final suspended = RegExp(
       r'^suspended until (\d{1,2}) ([a-z]{3})',
       caseSensitive: false,
@@ -498,6 +504,7 @@ class AppLocalizations {
     'head': 'إصابة في الرأس',
     'achilles': 'إصابة في وتر أكيليس',
     'muscle': 'إصابة عضلية',
+    'muscular': 'إصابة عضلية',
     'hand': 'إصابة في اليد',
     'wrist': 'إصابة في الرسغ',
     'toe': 'إصابة في إصبع القدم',
@@ -512,6 +519,26 @@ class AppLocalizations {
   String get unknown => isArabic ? 'غير معروف' : 'Unknown';
   String get news => isArabic ? 'الأخبار' : 'News';
   String get noNews => isArabic ? 'لا توجد أخبار' : 'No news';
+  String get playerNewsTitle => isArabic ? 'أخبار اللاعبين' : 'Player news';
+  String get playerNewsSubtitle => isArabic
+      ? 'الإصابات والإيقافات مرتبة بالجولة'
+      : 'Injuries and suspensions by gameweek';
+  String newsBeforeDeadline(int gameweek) => isArabic
+      ? 'قبل deadline الجولة $gameweek'
+      : 'Before the GW$gameweek deadline';
+  String get keyNews => isArabic ? 'المهم' : 'Key news';
+  String get allNews => isArabic ? 'الكل' : 'All';
+  String get inYourSquad => isArabic ? 'في فريقك' : 'In your squad';
+  String get available => isArabic ? 'متاح' : 'Available';
+  String ownedBy(String percent) =>
+      isArabic ? 'مختاره $percent٪' : '$percent% owned';
+  String newsAddedAt(String when) => isArabic ? 'اتنشر $when' : 'Added $when';
+  String moreNewsHidden(int count) => isArabic
+      ? '$count خبر تاني أقل أهمية'
+      : '$count lower-priority ${count == 1 ? 'update' : 'updates'}';
+  String get keyNewsHint => isArabic
+      ? 'المهم: لاعبين فريقك واللي مختارهم 3٪ أو أكتر.'
+      : 'Key news: your squad and players owned by 3% or more.';
   String get confirmTransfer => isArabic ? 'تأكيد التبديل' : 'Confirm transfer';
   String get selected => isArabic ? 'تم الاختيار' : 'Selected';
   String get transferSubmitted =>
