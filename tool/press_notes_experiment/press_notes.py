@@ -18,6 +18,7 @@ import re
 import sys
 import time
 import unicodedata
+import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
 from html.parser import HTMLParser
@@ -29,10 +30,6 @@ UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/
 
 # Line-ups are announced an hour before kickoff; anything later is leakage.
 LINEUP_LEAD = timedelta(minutes=70)
-NEWS_TAGS = {'ClubTeamNews', 'franchise:injury-news'}
-NEWS_TITLE = re.compile(
-    r'team news|injur|fitness|press conference|predicted line-ups|doubt|'
-    r'update on|ruled out|boost|return|assessed|available', re.I)
 NOT_MEN_FIRST_TEAM = re.compile(r'\b(WSL|women|bompastor|u21|u18|pl2|academy)\b', re.I)
 CHUNK_WORDS = 350
 
@@ -133,29 +130,40 @@ def article_team(article, by_code, by_name):
     return None
 
 
-def fetch_articles(start, end, max_pages=60):
-    articles, page = {}, 0
-    while page < max_pages:
-        content = get(f'{PL_CONTENT}?contentTypes=TEXT&pageSize=30&page={page}')['content']
-        if not content:
-            break
-        for article in content:
-            articles[article['id']] = article
-        dates = [ts(a['date']) for a in content if a['date'] > '2000']
-        if dates and max(dates) < start:
-            break
-        page += 1
+FETCH_TAGS = ('ClubTeamNews', 'franchise:injury-news', 'franchise:predicted-line-ups')
+
+
+def fetch_articles(start, end, max_pages=120):
+    """Team-news articles published in [start, end], newest pages first."""
+    articles = {}
+    for tag in FETCH_TAGS:
+        for page in range(max_pages):
+            content = get(f'{PL_CONTENT}?contentTypes=TEXT&pageSize=30&page={page}&tagNames={tag}')['content']
+            if not content:
+                break
+            for article in content:
+                articles[article['id']] = article
+            dates = [ts(a['date']) for a in content if a['date'] > '2000']
+            if dates and max(dates) < start:
+                break
     window = []
     for a in articles.values():
-        if not (start <= ts(a['date']) <= end):
-            continue
-        tags = {t['label'] for t in a.get('tags', [])}
-        if not (tags & NEWS_TAGS or NEWS_TITLE.search(a['title'])):
+        if a['date'] < '2000' or not (start <= ts(a['date']) <= end):
             continue
         if NOT_MEN_FIRST_TEAM.search(a['title']):
             continue
         window.append(a)
     return sorted(window, key=lambda a: a['date'])
+
+
+def news_window(gameweek, fixtures, previous_fixtures):
+    """From the previous Gameweek's last kickoff to this one's last kickoff."""
+    kickoffs = [ts(f['kickoff_time']) for f in fixtures]
+    if previous_fixtures:
+        start = max(ts(f['kickoff_time']) for f in previous_fixtures) + timedelta(hours=2)
+    else:
+        start = min(kickoffs) - timedelta(days=7)
+    return start, max(kickoffs)
 
 
 def article_chunks(article, team, by_name):
@@ -320,19 +328,28 @@ def ollama_extract(chunk, team, roster, model, timings):
         'prompt': PROMPT.format(text=chunk),
         'format': SCHEMA,
         'stream': False,
-        'options': {'temperature': 0, 'num_ctx': 4096},
+        'options': {'temperature': 0, 'num_ctx': 4096, 'num_predict': 1024},
     }).encode()
     req = urllib.request.Request(f'{OLLAMA}/api/generate', data=body,
                                  headers={'Content-Type': 'application/json'})
     started = time.monotonic()
-    with urllib.request.urlopen(req, timeout=900) as res:
-        reply = json.loads(res.read())
+    reply = None
+    for attempt in range(2):
+        try:
+            with urllib.request.urlopen(req, timeout=300) as res:
+                reply = json.loads(res.read())
+            break
+        except (urllib.error.URLError, TimeoutError) as error:
+            print(f'ollama failed ({error}), attempt {attempt + 1}', file=sys.stderr)
     elapsed = time.monotonic() - started
+    if reply is None:
+        timings.append({'seconds': round(elapsed, 2), 'failed': True})
+        return []
     timings.append({
         'seconds': round(elapsed, 2),
         'prompt_tokens': reply.get('prompt_eval_count', 0),
         'output_tokens': reply.get('eval_count', 0),
-        'tokens_per_second': round(reply.get('eval_count', 0) / (reply.get('eval_duration', 1) / 1e9), 2),
+        'tokens_per_second': round(reply.get('eval_count', 0) / (reply.get('eval_duration') or 1) * 1e9, 2),
     })
     try:
         players = json.loads(reply['response']).get('players', [])
@@ -358,31 +375,34 @@ def ollama_extract(chunk, team, roster, model, timings):
 # --- Scoring ---------------------------------------------------------------
 
 def score(claims, bootstrap, fixtures, live):
-    kickoff, finished = {}, {}
+    by_fixture = {f['id']: f for f in fixtures}
+    team_fixture = {}
     for f in fixtures:
         for team in (f['team_h'], f['team_a']):
-            k = ts(f['kickoff_time'])
-            if team not in kickoff or k < kickoff[team]:
-                kickoff[team] = k
-                finished[team] = f['finished'] or f['finished_provisional']
+            if team not in team_fixture or f['kickoff_time'] < team_fixture[team]['kickoff_time']:
+                team_fixture[team] = f
     minutes = {e['id']: e['stats']['minutes'] for e in live['elements']}
-    team_of = {p['id']: p['team'] for p in bootstrap['elements']}
+    # A player's fixture that week, from the live data, so summer transfers
+    # are scored against the club they were at; else today's club.
+    fixture_of = {p['id']: team_fixture.get(p['team']) for p in bootstrap['elements']}
+    for e in live['elements']:
+        if e.get('explain') and e['explain'][0]['fixture'] in by_fixture:
+            fixture_of[e['id']] = by_fixture[e['explain'][0]['fixture']]
     names = {p['id']: p['web_name'] for p in bootstrap['elements']}
 
     latest = {}
     for c in claims:
         pid = c.get('player_id')
-        if pid is None or pid not in team_of:
-            continue
-        team = team_of[pid]
-        if team not in kickoff or ts(c['published']) > kickoff[team] - LINEUP_LEAD:
+        fixture = fixture_of.get(pid)
+        if fixture is None or ts(c['published']) > ts(fixture['kickoff_time']) - LINEUP_LEAD:
             continue
         if pid not in latest or c['published'] >= latest[pid]['published']:
             latest[pid] = c
 
     rows, buckets = [], {'out': [], 'doubt': [], 'fit': []}
     for pid, c in latest.items():
-        if not finished.get(team_of[pid]):
+        fixture = fixture_of[pid]
+        if not (fixture['finished'] or fixture['finished_provisional']):
             continue
         played = minutes.get(pid, 0) > 0
         buckets[c['status']].append(played)
@@ -417,8 +437,9 @@ def main():
     bootstrap, fixtures, live = load_fpl(args.gameweek)
     roster = Roster(bootstrap)
     by_code, by_name = team_lookup(bootstrap)
-    kickoffs = [ts(f['kickoff_time']) for f in fixtures]
-    articles = fetch_articles(min(kickoffs) - timedelta(days=4), max(kickoffs))
+    previous = get(f'{FPL}/fixtures/?event={args.gameweek - 1}') if args.gameweek > 1 else []
+    start, end = news_window(args.gameweek, fixtures, previous)
+    articles = fetch_articles(start, end)
 
     chunks, skipped, seen = [], [], set()
     for a in articles:
@@ -459,6 +480,7 @@ def main():
     metrics, rows = score(claims, bootstrap, fixtures, live)
     label = 'rules' if args.method == 'rules' else args.model
     llm = [c for c in claims if 'evidence_found' in c]
+    ok = [t for t in timings if not t.get('failed')]
     summary = {
         'method': label,
         'gameweek': args.gameweek,
@@ -472,12 +494,13 @@ def main():
         'name_in_text_rate': round(sum(c['name_in_text'] for c in llm) / len(llm), 3) if llm else None,
         'extract_seconds': round(total, 1),
         'seconds_per_chunk': round(total / len(chunks), 2) if chunks else None,
-        'tokens_per_second': round(sum(t['tokens_per_second'] for t in timings) / len(timings), 2) if timings else None,
+        'tokens_per_second': round(sum(t['tokens_per_second'] for t in ok) / len(ok), 2) if ok else None,
+        'chunks_failed': sum(1 for t in timings if t.get('failed')),
         **metrics,
     }
     import os
     os.makedirs(args.out, exist_ok=True)
-    safe = re.sub(r'[^A-Za-z0-9.]+', '_', label)
+    safe = re.sub(r'[^A-Za-z0-9.]+', '_', label) + f'-gw{args.gameweek}'
     with open(f'{args.out}/{safe}.json', 'w') as fh:
         json.dump({'summary': summary, 'scored': rows, 'claims': claims, 'skipped': skipped,
                    'timings': timings}, fh, indent=1, ensure_ascii=False)

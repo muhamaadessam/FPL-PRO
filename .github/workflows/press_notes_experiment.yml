@@ -14,18 +14,18 @@ on:
 permissions:
   contents: read
 
-env:
-  GAMEWEEK: 7
-
 jobs:
   run:
-    name: ${{ matrix.model }}
+    name: ${{ matrix.model }} GW${{ matrix.gameweek }}
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
         model: [rules, 'qwen2.5:3b', 'llama3.2:3b', 'gemma3:4b', 'qwen2.5:7b']
+        gameweek: [1, 2, 3, 4, 5, 6, 7]
+    env:
+      GAMEWEEK: ${{ matrix.gameweek }}
     steps:
       - uses: actions/checkout@v4
 
@@ -78,3 +78,16 @@ jobs:
           name: press-notes-${{ strategy.job-index }}
           path: results/
           retention-days: 3
+
+  report:
+    name: Report
+    needs: run
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: press-notes-*
+          path: results
+      - run: python3 tool/press_notes_experiment/report.py results | tee -a "$GITHUB_STEP_SUMMARY"
