@@ -6,9 +6,14 @@
 //
 //   dart run bin/publish_predictions.dart --out build/data
 //   dart run bin/publish_predictions.dart --input ../../data/tips --out /tmp/x
+//   dart run bin/publish_predictions.dart --out build/data --news-snapshot /tmp/news.json
 //
 // --input reads bootstrap-static.json, fixtures.json and any
 // event-{id}-live.json from a folder instead of the network.
+//
+// --news-snapshot also writes every player's FPL availability news as it
+// stands now, which the deploy keeps on the fpl-news-snapshots branch so
+// later Gameweeks can be scored against what FPL said before kickoff.
 import 'dart:convert';
 import 'dart:io';
 
@@ -22,18 +27,23 @@ const _recentGameweeks = 5;
 Future<void> main(List<String> args) async {
   final out = _option(args, '--out') ?? 'build/data';
   final input = _option(args, '--input');
+  final newsSnapshot = _option(args, '--news-snapshot');
   final source = input == null ? _NetworkSource() : _FolderSource(input);
   try {
-    await _publish(source, Directory(out));
+    await _publish(source, Directory(out), newsSnapshot: newsSnapshot);
   } finally {
     source.close();
   }
 }
 
-Future<void> _publish(_Source source, Directory out) async {
-  final bootstrap = FplBootstrap.fromJson(
-    await source.json('bootstrap-static/') as Map<String, dynamic>,
-  );
+Future<void> _publish(
+  _Source source,
+  Directory out, {
+  String? newsSnapshot,
+}) async {
+  final bootstrapJson =
+      await source.json('bootstrap-static/') as Map<String, dynamic>;
+  final bootstrap = FplBootstrap.fromJson(bootstrapJson);
   final fixtures = (await source.json('fixtures/') as List)
       .map((item) => FplFixture.fromJson(item as Map<String, dynamic>))
       .toList(growable: false);
@@ -83,12 +93,58 @@ Future<void> _publish(_Source source, Directory out) async {
   File(
     '${folder.path}/player-projections.json',
   ).writeAsStringSync(jsonEncode(projections.toJson()));
+  if (newsSnapshot != null) {
+    _writeNewsSnapshot(
+      File(newsSnapshot),
+      bootstrapJson,
+      bootstrap,
+      generatedAt,
+    );
+  }
   stdout.writeln(
     'Wrote ${predictions.predictions.length} match predictions from '
     'GW$currentGameweekId and ${projections.projections.length} player '
     'projections for GW$gameweekId (live minutes from '
     '${recentMinutes.length} Gameweeks) to ${folder.path}',
   );
+}
+
+/// Every player's FPL status and news, as raw as the API gives them.
+void _writeNewsSnapshot(
+  File file,
+  Map<String, dynamic> bootstrapJson,
+  FplBootstrap bootstrap,
+  DateTime takenAt,
+) {
+  final players = (bootstrapJson['elements'] as List? ?? const [])
+      .whereType<Map<String, dynamic>>()
+      .map(
+        (player) => {
+          'id': player['id'],
+          'webName': player['web_name'],
+          'team': player['team'],
+          'status': player['status'],
+          'news': player['news'],
+          'newsAdded': player['news_added'],
+          'chanceOfPlayingThisRound': player['chance_of_playing_this_round'],
+          'chanceOfPlayingNextRound': player['chance_of_playing_next_round'],
+        },
+      )
+      .toList(growable: false);
+  if (players.isEmpty) throw StateError('Bootstrap has no players.');
+  file.parent.createSync(recursive: true);
+  // One player per line, so consecutive snapshots diff to a few lines.
+  final header = jsonEncode({
+    'schemaVersion': 1,
+    'takenAt': takenAt.toIso8601String(),
+    'currentGameweekId': bootstrap.currentGameweekId,
+    'nextGameweekId': projectionGameweekId(bootstrap),
+  });
+  file.writeAsStringSync(
+    '${header.substring(0, header.length - 1)},"players":[\n'
+    '${players.map(jsonEncode).join(',\n')}\n]}\n',
+  );
+  stdout.writeln('Wrote news for ${players.length} players to ${file.path}');
 }
 
 /// Refuses to publish anything the app would show as nonsense.

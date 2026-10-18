@@ -18,3 +18,8 @@ deploy workflow runs it every six hours and serves the files at
 `/data/v1/`; the app uses them when they match its current Gameweek and are
 under 36 hours old, and otherwise computes on device. Squad-specific advice
 always runs on device.
+
+With `--news-snapshot <file>` it also writes every player's FPL status and
+injury news. The deploy commits that file to the `fpl-news-snapshots` branch
+whenever the news changes, so the branch history records what FPL said
+before each deadline.
