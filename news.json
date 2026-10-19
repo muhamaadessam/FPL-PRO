@@ -1,4 +1,4 @@
-{"schemaVersion":1,"takenAt":"2026-10-18T18:06:54.613552Z","currentGameweekId":7,"nextGameweekId":8,"players":[
+{"schemaVersion":1,"takenAt":"2026-10-19T04:48:12.485421Z","currentGameweekId":7,"nextGameweekId":8,"players":[
 {"id":1,"webName":"Raya","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":2,"webName":"Arrizabalaga","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":3,"webName":"Meslier","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -665,5 +665,6 @@
 {"id":612,"webName":"Methalie","team":20,"status":"a","news":"","newsAdded":"2026-08-28T13:00:08.950445Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":613,"webName":"Ahoka","team":20,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":646,"webName":"Fofana","team":20,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
-{"id":651,"webName":"J.Angulo","team":20,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null}
+{"id":651,"webName":"J.Angulo","team":20,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
+{"id":668,"webName":"Tutierov","team":20,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null}
 ]}
