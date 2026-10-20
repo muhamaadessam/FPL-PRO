@@ -1,4 +1,4 @@
-{"schemaVersion":1,"takenAt":"2026-10-20T04:57:19.870127Z","currentGameweekId":7,"nextGameweekId":8,"players":[
+{"schemaVersion":1,"takenAt":"2026-10-20T17:15:10.010847Z","currentGameweekId":7,"nextGameweekId":8,"players":[
 {"id":1,"webName":"Raya","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":2,"webName":"Arrizabalaga","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":3,"webName":"Meslier","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -34,7 +34,7 @@
 {"id":33,"webName":"Mings","team":2,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":34,"webName":"Pau","team":2,"status":"a","news":"","newsAdded":"2026-09-12T18:00:08.712707Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":35,"webName":"Bogarde","team":2,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
-{"id":36,"webName":"Maatsen","team":2,"status":"i","news":"Ankle injury - Unknown return date","newsAdded":"2026-09-12T18:00:08.729468Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
+{"id":36,"webName":"Maatsen","team":2,"status":"d","news":"Ankle injury - 75% chance of playing","newsAdded":"2026-09-12T18:00:08.729468Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":75},
 {"id":37,"webName":"Lindelöf","team":2,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":38,"webName":"A.García","team":2,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":39,"webName":"Nedeljkovic","team":2,"status":"u","news":"Has joined Rangers on loan for the rest of the season","newsAdded":"2026-08-19T13:56:46.385411Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
@@ -55,11 +55,11 @@
 {"id":160,"webName":"Garnacho","team":2,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":166,"webName":"N.Jackson","team":2,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":582,"webName":"Madjo","team":2,"status":"a","news":"","newsAdded":"2026-08-15T16:00:07.974271Z","chanceOfPlayingThisRound":50,"chanceOfPlayingNextRound":100},
-{"id":596,"webName":"Ruggeri","team":2,"status":"i","news":"Hamstring injury - Unknown return date","newsAdded":"2026-10-10T18:00:10.750593Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
+{"id":596,"webName":"Ruggeri","team":2,"status":"i","news":"Hamstring injury - Expected back 2 Jan","newsAdded":"2026-10-10T18:00:10.750593Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":597,"webName":"Suzuki","team":2,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":606,"webName":"Rowe","team":2,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":607,"webName":"Lynch","team":2,"status":"u","news":"Has joined Oxford United on loan until January","newsAdded":"2026-09-04T12:35:39.820426Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
-{"id":611,"webName":"Wan-Bissaka","team":2,"status":"d","news":"Hamstring injury - 75% chance of playing","newsAdded":"2026-10-17T19:30:10.120990Z","chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":75},
+{"id":611,"webName":"Wan-Bissaka","team":2,"status":"i","news":"Hamstring injury - Expected back 21 Nov","newsAdded":"2026-10-17T19:30:10.120990Z","chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":0},
 {"id":618,"webName":"Goretzka","team":2,"status":"a","news":"","newsAdded":"2026-09-09T09:30:08.229436Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":630,"webName":"Harwood-Bellis","team":2,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":631,"webName":"Mbaye","team":2,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
