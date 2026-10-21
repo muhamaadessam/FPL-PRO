@@ -1,4 +1,4 @@
-{"schemaVersion":1,"takenAt":"2026-10-20T21:41:43.630794Z","currentGameweekId":7,"nextGameweekId":8,"players":[
+{"schemaVersion":1,"takenAt":"2026-10-21T11:57:35.185703Z","currentGameweekId":7,"nextGameweekId":8,"players":[
 {"id":1,"webName":"Raya","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":2,"webName":"Arrizabalaga","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":3,"webName":"Meslier","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -7,7 +7,7 @@
 {"id":6,"webName":"Saliba","team":1,"status":"i","news":"Back injury - Unknown return date","newsAdded":"2026-07-23T12:01:23.289376Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":7,"webName":"Lewis-Skelly","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":8,"webName":"Calafiori","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
-{"id":9,"webName":"Hincapie","team":1,"status":"i","news":"Ankle injury - Expected back 24 Oct","newsAdded":"2026-10-12T15:00:07.550884Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
+{"id":9,"webName":"Hincapie","team":1,"status":"d","news":"Ankle injury - 75% chance of playing","newsAdded":"2026-10-12T15:00:07.550884Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":75},
 {"id":10,"webName":"White","team":1,"status":"a","news":"","newsAdded":"2026-09-20T19:30:08.247780Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":11,"webName":"Mosquera","team":1,"status":"a","news":"","newsAdded":"2026-09-04T14:00:08.080310Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":12,"webName":"Saka","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -355,10 +355,10 @@
 {"id":576,"webName":"Stroud","team":11,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":585,"webName":"Herrington","team":11,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":586,"webName":"Mendy","team":11,"status":"i","news":"Groin injury - Expected back 31 Oct","newsAdded":"2026-10-16T12:30:09.976274Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
-{"id":589,"webName":"Gourna-Douath","team":11,"status":"i","news":"Calf injury - Expected back 25 Oct","newsAdded":"2026-10-16T13:00:08.314070Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
-{"id":617,"webName":"Cho","team":11,"status":"i","news":"Unspecified injury - Expected back 25 Oct","newsAdded":"2026-10-16T17:30:09.623338Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
+{"id":589,"webName":"Gourna-Douath","team":11,"status":"d","news":"Calf injury - 50% chance of playing","newsAdded":"2026-10-16T13:00:08.314070Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":50},
+{"id":617,"webName":"Cho","team":11,"status":"d","news":"Unspecified injury - 50% chance of playing","newsAdded":"2026-10-16T17:30:09.623338Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":50},
 {"id":632,"webName":"Ansah","team":11,"status":"i","news":"Back injury - Unknown return date","newsAdded":"2026-09-09T10:00:08.919489Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
-{"id":637,"webName":"Vaz","team":11,"status":"d","news":"Achilles injury - 50% chance of playing","newsAdded":"2026-10-17T17:00:08.108262Z","chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":50},
+{"id":637,"webName":"Vaz","team":11,"status":"d","news":"Achilles injury - 75% chance of playing","newsAdded":"2026-10-17T17:00:08.108262Z","chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":75},
 {"id":638,"webName":"Norton-Cuffy","team":11,"status":"a","news":"","newsAdded":"2026-09-21T08:30:09.561308Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":642,"webName":"Thomas","team":11,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":645,"webName":"Mouzakitis","team":11,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
