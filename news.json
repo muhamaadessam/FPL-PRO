@@ -1,4 +1,4 @@
-{"schemaVersion":1,"takenAt":"2026-10-22T04:43:26.946748Z","currentGameweekId":7,"nextGameweekId":8,"players":[
+{"schemaVersion":1,"takenAt":"2026-10-22T15:17:08.397826Z","currentGameweekId":7,"nextGameweekId":8,"players":[
 {"id":1,"webName":"Raya","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":2,"webName":"Arrizabalaga","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":3,"webName":"Meslier","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -363,7 +363,7 @@
 {"id":642,"webName":"Thomas","team":11,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":645,"webName":"Mouzakitis","team":11,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":259,"webName":"Diop","team":12,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
-{"id":267,"webName":"Lukić","team":12,"status":"d","news":"Groin injury - 75% chance of playing","newsAdded":"2026-10-19T15:30:08.949503Z","chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":75},
+{"id":267,"webName":"Lukić","team":12,"status":"i","news":"Groin injury - Expected back 23 Oct","newsAdded":"2026-10-19T15:30:08.949503Z","chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":0},
 {"id":300,"webName":"Walton","team":12,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":301,"webName":"Palmer","team":12,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":302,"webName":"Button","team":12,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
