@@ -1,4 +1,4 @@
-{"schemaVersion":1,"takenAt":"2026-10-24T00:42:47.098748Z","currentGameweekId":8,"nextGameweekId":9,"players":[
+{"schemaVersion":1,"takenAt":"2026-10-24T11:09:05.545785Z","currentGameweekId":8,"nextGameweekId":9,"players":[
 {"id":1,"webName":"Raya","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":2,"webName":"Arrizabalaga","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":3,"webName":"Meslier","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -48,7 +48,7 @@
 {"id":50,"webName":"Burrowes","team":2,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":51,"webName":"George Hemmings","team":2,"status":"a","news":"","newsAdded":"2026-10-10T18:00:10.386738Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":52,"webName":"Alysson","team":2,"status":"a","news":"","newsAdded":"2026-09-19T11:30:09.355376Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
-{"id":53,"webName":"Manzambi","team":2,"status":"d","news":"Calf injury - 75% chance of playing","newsAdded":"2026-10-17T19:30:09.768277Z","chanceOfPlayingThisRound":75,"chanceOfPlayingNextRound":75},
+{"id":53,"webName":"Manzambi","team":2,"status":"a","news":"","newsAdded":"2026-10-17T19:30:09.768277Z","chanceOfPlayingThisRound":75,"chanceOfPlayingNextRound":100},
 {"id":54,"webName":"Gomes","team":2,"status":"a","news":"","newsAdded":"2026-09-16T19:30:08.742410Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":55,"webName":"Watkins","team":2,"status":"u","news":"Has joined Al Hilal permanently","newsAdded":"2026-09-01T13:15:16.698799Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":56,"webName":"Abraham","team":2,"status":"a","news":"","newsAdded":"2026-08-15T16:00:07.558543Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
@@ -469,7 +469,7 @@
 {"id":237,"webName":"Ndiaye","team":15,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":384,"webName":"Donnarumma","team":15,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":386,"webName":"Bettinelli","team":15,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
-{"id":387,"webName":"O'Reilly","team":15,"status":"d","news":"Back injury - 75% chance of playing","newsAdded":"2026-10-19T15:30:09.078291Z","chanceOfPlayingThisRound":75,"chanceOfPlayingNextRound":75},
+{"id":387,"webName":"O'Reilly","team":15,"status":"a","news":"","newsAdded":"2026-10-19T15:30:09.078291Z","chanceOfPlayingThisRound":75,"chanceOfPlayingNextRound":100},
 {"id":388,"webName":"Guéhi","team":15,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":389,"webName":"Matheus N.","team":15,"status":"d","news":"Unspecified injury - 75% chance of playing","newsAdded":"2026-10-19T15:30:09.094655Z","chanceOfPlayingThisRound":75,"chanceOfPlayingNextRound":75},
 {"id":390,"webName":"Rúben","team":15,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -485,7 +485,7 @@
 {"id":400,"webName":"Doku","team":15,"status":"a","news":"","newsAdded":"2026-08-18T17:00:08.385597Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":402,"webName":"Rodrigo","team":15,"status":"u","news":"Has joined Barcelona permanently","newsAdded":"2026-07-23T12:01:23.675537Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":404,"webName":"Reijnders","team":15,"status":"u","news":"Has joined Al Qadsiah permanently","newsAdded":"2026-08-20T14:02:58.154273Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
-{"id":406,"webName":"Kovačić","team":15,"status":"d","news":"Unspecified injury - 75% chance of playing","newsAdded":"2026-10-19T15:30:09.126343Z","chanceOfPlayingThisRound":75,"chanceOfPlayingNextRound":75},
+{"id":406,"webName":"Kovačić","team":15,"status":"a","news":"","newsAdded":"2026-10-19T15:30:09.126343Z","chanceOfPlayingThisRound":75,"chanceOfPlayingNextRound":100},
 {"id":407,"webName":"Echeverri","team":15,"status":"u","news":"Has joined Benfica on loan for the rest of the season","newsAdded":"2026-09-03T15:41:24.710479Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":408,"webName":"Phillips","team":15,"status":"u","news":"Has joined Sheffield United on loan for the rest of the season","newsAdded":"2026-08-18T14:11:56.348781Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":409,"webName":"Mukasa","team":15,"status":"u","news":"has joined West Ham on loan for the rest of the seaon.","newsAdded":"2026-09-03T10:34:10.733520Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
