@@ -1,4 +1,4 @@
-{"schemaVersion":1,"takenAt":"2026-10-23T22:11:30.917664Z","currentGameweekId":8,"nextGameweekId":9,"players":[
+{"schemaVersion":1,"takenAt":"2026-10-24T00:42:47.098748Z","currentGameweekId":8,"nextGameweekId":9,"players":[
 {"id":1,"webName":"Raya","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":2,"webName":"Arrizabalaga","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":3,"webName":"Meslier","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -570,7 +570,7 @@
 {"id":201,"webName":"Muñoz","team":18,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":467,"webName":"Sels","team":18,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":468,"webName":"John","team":18,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
-{"id":469,"webName":"N.Williams","team":18,"status":"a","news":"","newsAdded":"2026-10-09T14:30:11.466887Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
+{"id":469,"webName":"N.Williams","team":18,"status":"d","news":"Arm injury - 75% chance of playing","newsAdded":"2026-10-24T00:00:10.181593Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":75},
 {"id":470,"webName":"Morato","team":18,"status":"u","news":"Has joined West Ham on loan for the rest of the season","newsAdded":"2026-09-02T16:19:54.503286Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":471,"webName":"Milenković","team":18,"status":"a","news":"","newsAdded":"2026-09-12T14:00:09.705107Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":472,"webName":"Murillo","team":18,"status":"a","news":"","newsAdded":"2026-07-23T12:01:23.801183Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
