@@ -1,4 +1,4 @@
-{"schemaVersion":1,"takenAt":"2026-10-24T20:54:43.904934Z","currentGameweekId":8,"nextGameweekId":9,"players":[
+{"schemaVersion":1,"takenAt":"2026-10-25T11:39:05.532843Z","currentGameweekId":8,"nextGameweekId":9,"players":[
 {"id":1,"webName":"Raya","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":2,"webName":"Arrizabalaga","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":3,"webName":"Meslier","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -621,7 +621,7 @@
 {"id":512,"webName":"Kudus","team":19,"status":"a","news":"","newsAdded":"2026-07-23T12:01:23.848657Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":513,"webName":"Xavi","team":19,"status":"i","news":"Knee injury - Unknown return date","newsAdded":"2026-07-23T12:01:23.864304Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":514,"webName":"Tel","team":19,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
-{"id":515,"webName":"Maddison","team":19,"status":"d","news":"Groin injury - 75% chance of playing","newsAdded":"2026-10-24T19:00:10.113555Z","chanceOfPlayingThisRound":75,"chanceOfPlayingNextRound":75},
+{"id":515,"webName":"Maddison","team":19,"status":"d","news":"Unspecified injury - 75% chance of playing","newsAdded":"2026-10-24T19:00:10.113555Z","chanceOfPlayingThisRound":75,"chanceOfPlayingNextRound":75},
 {"id":516,"webName":"Bentancur","team":19,"status":"s","news":"Suspended until 7 Nov","newsAdded":"2026-10-10T18:30:09.519346Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":517,"webName":"Odobert","team":19,"status":"i","news":"Knee injury - Unknown return date","newsAdded":"2026-07-23T12:01:23.879434Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":518,"webName":"P.M.Sarr","team":19,"status":"u","news":"Has joined Juventus on loan for the rest of the season","newsAdded":"2026-09-02T16:02:43.386849Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
