@@ -1,4 +1,4 @@
-{"schemaVersion":1,"takenAt":"2026-10-25T20:55:54.884698Z","currentGameweekId":8,"nextGameweekId":9,"players":[
+{"schemaVersion":1,"takenAt":"2026-10-27T12:19:56.394415Z","currentGameweekId":8,"nextGameweekId":9,"players":[
 {"id":1,"webName":"Raya","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":2,"webName":"Arrizabalaga","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":3,"webName":"Meslier","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -241,7 +241,7 @@
 {"id":205,"webName":"Sosa","team":8,"status":"u","news":"Has joined FC Cologne on loan for the rest of the season","newsAdded":"2026-09-02T16:03:25.710518Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":206,"webName":"Chadi Riad","team":8,"status":"i","news":"Knee injury - Unknown return date","newsAdded":"2026-08-22T18:00:07.352049Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":207,"webName":"Mingueza","team":8,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
-{"id":208,"webName":"Sarr","team":8,"status":"a","news":"","newsAdded":"2026-08-22T18:00:07.363165Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
+{"id":208,"webName":"Sarr","team":8,"status":"d","news":"Groin injury - 75% chance of playing","newsAdded":"2026-10-27T10:30:09.385934Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":75},
 {"id":210,"webName":"Wharton","team":8,"status":"a","news":"","newsAdded":"2026-07-23T12:01:23.498963Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":211,"webName":"Yeremy","team":8,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":212,"webName":"Hughes","team":8,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
