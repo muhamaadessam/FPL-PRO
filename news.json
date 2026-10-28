@@ -1,4 +1,4 @@
-{"schemaVersion":1,"takenAt":"2026-10-27T22:19:58.542908Z","currentGameweekId":8,"nextGameweekId":9,"players":[
+{"schemaVersion":1,"takenAt":"2026-10-28T05:49:36.747368Z","currentGameweekId":8,"nextGameweekId":9,"players":[
 {"id":1,"webName":"Raya","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":2,"webName":"Arrizabalaga","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":3,"webName":"Meslier","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -11,14 +11,14 @@
 {"id":10,"webName":"White","team":1,"status":"a","news":"","newsAdded":"2026-09-20T19:30:08.247780Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":11,"webName":"Mosquera","team":1,"status":"a","news":"","newsAdded":"2026-09-04T14:00:08.080310Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":12,"webName":"Saka","team":1,"status":"i","news":"Thigh injury - Unknown return date","newsAdded":"2026-10-21T20:30:09.540957Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
-{"id":13,"webName":"Rice","team":1,"status":"a","news":"","newsAdded":"2026-09-21T13:00:08.896379Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
+{"id":13,"webName":"Rice","team":1,"status":"d","news":"Unspecified injury - 75% chance of playing","newsAdded":"2026-10-28T00:00:08.477333Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":75},
 {"id":14,"webName":"Eze","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":15,"webName":"Ødegaard","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
-{"id":16,"webName":"Madueke","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
+{"id":16,"webName":"Madueke","team":1,"status":"d","news":"Ankle injury - 75% chance of playing","newsAdded":"2026-10-28T00:00:08.492716Z","chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":75},
 {"id":17,"webName":"Merino","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":18,"webName":"Martinelli","team":1,"status":"u","news":"Has joined Al Hilal permanently","newsAdded":"2026-09-04T12:34:46.738449Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":19,"webName":"Zubimendi","team":1,"status":"a","news":"","newsAdded":"2026-10-12T15:00:07.563478Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
-{"id":20,"webName":"Dowman","team":1,"status":"a","news":"","newsAdded":"2026-10-05T19:00:10.141532Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
+{"id":20,"webName":"Dowman","team":1,"status":"s","news":"Suspended until 29 Nov","newsAdded":"2026-10-27T22:30:09.534466Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":0},
 {"id":22,"webName":"Nwaneri","team":1,"status":"u","news":"Has joined Borussia Dortmund on loan for the rest of the season","newsAdded":"2026-09-02T16:01:07.058827Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":23,"webName":"Fábio Vieira","team":1,"status":"u","news":"Has joined Hamburger SV permanently","newsAdded":"2026-09-02T16:00:28.446370Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":24,"webName":"Nelson","team":1,"status":"u","news":"has departed the club as a free agent.","newsAdded":"2026-08-29T00:33:08.556767Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
