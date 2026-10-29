@@ -1,4 +1,4 @@
-{"schemaVersion":1,"takenAt":"2026-10-28T22:39:47.593376Z","currentGameweekId":8,"nextGameweekId":9,"players":[
+{"schemaVersion":1,"takenAt":"2026-10-29T05:47:30.106593Z","currentGameweekId":8,"nextGameweekId":9,"players":[
 {"id":1,"webName":"Raya","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":2,"webName":"Arrizabalaga","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":3,"webName":"Meslier","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -187,7 +187,7 @@
 {"id":168,"webName":"Marc Guiu","team":6,"status":"u","news":"Has joined RB Leipzig permanently","newsAdded":"2026-09-01T13:24:48.857362Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":169,"webName":"Mheuka","team":6,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":170,"webName":"Emegha","team":6,"status":"a","news":"","newsAdded":"2026-09-09T15:00:09.063849Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":100},
-{"id":200,"webName":"Lacroix","team":6,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
+{"id":200,"webName":"Lacroix","team":6,"status":"d","news":"Hamstring injury - 75% chance of playing","newsAdded":"2026-10-28T23:00:10.088612Z","chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":75},
 {"id":560,"webName":"Penders","team":6,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":561,"webName":"Anselmino","team":6,"status":"a","news":"","newsAdded":"2026-08-23T19:00:08.536705Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":568,"webName":"Barco","team":6,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
