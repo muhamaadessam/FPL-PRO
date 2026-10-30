@@ -1,4 +1,4 @@
-{"schemaVersion":1,"takenAt":"2026-10-29T23:18:33.701440Z","currentGameweekId":8,"nextGameweekId":9,"players":[
+{"schemaVersion":1,"takenAt":"2026-10-30T12:54:46.117060Z","currentGameweekId":8,"nextGameweekId":9,"players":[
 {"id":1,"webName":"Raya","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":2,"webName":"Arrizabalaga","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":3,"webName":"Meslier","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -76,7 +76,7 @@
 {"id":66,"webName":"Soler","team":3,"status":"a","news":"","newsAdded":"2026-08-15T16:30:07.021055Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":67,"webName":"Rayan","team":3,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":68,"webName":"Tavernier","team":3,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
-{"id":69,"webName":"Scott","team":3,"status":"i","news":"Thigh injury - Expected back 8 Nov","newsAdded":"2026-10-05T09:30:09.910752Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
+{"id":69,"webName":"Scott","team":3,"status":"i","news":"Thigh injury - Expected back 21 Nov","newsAdded":"2026-10-05T09:30:09.910752Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":70,"webName":"Kluivert","team":3,"status":"a","news":"","newsAdded":"2026-09-20T15:30:09.074071Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":71,"webName":"Cook","team":3,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":72,"webName":"Gannon-Doak","team":3,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -302,7 +302,7 @@
 {"id":257,"webName":"Bassey","team":10,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":258,"webName":"Castagne","team":10,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":261,"webName":"Iwobi","team":10,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
-{"id":262,"webName":"Smith Rowe","team":10,"status":"d","news":"Knock - 75% chance of playing","newsAdded":"2026-10-23T11:30:09.310090Z","chanceOfPlayingThisRound":75,"chanceOfPlayingNextRound":75},
+{"id":262,"webName":"Smith Rowe","team":10,"status":"a","news":"","newsAdded":"2026-10-23T11:30:09.310090Z","chanceOfPlayingThisRound":75,"chanceOfPlayingNextRound":100},
 {"id":263,"webName":"Kevin","team":10,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":264,"webName":"Bobb","team":10,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":265,"webName":"Berge","team":10,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -319,7 +319,7 @@
 {"id":626,"webName":"Zepa","team":10,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":635,"webName":"Larsson","team":10,"status":"a","news":"","newsAdded":"2026-10-16T17:30:09.637224Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":636,"webName":"Ángel","team":10,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
-{"id":650,"webName":"Affengruber","team":10,"status":"d","news":"Unspecified injury - 75% chance of playing","newsAdded":"2026-10-29T08:30:08.436091Z","chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":75},
+{"id":650,"webName":"Affengruber","team":10,"status":"a","news":"","newsAdded":"2026-10-29T08:30:08.436091Z","chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":100},
 {"id":240,"webName":"Iroegbunam","team":11,"status":"a","news":"","newsAdded":"2026-08-15T20:00:06.878792Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":273,"webName":"Phillips","team":11,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":274,"webName":"Butland","team":11,"status":"d","news":"Arm injury - 50% chance of playing","newsAdded":"2026-08-08T19:00:05.601633Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":50},
