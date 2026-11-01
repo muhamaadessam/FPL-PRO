@@ -1,4 +1,4 @@
-{"schemaVersion":1,"takenAt":"2026-11-01T06:15:32.843878Z","currentGameweekId":9,"nextGameweekId":10,"players":[
+{"schemaVersion":1,"takenAt":"2026-11-01T13:37:15.106914Z","currentGameweekId":9,"nextGameweekId":10,"players":[
 {"id":1,"webName":"Raya","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":2,"webName":"Arrizabalaga","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":3,"webName":"Meslier","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -643,7 +643,7 @@
 {"id":530,"webName":"Patterson","team":20,"status":"u","news":"Has joined Wrexham permanently","newsAdded":"2026-08-12T14:08:03.064533Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":531,"webName":"Ellborg","team":20,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":532,"webName":"Ballard","team":20,"status":"i","news":"Hamstring injury - Unknown return date","newsAdded":"2026-09-25T21:30:10.370384Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
-{"id":533,"webName":"Mukiele","team":20,"status":"d","news":"Knock - 75% chance of playing","newsAdded":"2026-10-29T18:30:09.458031Z","chanceOfPlayingThisRound":75,"chanceOfPlayingNextRound":75},
+{"id":533,"webName":"Mukiele","team":20,"status":"d","news":"Concussion - 75% chance of playing","newsAdded":"2026-10-29T18:30:09.458031Z","chanceOfPlayingThisRound":75,"chanceOfPlayingNextRound":75},
 {"id":534,"webName":"Hume","team":20,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":535,"webName":"Alderete","team":20,"status":"s","news":"Suspended until 21 Nov","newsAdded":"2026-10-31T17:30:08.393957Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":0},
 {"id":536,"webName":"Reinildo","team":20,"status":"a","news":"","newsAdded":"2026-09-12T21:30:09.421687Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
@@ -653,7 +653,7 @@
 {"id":540,"webName":"Masuaku","team":20,"status":"u","news":"Has joined Konyaspor permanently","newsAdded":"2026-08-12T14:08:03.097784Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":541,"webName":"Meunier","team":20,"status":"a","news":"","newsAdded":"2026-10-10T16:30:09.200467Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":542,"webName":"E.Le Fée","team":20,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
-{"id":543,"webName":"Diarra","team":20,"status":"a","news":"","newsAdded":"2026-08-30T16:30:08.428960Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
+{"id":543,"webName":"Diarra","team":20,"status":"d","news":"Muscular injury - 75% chance of playing","newsAdded":"2026-11-01T08:30:09.264068Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":75},
 {"id":544,"webName":"Xhaka","team":20,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":545,"webName":"Sadiki","team":20,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":546,"webName":"Adingra","team":20,"status":"u","news":"Has joined Ajax on loan for the rest of the season","newsAdded":"2026-08-20T14:00:08.416985Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
