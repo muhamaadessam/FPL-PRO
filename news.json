@@ -1,4 +1,4 @@
-{"schemaVersion":1,"takenAt":"2026-11-01T22:07:16.195043Z","currentGameweekId":9,"nextGameweekId":10,"players":[
+{"schemaVersion":1,"takenAt":"2026-11-03T01:03:14.944387Z","currentGameweekId":9,"nextGameweekId":10,"players":[
 {"id":1,"webName":"Raya","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":2,"webName":"Arrizabalaga","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":3,"webName":"Meslier","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -274,7 +274,7 @@
 {"id":227,"webName":"Travers","team":9,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":228,"webName":"King","team":9,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":229,"webName":"Tarkowski","team":9,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
-{"id":230,"webName":"Branthwaite","team":9,"status":"d","news":"Concussion - 75% chance of playing","newsAdded":"2026-10-30T15:30:09.601963Z","chanceOfPlayingThisRound":75,"chanceOfPlayingNextRound":75},
+{"id":230,"webName":"Branthwaite","team":9,"status":"a","news":"","newsAdded":"2026-10-30T15:30:09.601963Z","chanceOfPlayingThisRound":75,"chanceOfPlayingNextRound":100},
 {"id":231,"webName":"Keane","team":9,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":232,"webName":"O'Brien","team":9,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":233,"webName":"Mykolenko","team":9,"status":"a","news":"","newsAdded":"2026-10-24T19:00:09.907289Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
@@ -547,7 +547,7 @@
 {"id":451,"webName":"A.Murphy","team":17,"status":"u","news":"Has joined FC Kaiserslautern on loan for the rest of the season","newsAdded":"2026-08-12T14:05:29.224600Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":453,"webName":"Barnes","team":17,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":454,"webName":"Elanga","team":17,"status":"a","news":"","newsAdded":"2026-09-14T20:00:09.505598Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
-{"id":456,"webName":"J.Ramsey","team":17,"status":"a","news":"","newsAdded":"2026-09-15T09:00:08.191022Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
+{"id":456,"webName":"J.Ramsey","team":17,"status":"s","news":"Suspended until 21 Nov","newsAdded":"2026-11-02T22:00:09.813234Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":0},
 {"id":457,"webName":"J.Murphy","team":17,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":458,"webName":"Joelinton","team":17,"status":"a","news":"","newsAdded":"2026-08-16T08:00:08.074045Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":459,"webName":"L.Miley","team":17,"status":"d","news":"Muscular injury - 75% chance of playing","newsAdded":"2026-10-27T16:00:07.981816Z","chanceOfPlayingThisRound":75,"chanceOfPlayingNextRound":75},
@@ -556,7 +556,7 @@
 {"id":462,"webName":"Steur","team":17,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":463,"webName":"Woltemade","team":17,"status":"u","news":"Has joined Juventus on loan for the rest of the season","newsAdded":"2026-09-02T16:07:16.549304Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":464,"webName":"Wissa","team":17,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
-{"id":465,"webName":"Osula","team":17,"status":"d","news":"Ankle injury - 50% chance of playing","newsAdded":"2026-10-29T23:00:08.575179Z","chanceOfPlayingThisRound":50,"chanceOfPlayingNextRound":50},
+{"id":465,"webName":"Osula","team":17,"status":"a","news":"","newsAdded":"2026-10-29T23:00:08.575179Z","chanceOfPlayingThisRound":50,"chanceOfPlayingNextRound":100},
 {"id":466,"webName":"Neave","team":17,"status":"u","news":"Has joined Wolves on loan for the rest of the season","newsAdded":"2026-09-04T12:37:43.515176Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":559,"webName":"Bamba","team":17,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":567,"webName":"Horníček","team":17,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
