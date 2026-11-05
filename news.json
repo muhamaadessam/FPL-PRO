@@ -1,4 +1,4 @@
-{"schemaVersion":1,"takenAt":"2026-11-04T19:50:46.005905Z","currentGameweekId":9,"nextGameweekId":10,"players":[
+{"schemaVersion":1,"takenAt":"2026-11-05T15:29:21.701781Z","currentGameweekId":9,"nextGameweekId":10,"players":[
 {"id":1,"webName":"Raya","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":2,"webName":"Arrizabalaga","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":3,"webName":"Meslier","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -196,7 +196,7 @@
 {"id":669,"webName":"Sharman-Lowe","team":6,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":670,"webName":"Subuloye","team":6,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":91,"webName":"Pinnock","team":7,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
-{"id":104,"webName":"Onyeka","team":7,"status":"a","news":"","newsAdded":"2026-09-15T09:00:07.851220Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
+{"id":104,"webName":"Onyeka","team":7,"status":"d","news":"Groin injury - 50% chance of playing","newsAdded":"2026-11-05T09:00:09.236330Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":50},
 {"id":110,"webName":"Rushworth","team":7,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":171,"webName":"Dovin","team":7,"status":"u","news":"not included in squad.","newsAdded":"2026-09-02T15:44:14.839336Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":172,"webName":"Wilson","team":7,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -403,7 +403,7 @@
 {"id":260,"webName":"Wilson","team":13,"status":"a","news":"","newsAdded":"2026-09-18T13:30:09.626858Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":326,"webName":"Perri","team":13,"status":"u","news":"Has joined Torino on loan for the rest of the season","newsAdded":"2026-09-01T13:12:39.210133Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":327,"webName":"Bijol","team":13,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
-{"id":329,"webName":"Rodon","team":13,"status":"i","news":"Hamstring injury - Expected back 21 Nov","newsAdded":"2026-08-30T16:00:08.564382Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
+{"id":329,"webName":"Rodon","team":13,"status":"a","news":"","newsAdded":"2026-08-30T16:00:08.564382Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":100},
 {"id":330,"webName":"Bogle","team":13,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":331,"webName":"Gudmundsson","team":13,"status":"a","news":"","newsAdded":"2026-08-08T20:00:07.546568Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":332,"webName":"Justin","team":13,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
