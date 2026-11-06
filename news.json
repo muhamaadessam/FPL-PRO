@@ -1,4 +1,4 @@
-{"schemaVersion":1,"takenAt":"2026-11-05T21:59:43.261318Z","currentGameweekId":9,"nextGameweekId":10,"players":[
+{"schemaVersion":1,"takenAt":"2026-11-06T10:51:35.797058Z","currentGameweekId":9,"nextGameweekId":10,"players":[
 {"id":1,"webName":"Raya","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":2,"webName":"Arrizabalaga","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":3,"webName":"Meslier","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -307,7 +307,7 @@
 {"id":263,"webName":"Kevin","team":10,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":264,"webName":"Bobb","team":10,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":265,"webName":"Berge","team":10,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
-{"id":266,"webName":"Cairney","team":10,"status":"a","news":"","newsAdded":"2026-08-14T18:00:06.460944Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
+{"id":266,"webName":"Cairney","team":10,"status":"i","news":"Knee injury - Expected back 21 Nov","newsAdded":"2026-11-06T10:30:09.529201Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":0},
 {"id":268,"webName":"King","team":10,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":269,"webName":"Sessegnon","team":10,"status":"a","news":"","newsAdded":"2026-10-17T16:30:09.374216Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":100},
 {"id":270,"webName":"Reed","team":10,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
