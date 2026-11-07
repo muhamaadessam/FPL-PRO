@@ -1,4 +1,4 @@
-{"schemaVersion":1,"takenAt":"2026-11-06T23:07:51.536080Z","currentGameweekId":10,"nextGameweekId":11,"players":[
+{"schemaVersion":1,"takenAt":"2026-11-07T13:11:06.421399Z","currentGameweekId":10,"nextGameweekId":11,"players":[
 {"id":1,"webName":"Raya","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":2,"webName":"Arrizabalaga","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":3,"webName":"Meslier","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -410,7 +410,7 @@
 {"id":333,"webName":"Bornauw","team":13,"status":"u","news":"Has joined Hamburg SV on loan for the rest of the season","newsAdded":"2026-08-19T13:56:14.645970Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":334,"webName":"Muharemović","team":13,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":335,"webName":"Stach","team":13,"status":"d","news":"Foot injury - 50% chance of playing","newsAdded":"2026-11-05T18:30:07.925529Z","chanceOfPlayingThisRound":50,"chanceOfPlayingNextRound":50},
-{"id":336,"webName":"Okafor","team":13,"status":"d","news":"Thigh injury - 50% chance of playing","newsAdded":"2026-10-31T20:00:10.014132Z","chanceOfPlayingThisRound":50,"chanceOfPlayingNextRound":50},
+{"id":336,"webName":"Okafor","team":13,"status":"a","news":"","newsAdded":"2026-10-31T20:00:10.014132Z","chanceOfPlayingThisRound":50,"chanceOfPlayingNextRound":100},
 {"id":337,"webName":"Aaronson","team":13,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":338,"webName":"Ampadu","team":13,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":339,"webName":"Longstaff","team":13,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -419,7 +419,7 @@
 {"id":343,"webName":"James","team":13,"status":"a","news":"","newsAdded":"2026-10-08T14:00:11.803126Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":344,"webName":"Gruev","team":13,"status":"a","news":"","newsAdded":"2026-08-14T23:00:06.272027Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":345,"webName":"Tanaka","team":13,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
-{"id":346,"webName":"Calvert-Lewin","team":13,"status":"d","news":"Foot injury - 75% chance of playing","newsAdded":"2026-11-05T18:30:07.960444Z","chanceOfPlayingThisRound":75,"chanceOfPlayingNextRound":75},
+{"id":346,"webName":"Calvert-Lewin","team":13,"status":"a","news":"","newsAdded":"2026-11-05T18:30:07.960444Z","chanceOfPlayingThisRound":75,"chanceOfPlayingNextRound":100},
 {"id":347,"webName":"Nmecha","team":13,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":348,"webName":"Piroe","team":13,"status":"u","news":"Has joined West Ham United on loan for the rest of the season","newsAdded":"2026-08-19T13:56:14.666726Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":349,"webName":"Mateo Joseph","team":13,"status":"i","news":"Knee injury - Unknown return date","newsAdded":"2026-07-29T18:00:10.338170Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
