@@ -1,4 +1,4 @@
-{"schemaVersion":1,"takenAt":"2026-11-08T22:12:26.818402Z","currentGameweekId":10,"nextGameweekId":11,"players":[
+{"schemaVersion":1,"takenAt":"2026-11-09T22:27:15.484793Z","currentGameweekId":10,"nextGameweekId":11,"players":[
 {"id":1,"webName":"Raya","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":2,"webName":"Arrizabalaga","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":3,"webName":"Meslier","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -309,7 +309,7 @@
 {"id":264,"webName":"Bobb","team":10,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":265,"webName":"Berge","team":10,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":266,"webName":"Cairney","team":10,"status":"i","news":"Knee injury - Expected back 21 Nov","newsAdded":"2026-11-06T10:30:09.529201Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
-{"id":268,"webName":"King","team":10,"status":"d","news":"Groin injury - 75% chance of playing","newsAdded":"2026-11-07T20:00:09.169385Z","chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":75},
+{"id":268,"webName":"King","team":10,"status":"a","news":"","newsAdded":"2026-11-07T20:00:09.169385Z","chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":100},
 {"id":269,"webName":"Sessegnon","team":10,"status":"a","news":"","newsAdded":"2026-10-17T16:30:09.374216Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":270,"webName":"Reed","team":10,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":271,"webName":"Muniz","team":10,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -438,7 +438,7 @@
 {"id":353,"webName":"Pecsi","team":14,"status":"u","news":"Has joined TSV Hartberg on loan for the rest of the season","newsAdded":"2026-08-18T14:11:18.638344Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":354,"webName":"Jaros","team":14,"status":"i","news":"Knee injury - Unknown return date","newsAdded":"2026-07-29T18:00:10.351066Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":355,"webName":"Davies","team":14,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
-{"id":356,"webName":"Virgil","team":14,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
+{"id":356,"webName":"Virgil","team":14,"status":"d","news":"Unspecified injury - 75% chance of playing","newsAdded":"2026-11-09T18:00:09.325472Z","chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":75},
 {"id":357,"webName":"Frimpong","team":14,"status":"i","news":"Hamstring injury - Unknown return date","newsAdded":"2026-10-17T15:30:09.979166Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":358,"webName":"Kerkez","team":14,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":359,"webName":"Gomez","team":14,"status":"a","news":"","newsAdded":"2026-07-26T08:30:10.078473Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
