@@ -1,4 +1,4 @@
-{"schemaVersion":1,"takenAt":"2026-11-10T19:48:58.133620Z","currentGameweekId":10,"nextGameweekId":11,"players":[
+{"schemaVersion":1,"takenAt":"2026-11-11T06:34:23.033899Z","currentGameweekId":10,"nextGameweekId":11,"players":[
 {"id":1,"webName":"Raya","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":2,"webName":"Arrizabalaga","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":3,"webName":"Meslier","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -511,7 +511,7 @@
 {"id":415,"webName":"Dorgu","team":16,"status":"a","news":"","newsAdded":"2026-09-27T21:30:07.831640Z","chanceOfPlayingThisRound":75,"chanceOfPlayingNextRound":100},
 {"id":416,"webName":"De Ligt","team":16,"status":"a","news":"","newsAdded":"2026-07-23T12:01:23.690880Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":417,"webName":"Dalot","team":16,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
-{"id":418,"webName":"Maguire","team":16,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
+{"id":418,"webName":"Maguire","team":16,"status":"d","news":"Back injury - 75% chance of playing","newsAdded":"2026-11-11T01:00:09.173434Z","chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":75},
 {"id":419,"webName":"Martinez","team":16,"status":"a","news":"","newsAdded":"2026-10-31T14:00:08.592593Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":100},
 {"id":420,"webName":"Yoro","team":16,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":421,"webName":"Heaven","team":16,"status":"a","news":"","newsAdded":"2026-10-20T20:00:09.902224Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
