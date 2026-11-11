@@ -1,4 +1,4 @@
-{"schemaVersion":1,"takenAt":"2026-11-11T06:34:23.033899Z","currentGameweekId":10,"nextGameweekId":11,"players":[
+{"schemaVersion":1,"takenAt":"2026-11-11T19:40:15.325903Z","currentGameweekId":10,"nextGameweekId":11,"players":[
 {"id":1,"webName":"Raya","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":2,"webName":"Arrizabalaga","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":3,"webName":"Meslier","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -256,7 +256,7 @@
 {"id":219,"webName":"J.Rak-Sakyi","team":8,"status":"u","news":"has joined  Kasimpasa on loan for the rest of the seaon.","newsAdded":"2026-09-10T09:12:47.224598Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":220,"webName":"Cardines","team":8,"status":"u","news":"Has joined Bristol City on loan for the rest of the season","newsAdded":"2026-08-12T14:08:46.501813Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":221,"webName":"Drakes-Thomas","team":8,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
-{"id":222,"webName":"Strand Larsen","team":8,"status":"a","news":"","newsAdded":"2026-10-23T17:00:09.672494Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
+{"id":222,"webName":"Strand Larsen","team":8,"status":"d","news":"Ankle injury - 75% chance of playing","newsAdded":"2026-11-11T13:00:09.556609Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":75},
 {"id":223,"webName":"Mateta","team":8,"status":"s","news":"Suspended until 2 Dec","newsAdded":"2026-10-31T18:00:09.547671Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":224,"webName":"Nketiah","team":8,"status":"a","news":"","newsAdded":"2026-09-12T14:00:09.427136Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":225,"webName":"Uche","team":8,"status":"u","news":"has returned to Getafe CF","newsAdded":"2026-07-23T12:18:56.275922Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
