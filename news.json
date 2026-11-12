@@ -1,4 +1,4 @@
-{"schemaVersion":1,"takenAt":"2026-11-11T19:40:15.325903Z","currentGameweekId":10,"nextGameweekId":11,"players":[
+{"schemaVersion":1,"takenAt":"2026-11-12T16:01:43.110946Z","currentGameweekId":10,"nextGameweekId":11,"players":[
 {"id":1,"webName":"Raya","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":2,"webName":"Arrizabalaga","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":3,"webName":"Meslier","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -48,7 +48,7 @@
 {"id":50,"webName":"Burrowes","team":2,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":51,"webName":"George Hemmings","team":2,"status":"a","news":"","newsAdded":"2026-10-10T18:00:10.386738Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":52,"webName":"Alysson","team":2,"status":"a","news":"","newsAdded":"2026-09-19T11:30:09.355376Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
-{"id":53,"webName":"Manzambi","team":2,"status":"a","news":"","newsAdded":"2026-10-17T19:30:09.768277Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
+{"id":53,"webName":"Manzambi","team":2,"status":"d","news":"Calf injury - 75% chance of playing","newsAdded":"2026-11-12T13:00:05.872260Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":75},
 {"id":54,"webName":"Gomes","team":2,"status":"a","news":"","newsAdded":"2026-09-16T19:30:08.742410Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":55,"webName":"Watkins","team":2,"status":"u","news":"Has joined Al Hilal permanently","newsAdded":"2026-09-01T13:15:16.698799Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":56,"webName":"Abraham","team":2,"status":"a","news":"","newsAdded":"2026-08-15T16:00:07.558543Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
