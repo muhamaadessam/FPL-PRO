@@ -1,4 +1,4 @@
-{"schemaVersion":1,"takenAt":"2026-11-14T18:11:29.672897Z","currentGameweekId":10,"nextGameweekId":11,"players":[
+{"schemaVersion":1,"takenAt":"2026-11-15T18:55:21.887054Z","currentGameweekId":10,"nextGameweekId":11,"players":[
 {"id":1,"webName":"Raya","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":2,"webName":"Arrizabalaga","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":3,"webName":"Meslier","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -30,7 +30,7 @@
 {"id":557,"webName":"Tzolis","team":1,"status":"a","news":"","newsAdded":"2026-10-02T15:00:11.091226Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":29,"webName":"M.Bizot","team":2,"status":"a","news":"","newsAdded":"2026-09-17T07:30:09.058151Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":30,"webName":"Digne","team":2,"status":"u","news":"Has joined Paris Saint-Germain permanently","newsAdded":"2026-08-10T14:03:30.089007Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
-{"id":32,"webName":"Cash","team":2,"status":"a","news":"","newsAdded":"2026-10-31T22:00:07.593621Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":100},
+{"id":32,"webName":"Cash","team":2,"status":"d","news":"Concussion - 75% chance of playing","newsAdded":"2026-11-15T10:30:05.648897Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":75},
 {"id":33,"webName":"Mings","team":2,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":34,"webName":"Pau","team":2,"status":"a","news":"","newsAdded":"2026-09-12T18:00:08.712707Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":35,"webName":"Bogarde","team":2,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -596,7 +596,7 @@
 {"id":490,"webName":"Wood","team":18,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":491,"webName":"Igor Jesus","team":18,"status":"a","news":"","newsAdded":"2026-10-09T14:30:11.491800Z","chanceOfPlayingThisRound":75,"chanceOfPlayingNextRound":100},
 {"id":493,"webName":"Kalimuendo","team":18,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
-{"id":558,"webName":"Schlager","team":18,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
+{"id":558,"webName":"Schlager","team":18,"status":"d","news":"Thigh injury - 75% chance of playing","newsAdded":"2026-11-15T17:00:06.045512Z","chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":75},
 {"id":581,"webName":"Diomande","team":18,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":590,"webName":"Benda","team":18,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":112,"webName":"Van Hecke","team":19,"status":"a","news":"","newsAdded":"2026-09-30T16:00:09.552205Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
