@@ -1,4 +1,4 @@
-{"schemaVersion":1,"takenAt":"2026-11-16T22:11:55.932442Z","currentGameweekId":10,"nextGameweekId":11,"players":[
+{"schemaVersion":1,"takenAt":"2026-11-17T21:00:26.203559Z","currentGameweekId":10,"nextGameweekId":11,"players":[
 {"id":1,"webName":"Raya","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":2,"webName":"Arrizabalaga","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":3,"webName":"Meslier","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -102,7 +102,7 @@
 {"id":87,"webName":"Ajer","team":4,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":88,"webName":"Kayode","team":4,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":89,"webName":"Henry","team":4,"status":"i","news":"Hip injury - Unknown return date","newsAdded":"2026-10-27T16:30:09.444144Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
-{"id":90,"webName":"Hickey","team":4,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
+{"id":90,"webName":"Hickey","team":4,"status":"d","news":"Hamstring injury - 75% chance of playing","newsAdded":"2026-11-17T11:00:05.107723Z","chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":75},
 {"id":92,"webName":"Ji-soo","team":4,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":93,"webName":"Schuster","team":4,"status":"a","news":"","newsAdded":"2026-10-10T18:00:10.423378Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":94,"webName":"Schade","team":4,"status":"a","news":"","newsAdded":"2026-10-10T16:30:08.848962Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
