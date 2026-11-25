@@ -264,6 +264,10 @@ class _FakeAuthRepository implements AuthRepository {
   final OfficialSession session;
 
   @override
+  Future<OfficialSession?> refreshSession(OfficialSession session) async =>
+      session;
+
+  @override
   Future<OfficialSession?> restoreSession() async => session;
 
   @override
@@ -425,6 +429,13 @@ class _FakeTeamRepository implements TeamRepository {
     if (currentError != null) throw currentError!;
     return currentTeam;
   }
+
+  @override
+  Future<MyTeam> withPublicTransfers({
+    required MyTeam team,
+    required int entryId,
+    required FplBootstrap bootstrap,
+  }) async => team;
 
   @override
   Future<MyTeam> getMyTeam({

@@ -7,6 +7,7 @@ import 'package:fpl_engine/fpl_engine.dart';
 import '../../domain/repositories/fixtures_repository.dart';
 import '../cubit/fixtures_cubit.dart';
 import '../../../dashboard/presentation/cubit/home_preload_cubit.dart';
+import '../../../../core/widgets/refresh_on_resume.dart';
 import '../../../../core/layout/responsive.dart';
 import '../../../../core/network/api_constance.dart';
 import '../../../../core/widgets/adaptive_modal.dart';
@@ -40,7 +41,12 @@ class FixturesView extends StatelessWidget {
         }
         return cubit;
       },
-      child: const _FixturesBody(),
+      child: Builder(
+        builder: (context) => RefreshOnResume(
+          onRefresh: context.read<FixturesCubit>().refresh,
+          child: const _FixturesBody(),
+        ),
+      ),
     );
   }
 }

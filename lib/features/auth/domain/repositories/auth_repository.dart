@@ -3,6 +3,10 @@ import '../entities/official_session.dart';
 abstract interface class AuthRepository {
   Future<OfficialSession?> restoreSession();
 
+  /// A renewed copy of an expired signed-in [session], or null when the
+  /// provider no longer accepts it and the user must sign in again.
+  Future<OfficialSession?> refreshSession(OfficialSession session);
+
   Future<OfficialSession> signIn({
     Future<String> Function(Uri authorizationUri)? authenticate,
     Future<Map<String, String>> Function()? webSessionProvider,

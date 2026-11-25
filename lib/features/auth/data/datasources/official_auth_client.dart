@@ -49,21 +49,34 @@ class OfficialAuthClient {
       return stored.entryId == null ? null : stored;
     }
     if (stored == null || !stored.isExpired) return stored;
-    if (stored.refreshToken == null) {
+    try {
+      return await refreshSession(stored);
+    } on OfficialAuthException {
+      // Offline is not a sign-out; the token is renewed on the next request.
+      return stored;
+    }
+  }
+
+  /// Renews [session]'s tokens. Null means the provider rejected them, so the
+  /// stored session is gone; a network failure throws and keeps it.
+  Future<OfficialSession?> refreshSession(OfficialSession session) async {
+    final refreshToken = session.refreshToken;
+    if (refreshToken == null) {
       await _sessionStore.clear();
       return null;
     }
-
     try {
-      final refreshed = await _refresh(stored.refreshToken!);
-      final session = refreshed.copyWith(
-        entryId: stored.entryId,
-        cookieHeader: stored.cookieHeader,
-        csrfToken: stored.csrfToken,
+      final refreshed = await _refresh(refreshToken);
+      final renewed = session.copyWith(
+        accessToken: refreshed.accessToken,
+        // Providers may keep the same refresh token and omit it here.
+        refreshToken: refreshed.refreshToken,
+        expiresAt: refreshed.expiresAt,
       );
-      await _sessionStore.write(session);
-      return session;
-    } on Object {
+      await _sessionStore.write(renewed);
+      return renewed;
+    } on OfficialAuthException catch (error) {
+      if (error.error != OfficialAuthError.sessionMissing) rethrow;
       await _sessionStore.clear();
       return null;
     }
@@ -193,9 +206,18 @@ class OfficialAuthClient {
         options: Options(contentType: Headers.formUrlEncodedContentType),
       );
       return _sessionFromTokenResponse(response.data);
-    } on DioException catch (_, stackTrace) {
+    } on DioException catch (error, stackTrace) {
+      final rejected = const {
+        400,
+        401,
+        403,
+      }.contains(error.response?.statusCode);
       Error.throwWithStackTrace(
-        const OfficialAuthException(OfficialAuthError.sessionMissing),
+        OfficialAuthException(
+          rejected
+              ? OfficialAuthError.sessionMissing
+              : OfficialAuthError.network,
+        ),
         stackTrace,
       );
     }

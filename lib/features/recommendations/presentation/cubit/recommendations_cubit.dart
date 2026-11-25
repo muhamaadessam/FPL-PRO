@@ -51,7 +51,7 @@ class RecommendationsCubit extends Cubit<RecommendationsState> {
     try {
       final bootstrap = await fixturesRepository.getBootstrap();
       final gameweek = _nextGameweek(bootstrap);
-      final session = authCubit.state.session;
+      final session = await authCubit.freshSession();
       if (session == null || session.entryId == null) {
         throw const TeamAccessException(TeamAccessError.entryIdMissing);
       }
@@ -59,11 +59,22 @@ class RecommendationsCubit extends Cubit<RecommendationsState> {
         bootstrap.players,
       );
       final fixtures = await fixturesRepository.getFixtures();
-      final team = await teamRepository.getMyTeam(
+      var team = await teamRepository.getMyTeam(
         session: session,
         entryId: session.entryId!,
         gameweekId: gameweek.id,
       );
+      if (session.isGuest) {
+        try {
+          team = await teamRepository.withPublicTransfers(
+            team: team,
+            entryId: session.entryId!,
+            bootstrap: bootstrap,
+          );
+        } on Object {
+          // Lineup advice still works without the transfer details.
+        }
+      }
       final playerSummaries = Map<int, FplPlayerSummary>.fromEntries(
         await Future.wait(
           team.picks.map((pick) async {
@@ -160,7 +171,7 @@ class RecommendationsCubit extends Cubit<RecommendationsState> {
   Future<void> refresh() => load();
 
   Future<void> makeTransfer(TransferSuggestion transfer) async {
-    final session = authCubit.state.session;
+    final session = await authCubit.freshSession();
     final data = state.data;
     if (session == null || session.entryId == null || data == null) {
       throw const TeamAccessException(TeamAccessError.entryIdMissing);
@@ -182,7 +193,7 @@ class RecommendationsCubit extends Cubit<RecommendationsState> {
   }
 
   Future<void> saveChip(SuggestedChip chip) async {
-    final session = authCubit.state.session;
+    final session = await authCubit.freshSession();
     final data = state.data;
     if (session == null || session.entryId == null || data == null) {
       throw const TeamAccessException(TeamAccessError.entryIdMissing);

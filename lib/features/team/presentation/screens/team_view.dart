@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/widgets/refresh_on_resume.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
@@ -57,7 +58,12 @@ class TeamView extends StatelessWidget {
         if (!hasPreload) cubit.load();
         return cubit;
       },
-      child: _TeamBody(entryId: entryId),
+      child: Builder(
+        builder: (context) => RefreshOnResume(
+          onRefresh: context.read<TeamCubit>().refresh,
+          child: _TeamBody(entryId: entryId),
+        ),
+      ),
     );
   }
 }

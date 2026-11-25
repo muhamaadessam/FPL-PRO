@@ -195,6 +195,13 @@ class _FakeTeamRepository implements TeamRepository {
   );
 
   @override
+  Future<MyTeam> withPublicTransfers({
+    required MyTeam team,
+    required int entryId,
+    required FplBootstrap bootstrap,
+  }) async => team;
+
+  @override
   Future<MyTeam> getMyTeam({
     required OfficialSession session,
     required int entryId,
@@ -244,6 +251,10 @@ class _FakeAuthRepository implements AuthRepository {
   const _FakeAuthRepository(this.session);
 
   final OfficialSession session;
+
+  @override
+  Future<OfficialSession?> refreshSession(OfficialSession session) async =>
+      session;
 
   @override
   Future<OfficialSession?> restoreSession() async => session;

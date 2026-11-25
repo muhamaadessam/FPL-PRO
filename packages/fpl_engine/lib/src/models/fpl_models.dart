@@ -81,6 +81,7 @@ class FplPlayer {
     this.secondName,
     this.totalPoints = 0,
     this.nowCost,
+    this.costChangeStart = 0,
     this.status = 'a',
     this.news = '',
     this.newsAdded,
@@ -113,6 +114,9 @@ class FplPlayer {
   final String? secondName;
   final int totalPoints;
   final int? nowCost;
+
+  /// Price change since the season started, in the same tenths as [nowCost].
+  final int costChangeStart;
   final String status;
   final String news;
 
@@ -191,6 +195,7 @@ class FplPlayer {
       secondName: json['second_name'] as String?,
       totalPoints: _int(json['total_points']),
       nowCost: _nullableInt(json['now_cost']),
+      costChangeStart: _int(json['cost_change_start']),
       status: json['status'] as String? ?? 'a',
       news: json['news'] as String? ?? '',
       newsAdded: _date(json['news_added']),

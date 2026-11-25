@@ -44,6 +44,7 @@ class AuthCubit extends Cubit<AuthState> {
     : super(initialState);
 
   final AuthRepository _repository;
+  Future<OfficialSession?>? _refreshing;
 
   Future<void> restoreSession() async {
     emit(const AuthLoading());
@@ -56,6 +57,39 @@ class AuthCubit extends Cubit<AuthState> {
       );
     } on Object catch (error, stackTrace) {
       emit(AuthFailure(error, stackTrace));
+    }
+  }
+
+  /// The session with a token that still works. Access tokens last about an
+  /// hour, so a signed-in app left open has to renew them between requests.
+  Future<OfficialSession?> freshSession() async {
+    final session = state.session;
+    if (session == null || session.isGuest || !session.isExpired) {
+      return session;
+    }
+    // Refresh tokens may be single-use, so concurrent loads share one renewal.
+    return _refreshing ??= _refresh(session).whenComplete(() {
+      _refreshing = null;
+    });
+  }
+
+  Future<OfficialSession?> _refresh(OfficialSession session) async {
+    // A session with no known expiry cannot be judged; let the API decide.
+    if (session.refreshToken == null && session.expiresAt == null) {
+      return session;
+    }
+    try {
+      final renewed = await _repository.refreshSession(session);
+      // Signed out or switched team meanwhile.
+      if (isClosed || !identical(state.session, session)) return state.session;
+      emit(
+        renewed == null
+            ? const AuthUnauthenticated()
+            : AuthAuthenticated(renewed),
+      );
+      return renewed;
+    } on Object {
+      return session;
     }
   }
 

@@ -108,7 +108,7 @@ class ManageTeamCubit extends Cubit<ManageTeamState> {
   Future<void> load() async {
     emit(state.copyWith(status: ManageTeamStatus.loading));
     try {
-      final session = _session();
+      final session = await _session();
       final bootstrap = await fixturesRepository.getBootstrap();
       final gameweek = _deadlineGameweek(bootstrap);
       final raw = await teamRepository.getMyTeam(
@@ -260,7 +260,7 @@ class ManageTeamCubit extends Cubit<ManageTeamState> {
     if (state.isSaving) return;
     emit(state.copyWith(isSaving: true));
     try {
-      await request(_session());
+      await request(await _session());
     } on Object {
       if (!isClosed) emit(state.copyWith(isSaving: false));
       rethrow;
@@ -278,8 +278,8 @@ class ManageTeamCubit extends Cubit<ManageTeamState> {
     }
   }
 
-  OfficialSession _session() {
-    final session = authCubit.state.session;
+  Future<OfficialSession> _session() async {
+    final session = await authCubit.freshSession();
     if (session == null || session.entryId == null) {
       throw const TeamAccessException(TeamAccessError.entryIdMissing);
     }

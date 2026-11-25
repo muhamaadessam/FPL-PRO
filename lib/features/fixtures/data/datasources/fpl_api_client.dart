@@ -118,6 +118,12 @@ class FplApiClient {
     return parseEntryHistoryPoints(json);
   }
 
+  Future<Map<String, dynamic>> getEntryHistory(int entryId) =>
+      _getMap('/entry/$entryId/history/');
+
+  Future<List<dynamic>> getEntryTransfers(int entryId) =>
+      _getList('/entry/$entryId/transfers/');
+
   Future<FplPlayerSummary> getPlayerSummary(int playerId) async {
     final json = await _getMap('/element-summary/$playerId/');
     return FplPlayerSummary.fromJson(json);
