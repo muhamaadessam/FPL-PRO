@@ -47,8 +47,34 @@ class TeamRepositoryImpl implements TeamRepository {
       return await getPublicTeam(entryId: entryId, gameweekId: gameweekId);
     } on FplApiException catch (error) {
       if (error.statusCode != 404 || gameweekId <= 1) rethrow;
-      return getPublicTeam(entryId: entryId, gameweekId: gameweekId - 1);
+      final team = await getPublicTeam(
+        entryId: entryId,
+        gameweekId: gameweekId - 1,
+      );
+      // A Free Hit lasts one Gameweek, then the squad before it comes back.
+      if (team.activeChip != FplChipName.freeHit || gameweekId <= 2) {
+        return team;
+      }
+      return getPublicTeam(entryId: entryId, gameweekId: gameweekId - 2);
     }
+  }
+
+  @override
+  Future<MyTeam> withPublicTransfers({
+    required MyTeam team,
+    required int entryId,
+    required FplBootstrap bootstrap,
+  }) async {
+    final (history, transfers) = await (
+      _dataSource.getEntryHistory(entryId),
+      _dataSource.getEntryTransfers(entryId),
+    ).wait;
+    return withPublicTransferState(
+      team: team,
+      bootstrap: bootstrap,
+      history: history,
+      transfers: transfers,
+    );
   }
 
   @override

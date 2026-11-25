@@ -677,7 +677,12 @@ class _RecommendationContentState extends State<_RecommendationContent>
                       selectedChip: _selectedChip,
                       submittingChip: _submittingChip,
                       onChipTap: (chip) => _showChipSelection(chip),
-                      onTransfer: widget.onTransfer,
+                      // A team-ID session is read-only.
+                      onTransfer:
+                          (context.read<AuthCubit>().state.session?.isGuest ??
+                              true)
+                          ? null
+                          : widget.onTransfer,
                     ),
 
                     // Tab 2: Suggested Transfers

@@ -15,6 +15,14 @@ abstract interface class TeamRepository {
     required int gameweekId,
   });
 
+  /// [team], a public squad, with the bank, free transfers and selling prices
+  /// worked out from [entryId]'s public history.
+  Future<MyTeam> withPublicTransfers({
+    required MyTeam team,
+    required int entryId,
+    required FplBootstrap bootstrap,
+  });
+
   Future<MyTeam> getTeamForGameweek({
     required OfficialSession session,
     required int entryId,

@@ -72,7 +72,7 @@ class TeamCubit extends Cubit<TeamState> {
   Future<void> load({int? gameweekId}) async {
     emit(state.copyWith(status: TeamStatus.loading, error: null));
     try {
-      final session = authCubit?.state.session;
+      final session = await authCubit?.freshSession();
       final effectiveEntryId = entryId ?? session?.entryId;
       final entryFuture = effectiveEntryId == null
           ? Future<FplEntry?>.value()

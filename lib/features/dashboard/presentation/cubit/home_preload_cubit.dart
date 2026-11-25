@@ -95,15 +95,16 @@ class HomePreloadCubit extends Cubit<HomePreloadState> {
 
   Future<void> load() async {
     if (_isLoading) return;
-    final session = authCubit.state.session;
+    _isLoading = true;
+    final session = await authCubit.freshSession();
     if (session == null || session.entryId == null) {
+      _isLoading = false;
       emit(
         state.copyWith(status: PreloadStatus.failure, error: 'Unauthenticated'),
       );
       return;
     }
 
-    _isLoading = true;
     emit(state.copyWith(status: PreloadStatus.loading, error: null));
     final entryId = session.entryId!;
     try {

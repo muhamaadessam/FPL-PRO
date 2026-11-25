@@ -11,6 +11,10 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<OfficialSession?> restoreSession() => _client.restoreSession();
 
   @override
+  Future<OfficialSession?> refreshSession(OfficialSession session) =>
+      _client.refreshSession(session);
+
+  @override
   Future<OfficialSession> signIn({
     Future<String> Function(Uri authorizationUri)? authenticate,
     Future<Map<String, String>> Function()? webSessionProvider,
