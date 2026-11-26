@@ -1,4 +1,4 @@
-{"schemaVersion":1,"takenAt":"2026-11-26T08:15:47.921901Z","currentGameweekId":11,"nextGameweekId":12,"players":[
+{"schemaVersion":1,"takenAt":"2026-11-26T18:27:41.186866Z","currentGameweekId":11,"nextGameweekId":12,"players":[
 {"id":1,"webName":"Raya","team":1,"status":"d","news":"Shoulder injury - 50% chance of playing","newsAdded":"2026-11-21T19:00:05.753960Z","chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":50},
 {"id":2,"webName":"Arrizabalaga","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":3,"webName":"Meslier","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -180,7 +180,7 @@
 {"id":156,"webName":"Neto","team":6,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":157,"webName":"Estêvão","team":6,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":158,"webName":"Gittens","team":6,"status":"i","news":"Ankle injury - Unknown return date","newsAdded":"2026-09-26T05:30:09.245832Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
-{"id":159,"webName":"Caicedo","team":6,"status":"d","news":"Back injury - 75% chance of playing","newsAdded":"2026-11-21T16:30:05.451902Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":75},
+{"id":159,"webName":"Caicedo","team":6,"status":"a","news":"","newsAdded":"2026-11-21T16:30:05.451902Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":161,"webName":"Lavia","team":6,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":163,"webName":"D.Essugo","team":6,"status":"u","news":"Has joined RC Strasbourg on loan for the rest of the season","newsAdded":"2026-09-02T16:20:41.865225Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":164,"webName":"Quenda","team":6,"status":"a","news":"","newsAdded":"2026-07-24T20:30:10.609931Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
@@ -226,7 +226,7 @@
 {"id":195,"webName":"Simms","team":7,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":196,"webName":"Markelo","team":7,"status":"u","news":"Has joined Shabab Al-Ahli Dubai permanently","newsAdded":"2026-08-17T13:53:55.791223Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
 {"id":197,"webName":"Bassette","team":7,"status":"u","news":"Has joined KVC Westerlo on loan for the rest of the season","newsAdded":"2026-07-28T12:58:50.001768Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
-{"id":492,"webName":"Awoniyi","team":7,"status":"d","news":"Ankle injury - 75% chance of playing","newsAdded":"2026-11-21T16:30:05.778377Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":75},
+{"id":492,"webName":"Awoniyi","team":7,"status":"i","news":"Ankle injury - Unknown return date","newsAdded":"2026-11-21T16:30:05.778377Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":0},
 {"id":575,"webName":"Yirenkyi","team":7,"status":"d","news":"Unspecified injury - 75% chance of playing","newsAdded":"2026-11-19T19:00:05.972580Z","chanceOfPlayingThisRound":75,"chanceOfPlayingNextRound":75},
 {"id":584,"webName":"Hamer","team":7,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":599,"webName":"Cherif","team":7,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
