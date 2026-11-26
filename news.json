@@ -1,4 +1,4 @@
-{"schemaVersion":1,"takenAt":"2026-11-25T21:46:25.516308Z","currentGameweekId":11,"nextGameweekId":12,"players":[
+{"schemaVersion":1,"takenAt":"2026-11-26T08:15:47.921901Z","currentGameweekId":11,"nextGameweekId":12,"players":[
 {"id":1,"webName":"Raya","team":1,"status":"d","news":"Shoulder injury - 50% chance of playing","newsAdded":"2026-11-21T19:00:05.753960Z","chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":50},
 {"id":2,"webName":"Arrizabalaga","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":3,"webName":"Meslier","team":1,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
@@ -460,7 +460,7 @@
 {"id":374,"webName":"Endo","team":14,"status":"a","news":"","newsAdded":"2026-07-23T12:01:23.612529Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":375,"webName":"Nyoni","team":14,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":376,"webName":"Bajcetic","team":14,"status":"u","news":"Has joined Celta Vigo permanently","newsAdded":"2026-07-23T12:01:23.628373Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
-{"id":377,"webName":"Munoz","team":14,"status":"a","news":"","newsAdded":"2026-10-20T18:30:09.999223Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
+{"id":377,"webName":"Munoz","team":14,"status":"d","news":"Knee injury - 75% chance of playing","newsAdded":"2026-11-26T03:30:05.640103Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":75},
 {"id":378,"webName":"McConnell","team":14,"status":"a","news":"","newsAdded":null,"chanceOfPlayingThisRound":null,"chanceOfPlayingNextRound":null},
 {"id":379,"webName":"Isak","team":14,"status":"a","news":"","newsAdded":"2026-09-27T10:30:09.051435Z","chanceOfPlayingThisRound":100,"chanceOfPlayingNextRound":100},
 {"id":380,"webName":"Ekitiké","team":14,"status":"i","news":"Achilles injury - Unknown return date","newsAdded":"2026-07-23T12:01:23.643771Z","chanceOfPlayingThisRound":0,"chanceOfPlayingNextRound":0},
